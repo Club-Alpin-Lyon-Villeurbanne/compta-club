@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function Home() {
   const ndf =
   {
-    id: 111,
+    id: 5943,
     titre: "Cycle découverte Splitboard #1 Dévoluy",
     commission: 32,
     dateDebut: "21 janvier 2023",
@@ -58,6 +58,7 @@ export default function Home() {
             width={35}
             height={35} />
           <h2 className="text-2xl font-semibold leading-tight pl-5"> {ndf.titre}</h2>
+          <Link href={`https://www.clubalpinlyon.fr/sortie/-${ndf.id}.html`} className="inline-flex items-center px-3 py-2 ml-10 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Voir la sortie sur le site</Link>
         </div>
         <div className="my-2 flex sm:flex-row flex-col">
           <div className="flex flex-row mb-1 sm:mb-0">
