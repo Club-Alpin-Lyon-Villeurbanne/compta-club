@@ -11,6 +11,7 @@ export default function Home() {
     dateFin: "22 janvier 2023",
     statut: "Validée",
     lieu: "Aravis",
+    nbreParticipants: 9,
     demandeurs: [
       {
         id: 1,
@@ -20,7 +21,8 @@ export default function Home() {
         montantTrajet: 123,
         montantPeage: 23,
         montantHebergement: 100,
-        montantAutre: 23,
+        montantAutre1: 23,
+        descriptionAutreFrais1: "forfait Tignes",
         remboursement: true
       },
       {
@@ -31,7 +33,8 @@ export default function Home() {
         montantTrajet: 145,
         montantPeage: 23,
         montantHebergement: 80,
-        montantAutre: 23,
+        montantAutre1: 23,
+        descriptionAutreFrais1: "forfait Tignes",
         remboursement: false
       },
       {
@@ -42,7 +45,8 @@ export default function Home() {
         montantTrajet: 145,
         montantPeage: 23,
         montantHebergement: 80,
-        montantAutre: 23,
+        montantAutre1: 23,
+        descriptionAutreFrais1: "forfait Tignes",
         remboursement: false
       },
     ]
@@ -66,6 +70,7 @@ export default function Home() {
             Date de fin: {ndf.dateFin}<br />
             Statut: {ndf.statut}<br />
             Lieu: {ndf.lieu}
+            Nombre de participants: {ndf.nbreParticipants}
           </div>
         </div>
         <div className="grid grid-flow-row-dense grid-cols-3">
@@ -78,7 +83,8 @@ export default function Home() {
                 Montant trajet: {demandeur.montantTrajet} €<br />
                 Montant péage: {demandeur.montantPeage} €<br />
                 Montant Hébergement: {demandeur.montantHebergement} €<br />
-                Autres frais: {demandeur.montantAutre} €<br />
+                Autres frais:<br />
+                {demandeur.descriptionAutreFrais1}: {demandeur.montantAutre1} €<br />
                 Total: {demandeur.montantTrajet + demandeur.montantPeage + demandeur.montantHebergement + demandeur.montantAutre} €<br />
                 Remboursement: {demandeur.remboursement ? "oui" : "non"}<br />
 
