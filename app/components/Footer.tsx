@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
     return (
         <footer className="bg-white rounded-lg shadow m-4 dark:bg-gray-900">
@@ -9,7 +11,10 @@ export default function Footer() {
                         <a href="#" className="mr-4 hover:underline md:mr-6 ">A propos</a>
                     </li>
                     <li>
-                        <a href="#" className="hover:underline">Backlog du projet</a>
+                        <Link href="https://sharing.clickup.com/42653954/l/h/18np82-82/e8c751e9ba9d61f" className="hover:underline">Backlog du projet</Link>
+                    </li>
+                    <li>
+                        <Link href="https://github.com/Club-Alpin-Lyon-Villeurbanne/compta-club" className="hover:underline">Code source</Link>
                     </li>
                 </ul>
             </div>
