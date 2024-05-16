@@ -1,6 +1,11 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
+type User = {
+  id: string;
+  token: string;
+};
+
 const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -9,7 +14,7 @@ const authOptions: NextAuthOptions = {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req): Promise<User | null> {
         const { username, password } = credentials as {
           username: string;
           password: string;
@@ -25,7 +30,7 @@ const authOptions: NextAuthOptions = {
 
         if (response.ok) {
           const data = await response.json();
-          const user = {
+          const user: User = {
            token: data.token
           };
           return user;
@@ -51,4 +56,7 @@ const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
+export { handler as GET, handler as POST };
+export { handler as GET, handler as POST };
+export { handler as GET, handler as POST };
 export { handler as GET, handler as POST };
