@@ -1,59 +1,41 @@
+'use client';
+import { useEffect, useState } from 'react';
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  const ndf =
-  {
-    id: 5943,
-    titre: "Cycle découverte Splitboard #1 Dévoluy",
-    commission: 32,
-    dateDebut: "21 janvier 2023",
-    dateFin: "22 janvier 2023",
-    statut: "Validée",
-    lieu: "Aravis",
-    nbreParticipants: 9,
-    demandeurs: [
-      {
-        id: 1,
-        nom: "Nicolas Ritouet",
-        transport: "minibus club",
-        descriptionTransport: "Trajet Bron -> Thones -> Bron",
-        montantTrajet: 123,
-        montantPeage: 23,
-        montantHebergement: 100,
-        montantAutre1: 23,
-        descriptionAutreFrais1: "forfait Tignes",
-        remboursement: true
-      },
-      {
-        id: 2,
-        nom: "Jean-Christophe Segault",
-        transport: "voiture perso",
-        descriptionTransport: "Trajet Bron -> Thones -> Bron",
-        montantTrajet: 145,
-        montantPeage: 23,
-        montantHebergement: 80,
-        montantAutre1: 23,
-        descriptionAutreFrais1: "forfait Tignes",
-        remboursement: false
-      },
-      {
-        id: 3,
-        nom: "Bernard Servant",
-        transport: "voiture perso",
-        descriptionTransport: "Trajet Bron -> Thones -> Bron",
-        montantTrajet: 145,
-        montantPeage: 23,
-        montantHebergement: 80,
-        montantAutre1: 23,
-        descriptionAutreFrais1: "forfait Tignes",
-        remboursement: false
-      },
-    ]
-  };
+  const { data: session, status } = useSession();
+  const [ndf, setNdf] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch('http://127.0.0.1:8000/api/expense-report/1');
+      const data = await response.json();
+      if (data.success) {
+        setNdf(data.expenseReport);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  if (!session) {
+    redirect('/');
+    return null;
+  }
+
+  if (!ndf) {
+    return <div>Loading expense report...</div>;
+  }
   return (
     <main>
-      <div className="container mx-auto px-4 sm:px-8">
+      <div className="container px-4 mx-auto sm:px-8">
         <div className="flex">
           <Image
             src={`https://www.clubalpinlyon.fr/ftp/commission/${ndf.commission}/picto-dark.png`}
@@ -61,10 +43,10 @@ export default function Home() {
             className="float-left x-left-10"
             width={35}
             height={35} />
-          <h2 className="text-2xl font-semibold leading-tight pl-5"> {ndf.titre}</h2>
+          <h2 className="pl-5 text-2xl font-semibold leading-tight"> {ndf.titre}</h2>
           <Link href={`https://www.clubalpinlyon.fr/sortie/-${ndf.id}.html`} className="inline-flex items-center px-3 py-2 ml-10 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Voir la sortie sur le site</Link>
         </div>
-        <div className="my-2 flex sm:flex-row flex-col">
+        <div className="flex flex-col my-2 sm:flex-row">
           <div className="flex flex-row mb-1 sm:mb-0">
             Date de début: {ndf.dateDebut}<br />
             Date de fin: {ndf.dateFin}<br />

@@ -1,3 +1,4 @@
+import AuthProvider from './AuthProvider'
 import Footer from './components/Footer'
 import Navbar from './components/Navbar'
 import './globals.css'
@@ -14,12 +15,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased font-sans bg-gray-200">
-        <Navbar />
-        <div className="pt-20">
-        {children}
-        </div>
-        <Footer />
+      <body className="font-sans antialiased bg-gray-200">
+        <AuthProvider>
+          <Navbar />
+          <div className="pt-20">
+            {children}
+          </div>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   )
