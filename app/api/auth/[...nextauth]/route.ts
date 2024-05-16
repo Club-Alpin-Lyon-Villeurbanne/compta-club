@@ -31,6 +31,7 @@ const authOptions: NextAuthOptions = {
         if (response.ok) {
           const data = await response.json();
           const user: User = {
+           id: data.id, // Ensure that 'id' is returned from your backend and added here
            token: data.token
           };
           return user;
@@ -43,7 +44,11 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.user = user;
+        token.user = {
+          name: user.name, // Assuming 'name' is a property of 'user'
+          email: user.email, // Assuming 'email' is a property of 'user'
+          image: user.image // Assuming 'image' is a property of 'user'
+        };
       }
       return token;
     },
@@ -56,4 +61,5 @@ const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
+export { handler as GET, handler as POST };
 export { handler as GET, handler as POST };
