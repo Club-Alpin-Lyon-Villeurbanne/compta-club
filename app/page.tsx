@@ -19,7 +19,7 @@ export default function HomePage() {
     <main>
       <div className="container px-4 mx-auto sm:px-8">
         <div className="flex">
-          <h1>Bienvenue sur My App</h1>
+          <h1>Bienvenue sur Compta-Club</h1>
           <LoginForm />
         </div>
       </div>
