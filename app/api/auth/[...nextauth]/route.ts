@@ -1,10 +1,6 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-
-type User = {
-  id: string;
-  token: string;
-};
+import { User } from '@/app/lib/definitions';
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -20,22 +16,33 @@ const authOptions: NextAuthOptions = {
           password: string;
         };
 
-        const response = await fetch('http://localhost:8000/api/login_check', {
+        fetch(process.env.BACKEND_LOGIN_CHECK as string, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ username, password }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          } else {
+            throw new Error('Erreur serveur', {cause: response});
+          }
+        })
+        .then(json => {
           const user: User = {
-           id: data.id, // Ensure that 'id' is returned from your backend and added here
-           token: data.token
-          };
+            id: json.data.id, // Ensure that 'id' is returned from your backend and added here
+            token: json.token,
+            username: json.data.username,
+            email: json.data.email,
+          }
           return user;
-        }
+        })
+        .catch(e => {
+          console.error('Une erreur est survenue', e);
+        })
+        ;
 
         return null;
       },
@@ -44,16 +51,16 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.user = {
-          name: user.name, // Assuming 'name' is a property of 'user'
-          email: user.email, // Assuming 'email' is a property of 'user'
-          image: user.image // Assuming 'image' is a property of 'user'
-        };
+        token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
-    async session({ session, token }) {
-      session.user = token.user;
+    async session({ session, token, user }) {
+      session.user = {
+        name: user.name,
+        email: user.email,
+      };
       return session;
     },
   },

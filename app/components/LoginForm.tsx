@@ -13,18 +13,21 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = await signIn('credentials', {
+    signIn('credentials', {
       redirect: false,
       username,
       password,
-    });
-
-    // if (result?.error) {
-    //   console.error('Login failed:', result.error);
-    // } else {
-    //   router.push('/note-de-frais');
-    // }
-  };
+    })
+    .then(r => {
+      if (r?.ok) {
+        router.push('/note-de-frais');
+      } else {
+        console.log(r);
+      }
+    })
+    .catch(e => console.log(e))
+    ;
+  }
 
   return (
     <form onSubmit={handleSubmit}>

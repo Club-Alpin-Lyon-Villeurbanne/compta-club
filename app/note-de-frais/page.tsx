@@ -13,7 +13,7 @@ export default function Home() {
       const jwtToken = session?.user?.token;
 
       if (jwtToken) {
-        const response = await fetch('http://127.0.0.1:8000/api/expense-report', {
+        const response = await fetch(process.env.BACKEND_EXPENSE_REPORT as string, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
