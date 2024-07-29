@@ -1,19 +1,18 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { getSession } from 'next-auth/react';
+import { getSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function Home() {
   const [expenseReports, setExpenseReports] = useState([]);
 
   useEffect(() => {
-    console.log(expenseReports);
     const fetchData = async () => {
       const session = await getSession();
-      const jwtToken = session?.user?.token;
+      const jwtToken = session?.user?.jwt;
 
       if (jwtToken) {
-        const response = await fetch(process.env.BACKEND_EXPENSE_REPORT as string, {
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_BASE_URL as string + "/expense-report", {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
@@ -25,6 +24,8 @@ export default function Home() {
           const data = await response.json();
           if (data.success) {
             setExpenseReports(data.expenseReports);
+          } else if (response.status === 401) {
+            signOut({redirect: false}); // todo: refresh token
           } else {
             console.error('API response was not successful:', data);
           }
@@ -106,10 +107,11 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {expenseReports.map((report) => (
+                
                     <tr key={report.id}>
                       <td className="px-5 py-5 text-sm bg-white border-b border-gray-200">
                         <p className="text-gray-900 whitespace-no-wrap">
-                        <Link href={`/note-de-frais/${report.id}`}>{report.event}{report.event}</Link>
+                        <Link href={`/note-de-frais/${report.id}`}>{report.event.titre}</Link>
                         </p>
                       </td>
                       <td className="px-5 py-5 text-sm bg-white border-b border-gray-200">

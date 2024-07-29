@@ -22,12 +22,12 @@ export default function LoginForm() {
       if (r?.ok) {
         router.push('/note-de-frais');
       } else {
-        console.log(r);
+        throw new Error('Une erreur est survenue', {cause: r});
       }
     })
     .catch(e => console.log(e))
     ;
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit}>

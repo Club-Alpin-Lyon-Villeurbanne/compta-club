@@ -10,10 +10,10 @@ export default function HomePage() {
     return <div>Loading...</div>;
   }
 
-  if (session) {
-    redirect('/note-de-frais');
-    return null;
-  }
+  // if (session) {
+  //   redirect('/note-de-frais');
+  //   return null;
+  // }
 
   return (
     <main>

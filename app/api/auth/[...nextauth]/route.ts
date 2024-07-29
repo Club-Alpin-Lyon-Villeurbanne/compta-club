@@ -16,12 +16,12 @@ const authOptions: NextAuthOptions = {
           password: string;
         };
 
-        fetch(process.env.BACKEND_LOGIN_CHECK as string, {
+        const user = fetch(process.env.NEXT_PUBLIC_BACKEND_BASE_URL as string + '/auth', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ email: username, password }),
         })
         .then(response => {
           if (response.ok) {
@@ -41,26 +41,43 @@ const authOptions: NextAuthOptions = {
         })
         .catch(e => {
           console.error('Une erreur est survenue', e);
+          return null;
         })
         ;
 
-        return null;
+        return user;
       },
     }),
   ],
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
   callbacks: {
-    async jwt({ token, user }) {
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
+    async jwt({ token, user, account, profile, trigger, session  }) {
       if (user) {
         token.email = user.email;
-        token.name = user.name;
+        token.name = user.username;
+        token.jwt = user.token;
       }
       return token;
     },
     async session({ session, token, user }) {
-      session.user = {
-        name: user.name,
-        email: user.email,
-      };
+      if (token) {
+        session.user = {
+          name: token.name,
+          email: token.email,
+          jwt: token.jwt,
+        };
+      }
+        
       return session;
     },
   },
@@ -68,4 +85,4 @@ const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST};
