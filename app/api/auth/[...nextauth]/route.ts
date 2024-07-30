@@ -53,14 +53,17 @@ const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
+  pages: {
+    signIn: "/",
+  },
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
-    },
+    // async redirect({ url, baseUrl }) {
+    //   // Allows relative callback URLs
+    //   if (url.startsWith("/")) return `${baseUrl}${url}`
+    //   // Allows callback URLs on the same origin
+    //   else if (new URL(url).origin === baseUrl) return url
+    //   return baseUrl
+    // },
     async jwt({ token, user, account, profile, trigger, session  }) {
       if (user) {
         token.email = user.email;

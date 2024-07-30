@@ -1,13 +1,13 @@
 // app/components/LoginForm.tsx
 'use client';
 
-import { useState } from 'react';
+import { useRef } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const username = useRef("");
+  const password = useRef("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -15,8 +15,8 @@ export default function LoginForm() {
 
     signIn('credentials', {
       redirect: false,
-      username,
-      password,
+      username: username.current,
+      password: password.current,
     })
     .then(r => {
       if (r?.ok) {
@@ -34,14 +34,12 @@ export default function LoginForm() {
       <input
         type="text"
         placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        onChange={(e) => username.current = e.target.value}
       />
       <input
         type="password"
         placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => password.current = e.target.value}
       />
       <button type="submit">Login</button>
     </form>
