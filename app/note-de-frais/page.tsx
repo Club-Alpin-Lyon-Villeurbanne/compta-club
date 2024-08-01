@@ -1,42 +1,22 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { getSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import useAxiosAuth from '../lib/hooks/useAxiosAuth';
 
 export default function Home() {
   const [expenseReports, setExpenseReports] = useState([]);
+  const axiosAuth = useAxiosAuth();
+  const {data:session} = useSession();
 
   useEffect(() => {
     const fetchData = async () => {
-      const session = await getSession();
-      const jwtToken = session?.user?.jwt;
-
-      if (jwtToken) {
-        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_BASE_URL as string + "/expense-report", {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${jwtToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setExpenseReports(data.expenseReports);
-          } else if (response.status === 401) {
-            signOut({redirect: false}); // todo: refresh token
-          } else {
-            console.error('API response was not successful:', data);
-          }
-        } else {
-          console.error('Failed to fetch expense reports:', response.statusText);
-        }
-      }
+      const response = await axiosAuth("/expense-report");
+      setExpenseReports(response.data.expenseReports);
     };
 
-    fetchData();
-  }, []);
+    if (session) fetchData();
+  }, [session]);
 
   return (
     <main>

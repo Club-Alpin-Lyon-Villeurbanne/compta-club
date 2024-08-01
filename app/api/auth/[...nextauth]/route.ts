@@ -1,14 +1,15 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { User } from '@/app/lib/definitions';
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { User } from "@/app/lib/definitions";
+import * as jose from "jose";
 
 const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        username: { label: 'Username', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req): Promise<User | null> {
         const { username, password } = credentials as {
@@ -16,36 +17,39 @@ const authOptions: NextAuthOptions = {
           password: string;
         };
 
-        const user = fetch(process.env.NEXT_PUBLIC_BACKEND_BASE_URL as string + '/auth', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email: username, password }),
-        })
-        .then(response => {
-          if (response.ok) {
-            return response.json();
-          } else {
-            throw new Error('Erreur serveur', {cause: response});
-          }
-        })
-        .then(json => {
-          const user: User = {
-            id: json.data.id, // Ensure that 'id' is returned from your backend and added here
-            token: json.token,
-            username: json.data.username,
-            email: json.data.email,
-          }
-          return user;
-        })
-        .catch(e => {
-          console.error('Une erreur est survenue', e);
-          return null;
-        })
-        ;
+        try {
+          const response = await fetch(
+            (process.env.NEXT_PUBLIC_BACKEND_BASE_URL as string) + "/auth",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email: username, password }),
+            }
+          );
 
-        return user;
+          if (response.ok) {
+            const json = await response.json();
+
+            const claims = jose.decodeJwt(json.token);
+            const user: User = {
+              id: claims.id as string, // Ensure that 'id' is returned from your backend and added here
+              accessToken: json.token,
+              accessTokenExpires: claims.exp * 1000,
+              refreshToken: json.refresh_token,
+              name: claims.nickname as string,
+              email: claims.email as string,
+            };
+            return user;
+          } else {
+            throw new Error("Erreur serveur", { cause: response });
+          }
+        } catch (err) {
+          console.error("Une erreur est survenue", err);
+        }
+
+        return null;
       },
     }),
   ],
@@ -64,23 +68,36 @@ const authOptions: NextAuthOptions = {
     //   else if (new URL(url).origin === baseUrl) return url
     //   return baseUrl
     // },
-    async jwt({ token, user, account, profile, trigger, session  }) {
-      if (user) {
-        token.email = user.email;
-        token.name = user.username;
-        token.jwt = user.token;
+    async jwt({ token, user, account, profile, trigger, session }) {
+      // Initial sign in
+      if (account && user) {
+        return {
+          ...token,
+          user,
+          accessToken: user.accessToken,
+          accessTokenExpires: user.accessTokenExpires,
+          refreshToken: user.refreshToken,
+        };
       }
+
+      // Return previous token if the access token has not expired yet
+      // if (Date.now() < token.accessTokenExpires) {
+      //   return token
+      // }
+
+      // Access token has expired, try to update it
+      //return refreshAccessToken(token)
       return token;
     },
     async session({ session, token, user }) {
       if (token) {
-        session.user = {
-          name: token.name,
-          email: token.email,
-          jwt: token.jwt,
-        };
+        session.user = token.user as User;
+        session.accessToken = token.accessToken as string;
+        session.accessTokenExpires = token.accessTokenExpires as Number;
+        session.refreshToken = token.refreshToken as string;
+        //session.error = token.error;
       }
-        
+
       return session;
     },
   },
@@ -88,4 +105,4 @@ const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST};
+export { handler as GET, handler as POST };

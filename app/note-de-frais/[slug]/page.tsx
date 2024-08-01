@@ -2,44 +2,23 @@
 import { useEffect, useState } from 'react';
 import Image from "next/image";
 import Link from "next/link";
-import { useSession, getSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import useAxiosAuth from '@/app/lib/hooks/useAxiosAuth';
 
 export default function Home({params} : {params: {slug: string}}) {
   const { data: session, status } = useSession();
   const [ndf, setNdf] = useState(null);
+  const axiosAuth = useAxiosAuth();
 
   useEffect(() => {
     const fetchData = async () => {
-      const session = await getSession();
-      const jwtToken = session?.user?.jwt;
-
-      if (jwtToken) {
-        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_BASE_URL as string + "/expense-report/" + params.slug, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${jwtToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setNdf(data.expenseReport);
-          } else if (response.status === 401) {
-            signOut({redirect: false}); // Todo : refresh token
-          } else {
-            console.error('API response was not successful:', data);
-          }
-        } else {
-          console.error('Failed to fetch expense reports:', response.statusText);
-        }
-      }
+      
+      const response = await axiosAuth("/expense-report/" + params.slug);
+      setNdf(response.data.expenseReport);
     };
-
-    fetchData();
-  }, []);
+    if (session) fetchData();
+  }, [session]);
 
   if (status === 'loading') {
     return <div>Loading...</div>;
