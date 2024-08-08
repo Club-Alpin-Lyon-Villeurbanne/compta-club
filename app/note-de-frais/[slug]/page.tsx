@@ -1,16 +1,12 @@
-"use client";
-import { useCallback, useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
-import useAxiosAuth from "@/app/lib/hooks/useAxiosAuth";
-import { ExpenseStatus } from "@/app/lib/definitions";
+'use client';
+import { useCallback, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
+import useAxiosAuth from '@/app/lib/hooks/useAxiosAuth';
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import Header from "@/app/components/note-de-frais/header";
-import { swalComment } from "@/app/components/swalComment";
-import {
-  getSendingChoiceTranslation,
-  SendingChoice,
-} from "@/app/enums/sendingChoice";
+import { sweetModalComment } from "@/app/components/sweetModalComment";
+import {ExpenseStatus, getExpenseStatusTranslation} from "@/app/enums/ExpenseStatus";
 
 export default function Home({ params }: { params: { slug: string } }) {
   const { data: session, status } = useSession();
@@ -51,26 +47,26 @@ export default function Home({ params }: { params: { slug: string } }) {
     }
   };
 
-  const handleAction = async (action: SendingChoice) => {
-    const inputComment = await swalComment(comment, setComment, action);
-    if (inputComment) {
-      if (action === SendingChoice.VALIDATE) {
+  const handleAction = async (action: ExpenseStatus.VALIDATE | ExpenseStatus.REJECT) => {
+    const inputComment = await sweetModalComment(comment, setComment, action);
+    if (inputComment !== null) {
+      if (action === ExpenseStatus.VALIDATE) {
         validate(inputComment);
-      } else if (action === SendingChoice.REJECT) {
+      } else if (action === ExpenseStatus.REJECT) {
         reject(inputComment);
       }
     }
   };
 
   const validate = (comment: string) => {
-    patch({ status: ExpenseStatus.Approved, comment });
-    setComment("");
-  };
+    patch({ status: ExpenseStatus.APPROVED, comment });
+    setComment('');
+  }
 
   const reject = (comment: string) => {
-    patch({ status: ExpenseStatus.Rejected, comment });
-    setComment("");
-  };
+    patch({ status: ExpenseStatus.REJECT, comment });
+    setComment('');
+  }
 
   useEffect(() => {
     if (session) fetchData();
@@ -97,28 +93,53 @@ export default function Home({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <main>
-      <div className="container px-4 mx-auto sm:px-8">
-        <div className="flex">
-          <Header
-            commission={ndf.event.commission}
-            titre={ndf.event.titre}
-            id={ndf.id}
-          />
-        </div>
-        <div className="flex flex-col my-2 sm:flex-row">
-          <div className="flex flex-row mb-1 sm:mb-0">
-            Date de début:{" "}
-            {new Date(parseInt(ndf.event.tsp) * 1000).toLocaleDateString()}
-            <br />
-            Date de fin:{" "}
-            {new Date(parseInt(ndf.event.tspEnd) * 1000).toLocaleDateString()}
-            <br />
-            Statut: {ndf.status}
-            <br />
-            Lieu: {ndf.event.rdv}
-            <br />
-            Nombre de participants: {ndf.participations.length}
+      <main>
+        <div className="container px-4 mx-auto sm:px-8">
+          <div className="flex">
+            <Header commission={ndf.event.commission} titre={ndf.event.titre} id={ndf.id} />
+          </div>
+          <div className="flex flex-col my-2 sm:flex-row">
+            <div className="flex flex-row mb-1 sm:mb-0">
+              Date de début: {(new Date(parseInt(ndf.event.tsp) * 1000)).toLocaleDateString()}<br />
+              Date de fin: {(new Date(parseInt(ndf.event.tspEnd) * 1000)).toLocaleDateString()}<br />
+              Statut: {ndf.status}<br />
+              Lieu: {ndf.event.rdv}<br />
+              Nombre de participants: {ndf.participations.length}
+            </div>
+          </div>
+          <div className="grid grid-flow-row-dense grid-cols-3">
+            {ndf.status !== ExpenseStatus.APPROVED && ndf.status !== ExpenseStatus.REJECT && (
+                <>
+                  <button
+                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                      onClick={() => handleAction(ExpenseStatus.VALIDATE)}
+                  >
+                    {getExpenseStatusTranslation(ExpenseStatus.VALIDATE)}
+                  </button>
+                  <button
+                      className="inline-flex items-center px-3 py-2 ml-10 text-sm font-medium text-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                      onClick={() => handleAction(ExpenseStatus.REJECT)}
+                  >
+                    {getExpenseStatusTranslation(ExpenseStatus.REJECT)}
+                  </button>
+                </>
+            )}
+
+            {
+                ndf.status === ExpenseStatus.APPROVED && (
+                    <div className="flex flex-row mb-1 sm:mb-0">
+                      <p>Commentaire de validation: {ndf.statusComment}</p>
+                    </div>
+                )
+            }
+
+            {
+                ndf.status === ExpenseStatus.REJECT && (
+                    <div className="flex flex-row mb-1 sm:mb-0">
+                      <p>Commentaire de refus: {ndf.statusComment}</p>
+                    </div>
+                )
+            }
           </div>
         </div>
         <div className="grid grid-flow-row-dense grid-cols-3">

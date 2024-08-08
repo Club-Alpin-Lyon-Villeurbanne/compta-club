@@ -3,7 +3,7 @@ import {User} from "@/app/interfaces/UserInterface";
 export interface ExpenseReport {
     id: number
     status: string
-    statusComment: any
+    statusComment: string
     refundRequired: boolean
     user: User
     event: Event
