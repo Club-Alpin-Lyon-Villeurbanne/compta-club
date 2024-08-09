@@ -1,4 +1,5 @@
 import {User} from "@/app/interfaces/UserInterface";
+import {ExpenseGroups} from "@/app/interfaces/ExpenseGroups";
 
 export interface ExpenseReport {
     id: number
@@ -51,7 +52,4 @@ interface CycleChildren {
 
 
 export interface Participations {
-}
-
-export interface ExpenseGroups {
 }

@@ -1,8 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "../lib/hooks/useAxiosAuth";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import Filters from "@/app/components/note-de-frais/Filters";
 import ReportTable from "@/app/components/note-de-frais/ReportTable";
 import Pagination from "@/app/components/note-de-frais/Pagination";
@@ -21,7 +20,7 @@ const Home: React.FC = () => {
     };
 
     if (session) fetchData();
-  }, [axiosAuth, session]);
+  }, [axiosAuth, session, setExpenseReports]);
 
   return (
     <main>
