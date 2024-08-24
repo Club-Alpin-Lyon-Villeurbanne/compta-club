@@ -1,9 +1,10 @@
 import {User} from "@/app/interfaces/UserInterface";
+import {ExpenseGroups} from "@/app/interfaces/ExpenseGroups";
 
 export interface ExpenseReport {
     id: number
     status: string
-    statusComment: any
+    statusComment: string
     refundRequired: boolean
     user: User
     event: Event
@@ -51,7 +52,4 @@ interface CycleChildren {
 
 
 export interface Participations {
-}
-
-export interface ExpenseGroups {
 }

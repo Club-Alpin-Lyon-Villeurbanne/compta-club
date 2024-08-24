@@ -2,9 +2,13 @@
 
 import withReactContent from "sweetalert2-react-content";
 import Swal from "sweetalert2";
-import SendingChoice from "@/app/enums/sendingChoice";
+import ExpenseStatus from "@/app/enums/ExpenseStatus";
 
-export const swalComment = async (comment: string, setComment: (comment: string) => void, action: SendingChoice.VALIDATE | SendingChoice.REJECT) => {
+export const sweetModalComment = async (
+    comment: string,
+    setComment: (comment: string) => void,
+    action: ExpenseStatus.VALIDATE | ExpenseStatus.REJECT
+): Promise<string | null> => {
     const commentInput = await withReactContent(Swal).fire({
         title: <i>Commentaire</i>,
         input: 'textarea',
@@ -13,17 +17,23 @@ export const swalComment = async (comment: string, setComment: (comment: string)
         confirmButtonText: 'Suivant',
         confirmButtonColor: '#2563eb',
         cancelButtonText: 'Annuler',
+        inputValidator: (value) => {
+            if (action === ExpenseStatus.REJECT && !value) {
+                return 'Le commentaire est obligatoire pour le rejet.';
+            }
+            return null;
+        }
     });
 
-    if (commentInput.value) {
+    if (commentInput.value !== undefined) {
         setComment(commentInput.value);
         const result = await withReactContent(Swal).fire({
-            title: action === SendingChoice.VALIDATE ? 'Valider' : 'Refuser',
+            title: action === ExpenseStatus.VALIDATE ? 'Valider' : 'Refuser',
             text: "Voulez-vous vraiment continuer ?",
             showCancelButton: true,
             confirmButtonText: 'Oui',
             cancelButtonText: 'Non',
-            confirmButtonColor: action === SendingChoice.VALIDATE ? '#2563eb' : '#d33',
+            confirmButtonColor: action === ExpenseStatus.VALIDATE ? '#2563eb' : '#d33',
         });
 
         if (result.isConfirmed) {
