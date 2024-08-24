@@ -1,88 +1,141 @@
-'use client';
-import { useEffect, useState } from 'react';
-import Image from "next/image";
-import Link from "next/link";
-import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
-import useAxiosAuth from '@/app/lib/hooks/useAxiosAuth';
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import useAxiosAuth from "@/app/lib/hooks/useAxiosAuth";
+import { ExpenseStatus } from "@/app/lib/definitions";
+import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import Header from "@/app/components/note-de-frais/header";
+import { swalComment } from "@/app/components/swalComment";
+import {
+  getSendingChoiceTranslation,
+  SendingChoice,
+} from "@/app/enums/sendingChoice";
 
-export default function Home({params} : {params: {slug: string}}) {
+export default function Home({ params }: { params: { slug: string } }) {
   const { data: session, status } = useSession();
-  const [ndf, setNdf] = useState(null);
+  const [ndf, setNdf] = useState<ExpenseReport | null>(null);
+  const [comment, setComment] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const axiosAuth = useAxiosAuth();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      
+  const fetchData = useCallback(async () => {
+    try {
       const response = await axiosAuth("/expense-report/" + params.slug);
       setNdf(response.data.expenseReport);
-    };
-    if (session) fetchData();
-  }, [session]);
+    } catch (err) {
+      setError("Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  }, [axiosAuth, params.slug]);
 
-  if (status === 'loading') {
+  const patch = async (state: { status: ExpenseStatus; comment: string }) => {
+    try {
+      const response = await axiosAuth(
+        `/expense-report/${params.slug}/status`,
+        {
+          method: "patch",
+          data: {
+            status: state.status,
+            statusComment: state.comment,
+          },
+        }
+      );
+      if (response.status === 200 && session) {
+        await fetchData();
+      }
+    } catch (err) {
+      setError("Failed to update status");
+    }
+  };
+
+  const handleAction = async (action: SendingChoice) => {
+    const inputComment = await swalComment(comment, setComment, action);
+    if (inputComment) {
+      if (action === SendingChoice.VALIDATE) {
+        validate(inputComment);
+      } else if (action === SendingChoice.REJECT) {
+        reject(inputComment);
+      }
+    }
+  };
+
+  const validate = (comment: string) => {
+    patch({ status: ExpenseStatus.Approved, comment });
+    setComment("");
+  };
+
+  const reject = (comment: string) => {
+    patch({ status: ExpenseStatus.Rejected, comment });
+    setComment("");
+  };
+
+  useEffect(() => {
+    if (session) fetchData();
+  }, [fetchData, session]);
+
+  if (status === "loading") {
     return <div>Loading...</div>;
   }
 
   if (!session) {
-    redirect('/');
-    return null;
+    redirect("/");
+  }
+
+  if (loading) {
+    return <div>Loading expense report...</div>;
+  }
+
+  if (error) {
+    console.error(error);
   }
 
   if (!ndf) {
-    return <div>Loading expense report...</div>;
+    return <div>No expense report found.</div>;
   }
+
   return (
     <main>
       <div className="container px-4 mx-auto sm:px-8">
         <div className="flex">
-          <Image
-            src={`https://www.clubalpinlyon.fr/ftp/commission/${ndf.event.commission}/picto-dark.png`}
-            alt=""
-            className="float-left x-left-10"
-            width={35}
-            height={35}
-            style={{width: 35, height: 35}}
+          <Header
+            commission={ndf.event.commission}
+            titre={ndf.event.titre}
+            id={ndf.id}
           />
-          <h2 className="pl-5 text-2xl font-semibold leading-tight"> {ndf.event.titre}</h2>
-          <Link href={`https://www.clubalpinlyon.fr/sortie/-${ndf.id}.html`} className="inline-flex items-center px-3 py-2 ml-10 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Voir la sortie sur le site</Link>
         </div>
         <div className="flex flex-col my-2 sm:flex-row">
           <div className="flex flex-row mb-1 sm:mb-0">
-            Date de début: {(new Date(ndf.event.tsp * 1000)).toLocaleDateString()}<br />
-            Date de fin: {(new Date(ndf.event.tspEnd * 1000)).toLocaleDateString()}<br />
-            Statut: {ndf.status}<br />
-            Lieu: {ndf.event.rdv}<br />
+            Date de début:{" "}
+            {new Date(parseInt(ndf.event.tsp) * 1000).toLocaleDateString()}
+            <br />
+            Date de fin:{" "}
+            {new Date(parseInt(ndf.event.tspEnd) * 1000).toLocaleDateString()}
+            <br />
+            Statut: {ndf.status}
+            <br />
+            Lieu: {ndf.event.rdv}
+            <br />
             Nombre de participants: {ndf.participations.length}
           </div>
         </div>
         <div className="grid grid-flow-row-dense grid-cols-3">
-          {/* {ndf.demandeurs.map((demandeur: any, i: any) => (
-            <div className="p-4 m-3 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700" key={demandeur.id}>
-              <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{demandeur.nom}</h5>
-              <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">
-                Transport: {demandeur.transport}<br />
-                Description transport: {demandeur.descriptionTransport} <br />
-                Montant trajet: {demandeur.montantTrajet} €<br />
-                Montant péage: {demandeur.montantPeage} €<br />
-                Montant Hébergement: {demandeur.montantHebergement} €<br />
-                Autres frais:<br />
-                {demandeur.descriptionAutreFrais1}: {demandeur.montantAutre1} €<br />
-                Total: {demandeur.montantTrajet + demandeur.montantPeage + demandeur.montantHebergement + demandeur.montantAutre} €<br />
-                Remboursement: {demandeur.remboursement ? "oui" : "non"}<br />
-
-
-              </p>
-              <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                Valider
-              </button>
-              <button className="inline-flex items-center px-3 py-2 ml-10 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                Refuser
-              </button>
-            </div>
-          ))} */}
+          <button
+            className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            onClick={() => handleAction(SendingChoice.VALIDATE)}
+          >
+            {getSendingChoiceTranslation(SendingChoice.VALIDATE)}
+          </button>
+          <button
+            className="inline-flex items-center px-3 py-2 ml-10 text-sm font-medium text-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            onClick={() => handleAction(SendingChoice.REJECT)}
+          >
+            {getSendingChoiceTranslation(SendingChoice.REJECT)}
+          </button>
         </div>
       </div>
     </main>
-  )
+  );
 }
