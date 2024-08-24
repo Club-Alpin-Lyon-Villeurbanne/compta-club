@@ -1,41 +1,22 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { getSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import useAxiosAuth from '../lib/hooks/useAxiosAuth';
 
 export default function Home() {
   const [expenseReports, setExpenseReports] = useState([]);
+  const axiosAuth = useAxiosAuth();
+  const {data:session} = useSession();
 
   useEffect(() => {
-    console.log(expenseReports);
     const fetchData = async () => {
-      const session = await getSession();
-      const jwtToken = session?.user?.token;
-
-      if (jwtToken) {
-        const response = await fetch('http://127.0.0.1:8000/api/expense-report', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${jwtToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setExpenseReports(data.expenseReports);
-          } else {
-            console.error('API response was not successful:', data);
-          }
-        } else {
-          console.error('Failed to fetch expense reports:', response.statusText);
-        }
-      }
+      const response = await axiosAuth("/expense-report");
+      setExpenseReports(response.data.expenseReports);
     };
 
-    fetchData();
-  }, []);
+    if (session) fetchData();
+  }, [session]);
 
   return (
     <main>
@@ -106,10 +87,11 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {expenseReports.map((report) => (
+                
                     <tr key={report.id}>
                       <td className="px-5 py-5 text-sm bg-white border-b border-gray-200">
                         <p className="text-gray-900 whitespace-no-wrap">
-                        <Link href={`/note-de-frais/${report.id}`}>{report.event}{report.event}</Link>
+                        <Link href={`/note-de-frais/${report.id}`}>{report.event.titre}</Link>
                         </p>
                       </td>
                       <td className="px-5 py-5 text-sm bg-white border-b border-gray-200">
