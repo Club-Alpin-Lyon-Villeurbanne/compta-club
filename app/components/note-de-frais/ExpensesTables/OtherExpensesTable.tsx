@@ -1,9 +1,9 @@
 import React from 'react';
-import {Autre} from "@/app/interfaces/ExpenseGroups";
 import {FaFileAlt} from "react-icons/fa";
+import {Other} from "@/app/interfaces/DetailsInterface";
 
 interface OtherExpensesTableProps {
-    autres: Autre[];
+    autres: Other[];
 }
 
 const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({autres}) => {
@@ -25,18 +25,14 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({autres}) => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                 {autres.map((item, index) => {
-                    const priceField = item.fields.find(field => field.fieldType === 2); // Trouver le prix
-                    const descriptionField = item.fields.find(field => field.fieldType === 3); // Trouver la description
-                    const justificationField = item.fields.find(field => field.justificationDocument); // Trouver le justificatif
-
                     return (
-                        <tr key={item.id}>
+                        <tr key={index}>
                             <td className="px-6 py-4 whitespace-nowrap">Autre n°{index + 1}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{descriptionField?.value || "Aucune description"}</td>
-                            <td className="px-6 py-4 text-right">{priceField?.value ? `${priceField.value}€` : "N/A"}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{item.comment || "Aucune description"}</td>
+                            <td className="px-6 py-4 text-right">{item.price ? `${item.price}€` : "N/A"}</td>
                             <td className="px-6 py-4 text-center">
-                                {justificationField?.justificationDocument ? (
-                                    <a href={'https://www.clubalpinlyon.fr' + justificationField.justificationDocument} target="_blank"
+                                {item.expenseId ? (
+                                    <a href={'https://www.clubalpinlyon.fr' + item.expenseId} target="_blank"
                                        rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
                                         <FaFileAlt className="inline-block w-5 h-5"/>
                                     </a>

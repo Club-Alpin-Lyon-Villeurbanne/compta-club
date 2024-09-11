@@ -1,43 +1,60 @@
 import React from 'react';
-import { ExpenseGroups, Field } from "@/app/interfaces/ExpenseGroups";
+import { Details } from "@/app/interfaces/DetailsInterface";
 
-interface ExpensesSummaryProps {
-    expenseGroups: ExpenseGroups;
-}
+const formatEuro = (amount: number) => `${amount?.toFixed(2)} €`;
 
-const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({ expenseGroups }) => {
-    const { transport, hebergement, autres } = expenseGroups;
+// Calcul le total pour chaque catégorie de dépenses
+const calculateTotals = (details: Details) => {
+    let transportTotal: number;
 
-    // Fonction pour extraire la valeur numérique d'un champ
-    const getNumericValue = (field: Field | undefined): number => {
-        if (field && field.value) return parseFloat(field.value)
-        return 0;
+    // Calcul le total de transport selon le type de transport TODO: A modifier si on ajoute un nouveau type de transport
+    switch (details.transport.type) {
+        case "RENTAL_MINIBUS":
+            transportTotal = (details.transport.tollFee || 0) +
+                (details.transport.fuelExpense || 0) +
+                (details.transport.rentalPrice || 0);
+            break;
+        case "PUBLIC_TRANSPORT":
+            transportTotal = (details.transport.ticketPrice || 0);
+            break;
+        case "CLUB_MINIBUS":
+            transportTotal = (details.transport.tollFee || 0) +
+                (details.transport.fuelExpense || 0);
+            break;
+        case "PERSONAL_VEHICLE":
+            transportTotal = (details.transport.tollFee || 0);
+            break;
+        default:
+            transportTotal = 0;
+    }
+
+    // Calcul les totaux d'hébergement et autres dépenses
+    const accommodationsTotal = details.accommodations.reduce((total, acc) => total + acc.price, 0);
+    const othersTotal = details.others.reduce((total, other) => total + other.price, 0);
+
+    // Calcul le montant remboursable pour les hébergements (max 60€/nuitée)
+    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => total + Math.min(acc.price, 60), 0);
+
+    // Calcul le total remboursable (transport + hébergement + autres)
+    const totalRemboursable = transportTotal + accommodationsRemboursable + othersTotal;
+
+    return {
+        transportTotal,
+        accommodationsTotal,
+        othersTotal,
+        totalRemboursable,
+        accommodationsRemboursable
     };
+};
 
-    // Calcul du total des transports
-    const transportTotal = transport["0"] ? transport["0"].fields.reduce((acc, field) => {
-        return acc + getNumericValue(field);
-    }, 0) : 0;
-
-    // Calcul du total de l'hébergement (avec une limite de 60€/nuitée si applicable)
-    const hebergementTotal = hebergement.reduce((acc, item) => {
-        const priceField = item.fields.find(field => field.fieldType === 2);
-        const price = getNumericValue(priceField);
-        const cappedPrice = price > 60 ? 60 : price; // Limite à 60€
-        return acc + cappedPrice;
-    }, 0);
-
-    // Calcul du total des autres dépenses
-    const autresTotal = autres.reduce((acc, item) => {
-        const priceField = item.fields.find(field => field.fieldType === 2);
-        return acc + getNumericValue(priceField);
-    }, 0);
-
-    // Calcul du total remboursable
-    const totalRemboursable = transportTotal + hebergementTotal + autresTotal;
-
-    // Fonction pour formater un nombre en euros avec deux décimales
-    const formatEuro = (amount: number): string => `${amount.toFixed(2).replace('.', ',')}€`;
+const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
+    const {
+        transportTotal,
+        accommodationsTotal,
+        othersTotal,
+        totalRemboursable,
+        accommodationsRemboursable
+    } = calculateTotals(details);
 
     return (
         <div className="bg-gray-50 rounded-lg mt-6">
@@ -50,7 +67,7 @@ const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({ expenseGroups }) => {
                 </tr>
                 <tr>
                     <td className="px-6 py-4 text-sm font-medium text-gray-700">Dont Hébergement (max 60€/nuitée)</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(hebergementTotal)}</td>
+                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(accommodationsTotal)} dont {formatEuro(accommodationsRemboursable)} remboursables</td>
                 </tr>
                 <tr>
                     <td className="px-6 py-4 text-sm font-medium text-gray-700">Transport</td>
@@ -58,7 +75,7 @@ const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({ expenseGroups }) => {
                 </tr>
                 <tr>
                     <td className="px-6 py-4 text-sm font-medium text-gray-700">Autres dépenses</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(autresTotal)}</td>
+                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(othersTotal)}</td>
                 </tr>
                 </tbody>
             </table>

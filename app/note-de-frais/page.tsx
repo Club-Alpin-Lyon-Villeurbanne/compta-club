@@ -15,8 +15,8 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await axiosAuth("/expense-report");
-      setExpenseReports(response.data.expenseReports);
+      const response = await axiosAuth("/expense-reports");
+      setExpenseReports(response.data);
     };
 
     if (session) fetchData();

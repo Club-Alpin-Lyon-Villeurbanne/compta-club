@@ -11,7 +11,7 @@ const ReportRow: React.FC<ReportRowProps> = ({report}) => (
     <tr key={report.id}>
         <td className="px-5 py-5 text-sm bg-white border-b border-gray-200">
             <p className="text-gray-900 whitespace-no-wrap">
-                <Link href={`/note-de-frais/${report.id}`}>{report.event.titre}</Link>
+                <Link href={`/note-de-frais/${report.event.id}`}>{report.event.titre}</Link>
             </p>
         </td>
         <td className="px-5 py-5 text-sm bg-white border-b border-gray-200">
