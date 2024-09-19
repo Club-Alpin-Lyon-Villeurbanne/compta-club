@@ -1,55 +1,32 @@
 import {User} from "@/app/interfaces/UserInterface";
-import {ExpenseGroups} from "@/app/interfaces/ExpenseGroups";
+import {Details} from "@/app/interfaces/DetailsInterface";
 
 export interface ExpenseReport {
     id: number
     status: string
-    statusComment: string
     refundRequired: boolean
     user: User
     event: Event
-    participations: Participation[]
     createdAt: string
-    updatedAt: string
-    expenseGroups: ExpenseGroups
+    statusComment: any
+    details: Details
+    attachments: any[]
 }
-export interface Participation {
+
+export interface User {
     id: number
-    evt: number
-    user: number
-    role: string
-    status: number
-    isCovoiturage: any
+    firstname: string
+    lastname: string
 }
 
 export interface Event {
     id: number
-    user: number
-    titre: string
-    code: string
+    commission: any[]
     tsp: string
     tspEnd: string
-    place: string
+    titre: string
+    code: string
     rdv: string
-    lat: string
-    long: string
-    description: string
-    joinStart: number
-    joinMax: number
-    ngensMax: number
-    commission: number
-    participations: Participations
-    articles: Articles
-    cycleChildren: CycleChildren
-    tspCrea: string
-}
-
-interface Articles {
-}
-
-interface CycleChildren {
 }
 
 
-export interface Participations {
-}

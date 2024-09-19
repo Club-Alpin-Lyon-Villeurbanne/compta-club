@@ -1,16 +1,16 @@
 import React from 'react';
-import { Hebergement } from "@/app/interfaces/ExpenseGroups";
 import { FaFileAlt } from "react-icons/fa";
+import {Accommodation} from "@/app/interfaces/DetailsInterface";
 
 interface HebergementTableProps {
-    hebergement: Hebergement[];
+    hebergement: Accommodation[];
 }
 
 const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement }) => {
     // Vérifie s'il y a des montants dépassant 60€
+    console.log(hebergement);
     const hasExceedingPrice = hebergement.some(item => {
-        const priceField = item.fields.find(field => field.fieldType === 2);
-        return priceField && parseFloat(priceField.value) > 60;
+        return item.price && item.price > 60;
     });
 
     return (
@@ -30,20 +30,19 @@ const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement }) => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                 {hebergement.map((item, index) => {
-                    const priceField = item.fields.find(field => field.fieldType === 2);
-                    const descriptionField = item.fields.find(field => field.fieldType === 3);
-                    const justificationField = item.fields.find(field => field.justificationDocument);
+                    const descriptionField = item.comment ? item.comment : "Aucune description";
+                    const justificationField = item.expenseId ? item.expenseId : null;
 
-                    const price = priceField ? parseFloat(priceField.value) : 0;
+                    const price = item.price ? item.price : null;
                     const isExceeding = price > 60;
                     const remboursablePrice = isExceeding ? 60 : price; // Limite de 60€
 
                     return (
-                        <tr key={item.id}>
+                        <tr key={index}>
                             <td className="px-6 py-4 whitespace-nowrap">Nuitée n°{index + 1}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{descriptionField?.value || "Aucune description"}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{descriptionField}</td>
                             <td className={`px-6 py-4 text-right ${isExceeding ? 'text-red-600' : ''}`}>
-                                {priceField?.value ? `${priceField.value}€` : "N/A"}
+                                {price ? `${price}€` : "N/A"}
                             </td>
                             {hasExceedingPrice && (
                                 <td className="px-6 py-4 text-right">
@@ -51,8 +50,8 @@ const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement }) => {
                                 </td>
                             )}
                             <td className="px-6 py-4 text-center">
-                                {justificationField?.justificationDocument ? (
-                                    <a href={'https://www.clubalpinlyon.fr' + justificationField.justificationDocument} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
+                                {justificationField ? (
+                                    <a href={'https://www.clubalpinlyon.fr' + justificationField} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
                                         <FaFileAlt className="inline-block w-5 h-5" />
                                     </a>
                                 ) : (

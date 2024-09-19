@@ -29,4 +29,25 @@ export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
   }
 };
 
+export const getExpenseStatusColor = (status: ExpenseStatus): string => {
+    switch (status) {
+        case ExpenseStatus.DRAFT:
+        return "gray";
+        case ExpenseStatus.SUBMITTED:
+        return "blue";
+        case ExpenseStatus.PENDING:
+        return "yellow";
+        case ExpenseStatus.VALIDATED:
+        return "green";
+        case ExpenseStatus.VALIDATE:
+        return "green";
+        case ExpenseStatus.REJECT:
+        return "red";
+        case ExpenseStatus.APPROVED:
+        return "green";
+        default:
+        return "gray";
+    }
+}
+
 export default ExpenseStatus;
