@@ -79,6 +79,7 @@ const ExpensesList: React.FC<ExpensesListProps> = ({expenseReports}) => {
             <thead>
             <tr>
                 <th className="px-6 py-3 text-left">Nom de la note</th>
+                <th className="px-6 py-3 text-left">Demandeur</th>
                 <th className="px-6 py-3 text-left">Date</th>
                 <th className="px-6 py-3 text-right">Montant Total</th>
                 <th className="px-6 py-3 text-right">Statut</th>
@@ -92,13 +93,16 @@ const ExpensesList: React.FC<ExpensesListProps> = ({expenseReports}) => {
                     <tr className="bg-gray-100">
                         <td className="px-6 py-4">{report.event.titre}</td>
                         <td className="px-6 py-4">
+                           {report.user.firstname + " " + report.user.lastname}
+                        </td>
+                        <td className="px-6 py-4">
                             {dayjs(report.event.tsp).format("DD/MM/YYYY à HH:mm")}
                         </td>
                         <td className="px-6 py-4 text-right">
-                            {report.details?.accommodations
+                            {report.details ? (report.details?.accommodations
                                     .reduce((total, acc) => total + acc.price, 0) +
                                 report.details?.transport.fuelExpense +
-                                report.details?.transport.tollFee}{" "}
+                                report.details?.transport.tollFee) : ("Détails manquants")}{" "}
                             €
                         </td>
                         <td className="px-6 py-4 text-right">
