@@ -1,14 +1,16 @@
 import React from 'react';
 import { FaFileAlt } from "react-icons/fa";
 import {Accommodation} from "@/app/interfaces/DetailsInterface";
+import { getFileUrlByExpenseId } from '@/app/utils/helper';
+import { Justificatif } from '../Justificatif';
 
 interface HebergementTableProps {
     hebergement: Accommodation[];
+    attachments: any[];
 }
 
-const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement }) => {
+const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement, attachments }) => {
     // Vérifie s'il y a des montants dépassant 60€
-    console.log(hebergement);
     const hasExceedingPrice = hebergement.some(item => {
         return item.price && item.price > 60;
     });
@@ -31,7 +33,7 @@ const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement }) => {
                 <tbody className="bg-white divide-y divide-gray-200">
                 {hebergement.map((item, index) => {
                     const descriptionField = item.comment ? item.comment : "Aucune description";
-                    const justificationField = item.expenseId ? item.expenseId : null;
+                    const justificatifUrl = getFileUrlByExpenseId(attachments, item.expenseId);
 
                     const price = item.price ? item.price : null;
                     const isExceeding = price > 60;
@@ -49,15 +51,7 @@ const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement }) => {
                                     {`${remboursablePrice}€`}
                                 </td>
                             )}
-                            <td className="px-6 py-4 text-center">
-                                {justificationField ? (
-                                    <a href={'https://www.clubalpinlyon.fr' + justificationField} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
-                                        <FaFileAlt className="inline-block w-5 h-5" />
-                                    </a>
-                                ) : (
-                                    "N/A"
-                                )}
-                            </td>
+                            <td className="px-6 py-4 text-center"><Justificatif fileUrl={justificatifUrl}/></td>
                         </tr>
                     );
                 })}

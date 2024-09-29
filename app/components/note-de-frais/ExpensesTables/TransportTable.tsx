@@ -1,11 +1,15 @@
 import React from 'react';
 import { Transport } from "@/app/interfaces/DetailsInterface";
+import { getFileUrlByExpenseId } from '@/app/utils/helper';
+import { FaFileAlt } from 'react-icons/fa';
+import { Justificatif } from '../Justificatif';
 
 interface TransportTableProps {
     transport: Transport;
+    attachments: any[];
 }
 
-const TransportTable: React.FC<TransportTableProps> = ({ transport }) => {
+const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments }) => {
     const transportType = (type: string) => {
         switch (type) {
             case "RENTAL_MINIBUS":
@@ -22,6 +26,9 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport }) => {
     }
 
     const renderTransportRows = () => {
+        const tollFeeJustificatif = getFileUrlByExpenseId(attachments, 'tollFee');
+        const fuelExpenseJustificatif = getFileUrlByExpenseId(attachments, 'fuelExpense');
+        const rentalPriceJustificatif = getFileUrlByExpenseId(attachments, 'rentalPrice');
         switch (transport.type) {
             case "RENTAL_MINIBUS":
                 return (
@@ -29,14 +36,17 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport }) => {
                         <tr>
                             <td className="px-6 py-4 whitespace-nowrap">Péage</td>
                             <td className="px-6 py-4 text-right">{transport.tollFee}€</td>
+                            <td className="px-6 py-4 text-right"><Justificatif fileUrl={tollFeeJustificatif}/></td>
                         </tr>
                         <tr>
                             <td className="px-6 py-4 whitespace-nowrap">Carburant</td>
                             <td className="px-6 py-4 text-right">{transport.fuelExpense}€</td>
+                            <td className="px-6 py-4 text-right"><Justificatif fileUrl={fuelExpenseJustificatif}/></td>
                         </tr>
                         <tr>
                             <td className="px-6 py-4 whitespace-nowrap">Prix de location</td>
                             <td className="px-6 py-4 text-right">{transport.rentalPrice}€</td>
+                            <td className="px-6 py-4 text-right"><Justificatif fileUrl={rentalPriceJustificatif}/></td>
                         </tr>
                     </>
                 );
@@ -53,20 +63,28 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport }) => {
                         <tr>
                             <td className="px-6 py-4 whitespace-nowrap">Péage</td>
                             <td className="px-6 py-4 text-right">{transport.tollFee}€</td>
+                            <td className="px-6 py-4 text-right"><Justificatif fileUrl={tollFeeJustificatif}/></td>
                         </tr>
                         <tr>
                             <td className="px-6 py-4 whitespace-nowrap">Carburant</td>
                             <td className="px-6 py-4 text-right">{transport.fuelExpense}€</td>
+                            <td className="px-6 py-4 text-right"><Justificatif fileUrl={fuelExpenseJustificatif}/></td>
                         </tr>
                     </>
                 );
             case "PERSONAL_VEHICLE":
                 return (
                     <>
-                        <tr>
-                            <td className="px-6 py-4 whitespace-nowrap">Péage</td>
-                            <td className="px-6 py-4 text-right">{transport.tollFee}€</td>
-                        </tr>
+                    <tr>
+                        <td className="px-6 py-4 whitespace-nowrap">Péage</td>
+                        <td className="px-6 py-4 text-right">{transport.tollFee}€</td>
+                        <td className="px-6 py-4 text-right"><Justificatif fileUrl={tollFeeJustificatif}/></td>
+                    </tr>
+                    <tr>
+                        <td className="px-6 py-4 whitespace-nowrap">Distance</td>
+                        <td className="px-6 py-4 text-right">{transport.distance * process.env.NEXT_PUBLIC_TAUX_KILOMETRIQUE_VOITURE}€ ({transport.distance} km x {process.env.NEXT_PUBLIC_TAUX_KILOMETRIQUE_VOITURE}€)</td>
+                        <td className="px-6 py-4 text-right"><Justificatif fileUrl={tollFeeJustificatif}/></td>
+                    </tr>
                     </>
                 );
             default:
@@ -93,17 +111,20 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport }) => {
             </div>
             <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                 <thead className="bg-green-100">
-                <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type de dépense
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Montant (en Euros)
-                    </th>
-                </tr>
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Type de dépense
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Montant (en Euros)
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Justificatif
+                        </th>
+                    </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                {renderTransportRows()}
+                    {renderTransportRows()}
                 </tbody>
             </table>
         </div>
