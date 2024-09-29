@@ -15,8 +15,7 @@ Cette application est un outil de gestion des notes de frais de l'association Cl
 NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000/api
 NEXTAUTH_URL=http://locahost:3000
 NEXTAUTH_SECRET=topsecret
-NEXT_PUBLIC_TAUX_KILOMETRIQUE_VOITURE=0.5
-NEXT_PUBLIC_NUITEE_MAX_REMBOURSABLE=60
+NEXT_PUBLIC_WEBSITE_BASE_URL=https://www.clubalpinlyon.top
 ```
 4. Lancez le serveur de développement:
 `npm run dev`
