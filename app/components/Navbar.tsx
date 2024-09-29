@@ -8,23 +8,23 @@ import { FaQuestionCircle, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa'
 import { signOut } from 'next-auth/react';
 
 function LogoutButton() {
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/' });
-  };
+    const handleLogout = () => {
+        signOut({ callbackUrl: '/' });
+    };
 
-  return (
-    <button
-      onClick={handleLogout}
-      className="px-4 py-2 ml-3 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 transition duration-300 ease-in-out flex items-center"
-    >
-      <FaSignOutAlt className="mr-2" />
-      Déconnexion
-    </button>
-  );
+    return (
+        <button
+            onClick={handleLogout}
+            className="px-4 py-2 ml-3 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 transition duration-300 ease-in-out flex items-center"
+        >
+            <FaSignOutAlt className="mr-2" />
+            Déconnexion
+        </button>
+    );
 }
 
 export default function Navbar() {
-    const {data: session} = useSession();
+    const { data: session } = useSession();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
@@ -34,12 +34,15 @@ export default function Navbar() {
                     <Image src="https://www.clubalpinlyon.fr/img/logo.png" className="h-10 mr-3" alt="Logo Club Alpin de Lyon" height={59} width={150} />
                 </Link>
                 <div className="flex items-center md:order-2">
-                    <button type="button" className="px-4 py-2 mr-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 transition duration-300 ease-in-out flex items-center">
+                    <Link
+                        href="/aide"
+                        className="px-4 py-2 mr-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 transition duration-300 ease-in-out flex items-center"
+                    >
                         <FaQuestionCircle className="mr-2" />
                         Aide
-                    </button>
+                    </Link>
                     {session?.user && <LogoutButton />}
-                    <button 
+                    <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="inline-flex items-center p-2 ml-1 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
                     >
