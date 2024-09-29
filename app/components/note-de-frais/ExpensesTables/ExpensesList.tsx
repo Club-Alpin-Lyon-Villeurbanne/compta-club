@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ExpensesTable from "@/app/components/note-de-frais/ExpensesTables/ExpensesTable";
-import { FaAngleDown, FaAngleUp } from "react-icons/fa";
+import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaEuroSign } from "react-icons/fa";
 import dayjs from "dayjs";
 import { Badge } from "@/app/components/note-de-frais/Badge";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
@@ -13,7 +13,6 @@ interface ExpensesListProps {
 
 const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports }) => {
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
-    const [comment, setComment] = useState<string>("");
 
     const toggleRow = (id: number) => {
         setExpandedRows(prev =>
@@ -21,137 +20,88 @@ const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports }) => {
         );
     };
 
-
-    /*    const patch = async (state: { status: ExpenseStatus; comment: string }) => {
-            try {
-                const response = await axiosAuth(
-                    `/expense-report/${params.slug}/status`,
-                    {
-                        method: "patch",
-                        data: {
-                            status: state.status,
-                            statusComment: state.comment,
-                        },
-                    }
-                );
-                if (response.status === 200 && session) {
-                    await fetchData();
-                }
-            } catch (err) {
-                setError("Failed to update status");
-            }
-        };
-
-
-        const handleAction = async (
-            action: ExpenseStatus.VALIDATE | ExpenseStatus.REJECT
-        ) => {
-            const inputComment = await sweetModalComment(comment, setComment, action);
-            if (inputComment !== null) {
-                if (action === ExpenseStatus.VALIDATE) {
-                    validate(inputComment);
-                } else if (action === ExpenseStatus.REJECT) {
-                    reject(inputComment);
-                }
-            }
-        };
-
-        const validate = (comment: string) => {
-            patch({status: ExpenseStatus.APPROVED, comment});
-            setComment("");
-        };
-
-        const reject = (comment: string) => {
-            patch({status: ExpenseStatus.REJECT, comment});
-            setComment("");
-        };*/
-
-
-    // fonction pour vérifier si la note de frais a des détails
     const hasDetails = (report: ExpenseReport) => {
         return report.details !== null;
     };
 
-
     return (
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-            <thead>
-                <tr>
-                    <th className="px-6 py-3 text-left">Nom de la note</th>
-                    <th className="px-6 py-3 text-left">Demandeur</th>
-                    <th className="px-6 py-3 text-left">Date</th>
-                    <th className="px-6 py-3 text-right">Montant Total</th>
-                    <th className="px-6 py-3 text-right">Statut</th>
-                    <th className="px-6 py-3 text-center">Actions</th>
-                    <th className="px-6 py-3 text-center"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {expenseReports.map(report => (
-                    <React.Fragment key={report.id}>
-                        <tr className="bg-gray-100">
-                            <td className="px-6 py-4">{report.event.titre}</td>
-                            <td className="px-6 py-4">
-                                {report.user.firstname + " " + report.user.lastname}
-                            </td>
-                            <td className="px-6 py-4">
-                                {dayjs(report.event.tsp).format("DD/MM/YYYY à HH:mm")}
-                            </td>
-                            <td className="px-6 py-4 text-right">{formatEuro(calculateTotals(report.details).totalRemboursable)}</td>
-                            <td className="px-6 py-4 text-right">
-                                <Badge status={report.status} />
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                                {
-                                    hasDetails(report) &&
-                                    <div className="grid grid-cols-1 gap-4 mt-6">
-                                        {report.status !== ExpenseStatus.APPROVED &&
-                                            report.status !== ExpenseStatus.REJECT && (
-                                                <div className="flex space-x-4">
-                                                    <button
-                                                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                                                    // onClick={() => handleAction(ExpenseStatus.VALIDATE)}
-                                                    >
-                                                        Valider
-                                                    </button>
-                                                    <button
-                                                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
-                                                    // onClick={() => handleAction(ExpenseStatus.REJECT)}
-                                                    >
-                                                        Refuser
-                                                    </button>
-                                                </div>
-                                            )
-                                        }
+        <div className="overflow-x-auto">
+            <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                <thead className="bg-gray-100">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note de frais</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demandeur</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Montant Total</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                    {expenseReports.map(report => (
+                        <React.Fragment key={report.id}>
+                            <tr className="hover:bg-gray-50 transition-colors duration-200">
+                                <td className="px-6 py-4 whitespace-nowrap">{report.event.titre}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <FaUser className="text-gray-400 mr-2" />
+                                        {report.user.firstname + " " + report.user.lastname}
                                     </div>
-                                }
-
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                                {
-                                    hasDetails(report) && <button onClick={() => toggleRow(report.id)}>
-                                        {expandedRows.includes(report.id) ? (
-                                            <FaAngleUp className="inline-block w-5 h-5" />
-                                        ) : (
-                                            <FaAngleDown className="inline-block w-5 h-5" />
-                                        )}
-                                    </button>
-                                }
-                            </td>
-                        </tr>
-                        {expandedRows.includes(report.id) && (
-                            <tr>
-                                <td colSpan={5}>
-                                    {
-                                        report.details && <ExpensesTable report={report} />
-                                    }
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <FaCalendarAlt className="text-gray-400 mr-2" />
+                                        {dayjs(report.event.tsp).format("DD/MM/YYYY à HH:mm")}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                    <div className="flex items-center justify-end">
+                                        {formatEuro(calculateTotals(report.details).totalRemboursable)}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                    <Badge status={report.status} />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                    {hasDetails(report) && report.status !== ExpenseStatus.APPROVED && report.status !== ExpenseStatus.REJECT && (
+                                        <div className="flex justify-center space-x-2">
+                                            <button className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out flex items-center">
+                                                <FaCheck className="mr-2" /> Valider
+                                            </button>
+                                            <button className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out flex items-center">
+                                                <FaTimes className="mr-2" /> Refuser
+                                            </button>
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                    {hasDetails(report) && (
+                                        <button 
+                                            onClick={() => toggleRow(report.id)}
+                                            className="text-blue-500 hover:text-blue-700 transition-colors duration-200"
+                                        >
+                                            {expandedRows.includes(report.id) ? (
+                                                <FaAngleUp className="inline-block w-5 h-5" />
+                                            ) : (
+                                                <FaAngleDown className="inline-block w-5 h-5" />
+                                            )}
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
-                        )}
-                    </React.Fragment>
-                ))}
-            </tbody>
-        </table>
+                            {expandedRows.includes(report.id) && (
+                                <tr>
+                                    <td colSpan={7} className="px-6 py-4">
+                                        {report.details && <ExpensesTable report={report} />}
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 };
 
