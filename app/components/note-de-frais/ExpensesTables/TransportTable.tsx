@@ -30,6 +30,7 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
         const tollFeeJustificatif = getFileUrlByExpenseId(attachments, 'tollFee');
         const fuelExpenseJustificatif = getFileUrlByExpenseId(attachments, 'fuelExpense');
         const rentalPriceJustificatif = getFileUrlByExpenseId(attachments, 'rentalPrice');
+        const ticketPriceJustificatif = getFileUrlByExpenseId(attachments, 'ticketPrice');
         switch (transport.type) {
             case "RENTAL_MINIBUS":
                 return (
@@ -56,6 +57,7 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
                     <tr>
                         <td className="px-6 py-4 whitespace-nowrap">Prix du billet</td>
                         <td className="px-6 py-4 text-right">{transport.ticketPrice}€</td>
+                        <td className="px-6 py-4 text-right"><Justificatif fileUrl={ticketPriceJustificatif}/></td>
                     </tr>
                 );
             case "CLUB_MINIBUS":

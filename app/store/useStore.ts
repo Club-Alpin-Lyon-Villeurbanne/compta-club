@@ -17,7 +17,7 @@ interface StoreState {
 const useStore = create<StoreState>((set) => ({
     expenseReports: [],
     status: 'Toutes',
-    itemsPerPage: 5,
+    itemsPerPage: 10,
     currentPage: 1,
     setExpenseReports: (reports) => set({ expenseReports: reports }),
     setStatus: (status) => set({ status }),

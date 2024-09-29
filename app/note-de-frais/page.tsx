@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "../lib/hooks/useAxiosAuth";
 import Filters from "@/app/components/note-de-frais/Filters";
@@ -12,11 +12,18 @@ const Home: React.FC = () => {
   const axiosAuth = useAxiosAuth();
   const setExpenseReports = useStore((state) => state.setExpenseReports);
   const expenseReports = useStore((state) => state.expenseReports);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await axiosAuth("/expense-reports");
-      setExpenseReports(response.data);
+      setIsLoading(true);
+      try {
+        const response = await axiosAuth("/expense-reports");
+        setExpenseReports(response.data);
+      } finally {
+        setIsLoading(false);
+
+      }
     };
 
     if (session) fetchData();
@@ -33,7 +40,7 @@ const Home: React.FC = () => {
           </div>
           <Filters />
           <div className="px-4 py-4 -mx-4 overflow-x-auto sm:-mx-8 sm:px-8">
-            <ReportTable reports={expenseReports} />
+            <ReportTable reports={expenseReports} isLoading={isLoading} />
             <Pagination />
           </div>
         </div>

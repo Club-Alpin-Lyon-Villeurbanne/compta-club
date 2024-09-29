@@ -15,12 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased bg-gray-200">
+      <body className="font-sans antialiased bg-gray-200 flex flex-col min-h-screen">
         <AuthProvider>
           <Navbar />
-          <div className="pt-20">
+          <main className="flex-grow pt-20 mt-4">
             {children}
-          </div>
+          </main>
           <Footer />
         </AuthProvider>
       </body>

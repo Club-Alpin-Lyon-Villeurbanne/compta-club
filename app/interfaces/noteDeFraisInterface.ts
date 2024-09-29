@@ -1,9 +1,9 @@
-import {User} from "@/app/interfaces/UserInterface";
 import {Details} from "@/app/interfaces/DetailsInterface";
+import ExpenseStatus from "../enums/ExpenseStatus";
 
 export interface ExpenseReport {
     id: number
-    status: string
+    status: ExpenseStatus
     refundRequired: boolean
     user: User
     event: Event

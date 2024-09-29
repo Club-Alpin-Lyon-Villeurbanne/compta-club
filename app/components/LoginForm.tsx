@@ -58,15 +58,6 @@ export default function LoginForm() {
             >
               Mot de passe
             </label>
-            <div className="text-sm">
-              {/* TODO: Créer la route "forgot-password" */}
-              <a
-                href="#"
-                className="font-semibold text-indigo-600 hover:text-indigo-500"
-              >
-                Mot de passe oublié ?
-              </a>
-            </div>
           </div>
           <div className="mt-2">
             <input

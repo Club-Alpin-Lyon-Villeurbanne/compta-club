@@ -1,6 +1,10 @@
-import {ExpenseStatus, getExpenseStatusColor, getExpenseStatusTranslation} from "@/app/enums/ExpenseStatus";
+import { ExpenseStatus, getExpenseStatusColor, getExpenseStatusTranslation } from "@/app/enums/ExpenseStatus";
 
-export const Badge = ({status}) => {
+interface BadgeProps {
+    status: ExpenseStatus;
+}
+
+export const Badge: React.FC<BadgeProps> = ({ status }) => {
     const color = getExpenseStatusColor(status as ExpenseStatus);
     const text = getExpenseStatusTranslation(status as ExpenseStatus);
     return (

@@ -4,7 +4,7 @@ import ExpensesTable from "@/app/components/note-de-frais/ExpensesTables/Expense
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 import dayjs from "dayjs";
 import { Badge } from "@/app/components/note-de-frais/Badge";
-import ExpenseStatus, { getExpenseStatusTranslation } from "@/app/enums/ExpenseStatus";
+import ExpenseStatus from "@/app/enums/ExpenseStatus";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 
 interface ExpensesListProps {
