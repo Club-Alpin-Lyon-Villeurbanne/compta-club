@@ -1,6 +1,7 @@
 import React from 'react';
 import { Details } from "@/app/interfaces/DetailsInterface";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
+import { config } from '@/app/config';
 
 
 const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
@@ -22,7 +23,7 @@ const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
                     <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">{formatEuro(totalRemboursable)}</td>
                 </tr>
                 <tr>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-700">Dont Hébergement (max {process.env.NEXT_PUBLIC_NUITEE_MAX_REMBOURSABLE}€/nuitée)</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-700">Dont Hébergement (max {config.NUITEE_MAX_REMBOURSABLE}€/nuitée)</td>
                     <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(accommodationsTotal)} dont {formatEuro(accommodationsRemboursable)} remboursables</td>
                 </tr>
                 <tr>

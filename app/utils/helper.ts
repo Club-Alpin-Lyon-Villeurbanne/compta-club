@@ -1,5 +1,5 @@
-import { ExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
 import { Details } from '../interfaces/DetailsInterface';
+import { config } from '../config';
 
 export function getFileUrlByExpenseId(attachments: any[], expenseId: string): string | undefined {
     if (!attachments || attachments.length === 0) {
@@ -40,7 +40,7 @@ export function calculateTotals(details: Details) {
             break;
         case "PERSONAL_VEHICLE":
             transportTotal = (details.transport.tollFee || 0) +
-            (details.transport.distance || 0) * parseFloat(process.env.NEXT_PUBLIC_TAUX_KILOMETRIQUE_VOITURE || '0');
+            (details.transport.distance || 0) * config.TAUX_KILOMETRIQUE_VOITURE;
             break;
         default:
             transportTotal = 0;
@@ -51,7 +51,7 @@ export function calculateTotals(details: Details) {
     const othersTotal = details.others.reduce((total, other) => total + other.price, 0);
 
     // Calcul le montant remboursable pour les hébergements (max 60€/nuitée)
-    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => total + Math.min(acc.price, parseFloat(process.env.NEXT_PUBLIC_NUITEE_MAX_REMBOURSABLE)), 0);
+    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => total + Math.min(acc.price, config.NUITEE_MAX_REMBOURSABLE), 0);
 
     // Calcul le total remboursable (transport + hébergement + autres)
     const totalRemboursable = transportTotal + accommodationsRemboursable + othersTotal;

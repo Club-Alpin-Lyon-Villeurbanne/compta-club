@@ -3,6 +3,7 @@ import { Transport } from "@/app/interfaces/DetailsInterface";
 import { getFileUrlByExpenseId } from '@/app/utils/helper';
 import { FaFileAlt } from 'react-icons/fa';
 import { Justificatif } from '../Justificatif';
+import { config } from '@/app/config';
 
 interface TransportTableProps {
     transport: Transport;
@@ -82,7 +83,7 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
                     </tr>
                     <tr>
                         <td className="px-6 py-4 whitespace-nowrap">Distance</td>
-                        <td className="px-6 py-4 text-right">{transport.distance * process.env.NEXT_PUBLIC_TAUX_KILOMETRIQUE_VOITURE}€ ({transport.distance} km x {process.env.NEXT_PUBLIC_TAUX_KILOMETRIQUE_VOITURE}€)</td>
+                        <td className="px-6 py-4 text-right">{(transport.distance || 0) * config.TAUX_KILOMETRIQUE_VOITURE}€ ({transport.distance} km x {config.TAUX_KILOMETRIQUE_VOITURE}€)</td>
                         <td className="px-6 py-4 text-right"><Justificatif fileUrl={tollFeeJustificatif}/></td>
                     </tr>
                     </>
