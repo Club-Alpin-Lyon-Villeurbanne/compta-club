@@ -1,7 +1,7 @@
-// components/LogoutButton.tsx
 'use client';
 
 import { signOut } from 'next-auth/react';
+import { FaSignOutAlt } from 'react-icons/fa';
 
 export default function LogoutButton() {
   const handleLogout = () => {
@@ -11,9 +11,10 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="px-4 py-2 font-bold text-white bg-red-500 rounded hover:bg-red-600"
+      className="px-4 py-2 ml-3 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 transition duration-300 ease-in-out flex items-center"
     >
-      Logout
+      <FaSignOutAlt className="mr-2" />
+      Déconnexion
     </button>
   );
 }
