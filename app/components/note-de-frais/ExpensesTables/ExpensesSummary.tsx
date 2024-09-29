@@ -2,7 +2,7 @@ import React from 'react';
 import { Details } from "@/app/interfaces/DetailsInterface";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 import { config } from '@/app/config';
-
+import { FaMoneyBillWave, FaBed, FaCar, FaReceipt } from 'react-icons/fa';
 
 const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
     const {
@@ -13,29 +13,47 @@ const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
         accommodationsRemboursable
     } = calculateTotals(details);
 
+    const SummaryItem = ({ icon, label, amount, subAmount = null }) => (
+        <div className="flex items-center justify-between py-3 border-b last:border-b-0">
+            <div className="flex items-center">
+                {icon}
+                <span className="ml-2 text-sm font-medium text-gray-700">{label}</span>
+            </div>
+            <div className="text-right">
+                <div className="text-sm font-semibold text-gray-900">{amount}</div>
+                {subAmount && <div className="text-xs text-gray-500">{subAmount}</div>}
+            </div>
+        </div>
+    );
+
     return (
-        <div className="bg-gray-50 rounded-lg mt-6">
-            <h3 className="text-lg font-semibold text-red-700 mb-3 px-6 pt-4">Résumé</h3>
-            <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                <tbody>
-                <tr className="bg-red-100">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">Total remboursable</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">{formatEuro(totalRemboursable)}</td>
-                </tr>
-                <tr>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-700">Dont Hébergement (max {config.NUITEE_MAX_REMBOURSABLE}€/nuitée)</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(accommodationsTotal)} dont {formatEuro(accommodationsRemboursable)} remboursables</td>
-                </tr>
-                <tr>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-700">Transport</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(transportTotal)}</td>
-                </tr>
-                <tr>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-700">Autres dépenses</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-700">{formatEuro(othersTotal)}</td>
-                </tr>
-                </tbody>
-            </table>
+        <div className="bg-white rounded-lg shadow-md mt-6 overflow-hidden">
+            <div className="bg-red-600 text-white px-6 py-4">
+                <h3 className="text-lg font-semibold">Résumé des dépenses</h3>
+            </div>
+            <div className="p-6">
+                <SummaryItem 
+                    icon={<FaMoneyBillWave className="text-green-500" />}
+                    label="Total remboursable"
+                    amount={formatEuro(totalRemboursable)}
+                />
+                <SummaryItem 
+                    icon={<FaBed className="text-blue-500" />}
+                    label={`Hébergement (max ${config.NUITEE_MAX_REMBOURSABLE}€/nuitée)`}
+                    amount={formatEuro(accommodationsTotal)}
+                    subAmount={`dont ${formatEuro(accommodationsRemboursable)} remboursables`}
+                />
+                <SummaryItem 
+                    icon={<FaCar className="text-yellow-500" />}
+                    label="Transport"
+                    amount={formatEuro(transportTotal)}
+                />
+                <SummaryItem 
+                    icon={<FaReceipt className="text-purple-500" />}
+                    label="Autres dépenses"
+                    amount={formatEuro(othersTotal)}
+                />
+            </div>
         </div>
     );
 };
