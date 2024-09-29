@@ -19,9 +19,14 @@ export interface User {
     lastname: string
 }
 
+export interface Commission {
+    id: number
+    name: string
+}
+
 export interface Event {
     id: number
-    commission: any[]
+    commission: Commission
     tsp: string
     tspEnd: string
     titre: string

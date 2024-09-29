@@ -22,7 +22,6 @@ export default function Home({params}: { params: { slug: string } }) {
             const response = await axiosAuth("/expense-reports?event=" + params.slug);
             const data = response.data;
             data.map(report => report.details = JSON.parse(report.details))
-            console.log(data)
             setEvent(data[0].event);
             setNdfs(data);
         } catch (err) {
@@ -99,7 +98,7 @@ export default function Home({params}: { params: { slug: string } }) {
                 <div className="flex">
 
                     <Header
-                        commission={event.commission}
+                        commission={event.commission.id}
                         titre={event.titre}
                         id={event.id}
                     />

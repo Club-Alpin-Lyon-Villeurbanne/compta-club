@@ -11,9 +11,9 @@ export default function ExpensesTable({report}: { report: ExpenseReport }) {
     return <>
         <div className="container my-8 p-4 bg-white shadow-md rounded-lg max-w-3xl">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Récapitulatif des Dépenses</h2>
-            <TransportTable transport={report.details.transport} />
-            <HebergementTable hebergement={report.details.accommodations} />
-            <OtherExpensesTable autres={report.details.others} />
+            <TransportTable transport={report.details.transport} attachments={report.attachments} />
+            <HebergementTable hebergement={report.details.accommodations} attachments={report.attachments} />
+            <OtherExpensesTable autres={report.details.others} attachments={report.attachments} />
             <ExpensesSummary details={report.details} />
 
             {report.status === ExpenseStatus.APPROVED && (

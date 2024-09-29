@@ -1,12 +1,16 @@
 import React from 'react';
 import {FaFileAlt} from "react-icons/fa";
 import {Other} from "@/app/interfaces/DetailsInterface";
+import { get } from 'http';
+import { getFileUrlByExpenseId } from '@/app/utils/helper';
+import { Justificatif } from '../Justificatif';
 
 interface OtherExpensesTableProps {
     autres: Other[];
+    attachments: any[];
 }
 
-const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({autres}) => {
+const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({autres, attachments}) => {
     return (
         <div className="mb-8">
             <h3 className="text-xl font-semibold text-orange-700 mb-3">Autres dépenses</h3>
@@ -25,21 +29,13 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({autres}) => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                 {autres.map((item, index) => {
+                    const justificationUrl = getFileUrlByExpenseId(attachments, item.expenseId);
                     return (
                         <tr key={index}>
                             <td className="px-6 py-4 whitespace-nowrap">Autre n°{index + 1}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{item.comment || "Aucune description"}</td>
                             <td className="px-6 py-4 text-right">{item.price ? `${item.price}€` : "N/A"}</td>
-                            <td className="px-6 py-4 text-center">
-                                {item.expenseId ? (
-                                    <a href={'https://www.clubalpinlyon.fr' + item.expenseId} target="_blank"
-                                       rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
-                                        <FaFileAlt className="inline-block w-5 h-5"/>
-                                    </a>
-                                ) : (
-                                    "N/A"
-                                )}
-                            </td>
+                            <td className="px-6 py-4 text-center"><Justificatif fileUrl={justificationUrl}/></td>
                         </tr>
                     );
                 })}

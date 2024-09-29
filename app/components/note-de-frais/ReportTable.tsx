@@ -28,6 +28,9 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports }) => {
             <table className="min-w-full leading-normal">
                 <thead>
                 <tr>
+                    <th className="px-1 py-1 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+                        Commission
+                    </th>
                     <th className="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
                         Note de frais
                     </th>
