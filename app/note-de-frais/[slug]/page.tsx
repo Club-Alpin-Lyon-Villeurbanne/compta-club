@@ -4,10 +4,13 @@ import { useSession } from "next-auth/react";
 import { redirect, useRouter } from "next/navigation";
 import useAxiosAuth from "@/app/lib/hooks/useAxiosAuth";
 import { ExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
-import { FaCalendarAlt, FaExclamationTriangle, FaMapMarkerAlt, FaSpinner, FaHome } from "react-icons/fa";
+import { FaCalendarAlt, FaExclamationTriangle, FaSpinner, FaHome, FaUsers, FaInfoCircle } from "react-icons/fa";
 import dayjs from "dayjs";
 import ExpensesList from "@/app/components/note-de-frais/ExpensesTables/ExpensesList";
 import Header from "@/app/components/note-de-frais/header";
+import LoadingSpinner from "@/app/components/LoadingSpinner";
+import ErrorMessage from "@/app/components/ErrorMessage";
+import EventInfo from "@/app/components/EventInfo";
 
 // Types
 type State = {
@@ -21,6 +24,7 @@ type Action =
   | { type: 'FETCH_START' }
   | { type: 'FETCH_SUCCESS'; payload: { event: Event; ndfs: ExpenseReport[] } }
   | { type: 'FETCH_ERROR'; payload: string }
+  | { type: 'UPDATE_NDF_STATUS'; payload: { id: number; status: number } }
   | { type: 'RESET' };
 
 // Reducer
@@ -32,6 +36,13 @@ const reducer = (state: State, action: Action): State => {
       return { ...state, loading: false, event: action.payload.event, ndfs: action.payload.ndfs, error: null };
     case 'FETCH_ERROR':
       return { ...state, loading: false, error: action.payload };
+    case 'UPDATE_NDF_STATUS':
+      return {
+        ...state,
+        ndfs: state.ndfs?.map(ndf =>
+          ndf.id === action.payload.id ? { ...ndf, status: action.payload.status } : ndf
+        ) ?? null
+      };
     case 'RESET':
       return { event: null, ndfs: null, loading: false, error: null };
     default:
@@ -40,39 +51,11 @@ const reducer = (state: State, action: Action): State => {
 };
 
 // Components
-const LoadingSpinner = () => (
-  <div className="flex justify-center items-center h-screen" role="status">
-    <FaSpinner className="animate-spin text-blue-500 w-8 h-8" aria-hidden="true" />
-    <span className="ml-2 text-lg text-gray-700">Chargement...</span>
-  </div>
-);
 
-const ErrorMessage = ({ message }: { message: string }) => {
-  const router = useRouter();
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="bg-white shadow-md rounded-lg p-6 max-w-lg mx-auto">
-        <div className="flex items-center justify-center mb-4">
-          <FaExclamationTriangle className="text-red-500 w-12 h-12" aria-hidden="true" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">
-          Oups ! Une erreur est survenue
-        </h2>
-        <p className="text-gray-600 text-center mb-6">{message}</p>
-        <div className="flex justify-center">
-          <button
-            onClick={() => router.push('/')}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
-          >
-            <FaHome className="mr-2" />
-            Retour à l'accueil
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+
+
+
 
 // Main component
 export default function Home({ params }: { params: { slug: string } }) {
@@ -102,6 +85,16 @@ export default function Home({ params }: { params: { slug: string } }) {
     }
   }, [axiosAuth, params.slug]);
 
+  const handleUpdateStatus = useCallback(async (id: number, status: number) => {
+    try {
+      await axiosAuth.put(`/expense-reports/${id}`, { status });
+      dispatch({ type: 'UPDATE_NDF_STATUS', payload: { id, status } });
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour du statut:", err);
+      // Vous pouvez ajouter ici une notification d'erreur pour l'utilisateur
+    }
+  }, [axiosAuth]);
+
   useEffect(() => {
     if (session) fetchData();
   }, [fetchData, session]);
@@ -123,39 +116,24 @@ export default function Home({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <main>
-      <div className="container px-4 mx-auto sm:px-8">
+    <main className="bg-gray-50 min-h-screen">
+      <div className="container px-4 py-8 mx-auto max-w-6xl">
         <Header
           commission={state.event.commission.id}
           titre={state.event.titre}
           id={state.event.id}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-6">
-          <div className="bg-white shadow-md rounded-lg p-4 flex items-center">
-            <FaCalendarAlt className="text-blue-500 w-5 h-5 mr-3" aria-hidden="true" />
-            <div>
-              <p className="text-gray-500">Date de début</p>
-              <p className="font-semibold">{dayjs(state.event.tsp).format('DD/MM/YYYY à H:mm')}</p>
-            </div>
-          </div>
-          <div className="bg-white shadow-md rounded-lg p-4 flex items-center">
-            <FaCalendarAlt className="text-blue-500 w-5 h-5 mr-3" aria-hidden="true" />
-            <div>
-              <p className="text-gray-500">Date de fin</p>
-              <p className="font-semibold">{dayjs(state.event.tspEnd).format('DD/MM/YYYY à H:mm')}</p>
-            </div>
-          </div>
-          <div className="bg-white shadow-md rounded-lg p-4 flex items-center">
-            <FaMapMarkerAlt className="text-blue-500 w-5 h-5 mr-3" aria-hidden="true" />
-            <div>
-              <p className="text-gray-500">Lieu</p>
-              <p className="font-semibold">{state.event.rdv}</p>
-            </div>
-          </div>
-        </div>
+        <EventInfo event={state.event} />
 
-        <ExpensesList expenseReports={state.ndfs} />
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Notes de frais</h2>
+          <ExpensesList 
+            expenseReports={state.ndfs} 
+            onValidate={(id) => handleUpdateStatus(id, 1)}
+            onReject={(id) => handleUpdateStatus(id, 2)}
+          />
+        </div>
       </div>
     </main>
   );
