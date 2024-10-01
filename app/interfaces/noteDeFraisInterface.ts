@@ -32,6 +32,9 @@ export interface Event {
     titre: string
     code: string
     rdv: string
+    participationsCount: number
+    status: number
+    statusLegal: number
 }
 
 
