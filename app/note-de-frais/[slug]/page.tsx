@@ -128,11 +128,7 @@ export default function Home({ params }: { params: { slug: string } }) {
 
         <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Notes de frais</h2>
-          <ExpensesList 
-            expenseReports={state.ndfs} 
-            onValidate={(id) => handleUpdateStatus(id, 1)}
-            onReject={(id) => handleUpdateStatus(id, 2)}
-          />
+          <ExpensesList expenseReports={state.ndfs} />
         </div>
       </div>
     </main>

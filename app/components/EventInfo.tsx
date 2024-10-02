@@ -27,12 +27,12 @@ const EventInfo: React.FC<EventInfoProps> = ({ event }) => {
         <InfoItem 
           icon={FaCalendarAlt} 
           label="Début" 
-          value={dayjs(event.tsp).format('DD/MM/YYYY à HH:mm')} 
+          value={dayjs(event.tsp).format('DD/MM/YYYY')} 
         />
         <InfoItem 
           icon={FaCalendarAlt} 
           label="Fin" 
-          value={dayjs(event.tspEnd).format('DD/MM/YYYY à HH:mm')} 
+          value={dayjs(event.tspEnd).format('DD/MM/YYYY')} 
         />
         <InfoItem 
           icon={FaUsers} 
@@ -41,7 +41,7 @@ const EventInfo: React.FC<EventInfoProps> = ({ event }) => {
         />
         <InfoItem 
           icon={FaInfoCircle} 
-          label="Statut" 
+          label="Statut"
           value={event.status ?? "Non spécifié"} 
         />
       </div>
