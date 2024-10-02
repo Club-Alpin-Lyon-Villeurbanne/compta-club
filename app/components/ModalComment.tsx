@@ -5,35 +5,39 @@ import Swal from "sweetalert2";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
 
 export const ModalComment = async (
-    comment: string,
-    setComment: (comment: string) => void,
-    action: ExpenseStatus.APPROVED | ExpenseStatus.REJECT
+    action: ExpenseStatus.REJECT
 ): Promise<string | null> => {
-    const commentInput = await withReactContent(Swal).fire({
-        title: <i>Commentaire</i>,
+    if (action !== ExpenseStatus.REJECT) {
+        console.error("ModalComment should only be called for REJECT actions");
+        return null;
+    }
+
+    const MySwal = withReactContent(Swal);
+
+    const commentInput = await MySwal.fire({
+        title: <i>Commentaire de rejet</i>,
         input: 'textarea',
-        inputValue: comment,
+        inputPlaceholder: 'Entrez votre commentaire ici...',
         showCancelButton: true,
         confirmButtonText: 'Suivant',
-        confirmButtonColor: '#2563eb',
+        confirmButtonColor: '#d33',
         cancelButtonText: 'Annuler',
         inputValidator: (value) => {
-            if (action === ExpenseStatus.REJECT && !value) {
+            if (!value) {
                 return 'Le commentaire est obligatoire pour le rejet.';
             }
             return null;
         }
     });
 
-    if (commentInput.value !== undefined) {
-        setComment(commentInput.value);
-        const result = await withReactContent(Swal).fire({
-            title: action === ExpenseStatus.APPROVED ? 'Valider' : 'Refuser',
-            text: "Voulez-vous vraiment continuer ?",
+    if (commentInput.isConfirmed && commentInput.value) {
+        const result = await MySwal.fire({
+            title: 'Refuser',
+            text: "Voulez-vous vraiment refuser cette note de frais ?",
             showCancelButton: true,
-            confirmButtonText: 'Oui',
-            cancelButtonText: 'Non',
-            confirmButtonColor: action === ExpenseStatus.APPROVED ? '#2563eb' : '#d33',
+            confirmButtonText: 'Oui, refuser',
+            cancelButtonText: 'Non, annuler',
+            confirmButtonColor: '#d33',
         });
 
         if (result.isConfirmed) {
@@ -42,3 +46,5 @@ export const ModalComment = async (
     }
     return null;
 }
+
+export default ModalComment;

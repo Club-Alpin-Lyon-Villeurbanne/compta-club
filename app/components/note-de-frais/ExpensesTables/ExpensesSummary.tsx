@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Details } from "@/app/interfaces/DetailsInterface";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 import { config } from '@/app/config';
 import { FaMoneyBillWave, FaBed, FaCar, FaReceipt } from 'react-icons/fa';
+import { IconType } from 'react-icons';
 
 const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
     const {
@@ -13,7 +14,14 @@ const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
         accommodationsRemboursable
     } = calculateTotals(details);
 
-    const SummaryItem = ({ icon, label, amount, subAmount = null }) => (
+    interface SummaryItemProps {
+        icon: ReactNode;
+        label: string;
+        amount: string | ReactNode;
+        subAmount?: string | number | null;
+      }
+      
+      const SummaryItem: React.FC<SummaryItemProps> = ({ icon, label, amount, subAmount = null }) => (
         <div className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
             <div className="flex items-center">
                 {icon}
