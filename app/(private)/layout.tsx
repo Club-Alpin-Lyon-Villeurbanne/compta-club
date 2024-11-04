@@ -1,7 +1,8 @@
-import AuthProvider from './AuthProvider'
-import Footer from './components/Footer'
-import Navbar from './components/Navbar'
-import './globals.css'
+
+import AuthProvider from '../AuthProvider'
+import Footer from '../components/Footer'
+import Navbar from '../components/Navbar'
+import '../globals.css'
 
 export const metadata = {
   title: 'Gestion des notes de frais du Club Alpin de Lyon',

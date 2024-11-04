@@ -4,13 +4,11 @@ import { useSession } from "next-auth/react";
 import { redirect, useRouter } from "next/navigation";
 import useAxiosAuth from "@/app/lib/hooks/useAxiosAuth";
 import { ExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
-import { FaCalendarAlt, FaExclamationTriangle, FaSpinner, FaHome, FaUsers, FaInfoCircle } from "react-icons/fa";
-import dayjs from "dayjs";
-import ExpensesList from "@/app/components/note-de-frais/ExpensesTables/ExpensesList";
 import Header from "@/app/components/note-de-frais/header";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import EventInfo from "@/app/components/EventInfo";
+import ExpensesList from "@/app/components/note-de-frais/ExpensesTables/ExpensesList";
 
 // Types
 type State = {

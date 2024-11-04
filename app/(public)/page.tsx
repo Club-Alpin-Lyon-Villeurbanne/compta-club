@@ -1,9 +1,9 @@
 'use client';
 import { useSession } from 'next-auth/react';
-import LoginForm from './components/LoginForm';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { FaSpinner } from 'react-icons/fa';
+import LoginForm from '../components/LoginForm';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
