@@ -1,5 +1,5 @@
 "use client";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useEffect } from "react";
 import { axiosAuth } from "../axios";
 import { useRefreshToken } from "./useRefreshToken";
@@ -26,7 +26,6 @@ const useAxiosAuth = () => {
       async (error) => {
         const prevRequest = error.config;
         
-        // Tente de rafraîchir le token si erreur 401 et pas déjà essayé
         if (error.response?.status === 401 && !prevRequest.sent) {
           prevRequest.sent = true;
           try {
@@ -34,14 +33,16 @@ const useAxiosAuth = () => {
             prevRequest.headers["Authorization"] = `Bearer ${session?.accessToken}`;
             return axiosAuth(prevRequest);
           } catch (refreshError) {
-            // Si le refresh token échoue, redirige vers la page de connexion
+            // Au lieu de rediriger, déconnectez l'utilisateur
+            await signOut({ redirect: false });
             router.push('/');
             return Promise.reject(refreshError);
           }
         }
         
-        // Pour les autres erreurs 4xx (403, 404, etc.), redirige vers la page de connexion
         if (error.response?.status >= 400 && error.response?.status < 500) {
+          // Au lieu de simplement rediriger, déconnectez l'utilisateur
+          await signOut({ redirect: false });
           router.push('/');
         }
         

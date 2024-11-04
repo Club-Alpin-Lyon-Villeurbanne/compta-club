@@ -10,7 +10,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (session) {
+    if (session?.accessToken) {
       router.push('/note-de-frais');
     }
   }, [session, router]);
