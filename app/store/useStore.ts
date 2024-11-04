@@ -1,5 +1,7 @@
-import {create} from 'zustand';
-import {ExpenseReport} from "@/app/interfaces/noteDeFraisInterface";
+import { create } from "zustand";
+import ExpenseStatus from "../enums/ExpenseStatus";
+import { ExpenseReport } from "../interfaces/noteDeFraisInterface";
+
 
 interface StoreState {
     expenseReports: ExpenseReport[];
@@ -23,7 +25,7 @@ interface StoreState {
 
 const useStore = create<StoreState>((set) => ({
     expenseReports: [],
-    status: 'Toutes',
+    status: ExpenseStatus.SUBMITTED,
     itemsPerPage: 10,
     currentPage: 1,
     searchTerm: '',
@@ -39,7 +41,7 @@ const useStore = create<StoreState>((set) => ({
     setRequesterFilter: (requester) => set({ requesterFilter: requester }),
     setTypeFilter: (type) => set({ typeFilter: type }),
     resetFilters: () => set({
-        status: 'Toutes',
+        status: ExpenseStatus.SUBMITTED,
         searchTerm: '',
         dateFilter: '',
         requesterFilter: '',
