@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useReducer } from "react";
+import React, { useCallback, useEffect, useReducer, use } from "react";
 import { useSession } from "next-auth/react";
 import { redirect, useRouter } from "next/navigation";
 import useAxiosAuth from "@/app/lib/hooks/useAxiosAuth";
@@ -57,6 +57,9 @@ const reducer = (state: State, action: Action): State => {
 
 // Main component
 export default function Home({ params }: { params: { slug: string } }) {
+  const unwrappedParams = use(params);
+  const { slug } = unwrappedParams;
+
   const { data: session, status } = useSession();
   const axiosAuth = useAxiosAuth();
   const [state, dispatch] = useReducer(reducer, {
@@ -69,7 +72,7 @@ export default function Home({ params }: { params: { slug: string } }) {
   const fetchData = useCallback(async () => {
     dispatch({ type: 'FETCH_START' });
     try {
-      const response = await axiosAuth(`/expense-reports?event=${params.slug}`);
+      const response = await axiosAuth(`/expense-reports?event=${slug}`);
       if (response.data.length === 0) {
         throw new Error("Aucune note de frais trouvée pour cet événement.");
       }
@@ -81,7 +84,7 @@ export default function Home({ params }: { params: { slug: string } }) {
     } catch (err) {
       dispatch({ type: 'FETCH_ERROR', payload: err.message || "Une erreur est survenue" });
     }
-  }, [axiosAuth, params.slug]);
+  }, [axiosAuth, slug]);
 
   const handleUpdateStatus = useCallback(async (id: number, status: number) => {
     try {
@@ -114,8 +117,8 @@ export default function Home({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen">
-      <div className="container px-4 py-8 mx-auto max-w-6xl">
+    <main className="min-h-screen bg-gray-50">
+      <div className="container max-w-6xl px-4 py-8 mx-auto">
         <Header
           commission={state.event.commission.id}
           titre={state.event.titre}
@@ -124,8 +127,8 @@ export default function Home({ params }: { params: { slug: string } }) {
 
         <EventInfo event={state.event} />
 
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Notes de frais</h2>
+        <div className="p-6 bg-white rounded-lg shadow-sm">
+          <h2 className="mb-4 text-xl font-semibold text-gray-800">Notes de frais</h2>
           <ExpensesList expenseReports={state.ndfs} />
         </div>
       </div>

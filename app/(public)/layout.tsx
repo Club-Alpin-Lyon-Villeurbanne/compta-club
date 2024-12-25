@@ -16,10 +16,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className="font-sans antialiased bg-gray-200 flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen font-sans antialiased bg-gray-200">
         <AuthProvider>
           <Navbar />
-          <main className="flex-grow pt-20 mt-4 px-4 sm:px-6 lg:px-8">
+          <main className="flex-grow px-4 pt-20 mt-4 sm:px-6 lg:px-8">
             {children}
           </main>
           <Footer />

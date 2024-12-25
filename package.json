@@ -9,28 +9,32 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@sentry/nextjs": "^8.32.0",
-    "axios": "^1.7.2",
+    "@sentry/nextjs": "^8.47.0",
+    "axios": "^1.7.9",
     "dayjs": "^1.11.13",
-    "next": "14.2.3",
-    "next-auth": "^4.24.7",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-icons": "^5.3.0",
-    "sweetalert2": "^11.12.4",
-    "sweetalert2-react-content": "^5.0.7",
-    "zustand": "^4.5.4"
+    "next": "15.1.2",
+    "next-auth": "^4.24.11",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-icons": "^5.4.0",
+    "sweetalert2": "^11.15.3",
+    "sweetalert2-react-content": "^5.1.0",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@types/next-auth": "^3.15.0",
-    "@types/node": "^20.12.12",
-    "@types/react": "^18.3.2",
-    "@types/react-dom": "18.3.0",
-    "autoprefixer": "^10.4.19",
-    "eslint": "^8.40.0",
-    "eslint-config-next": "14.2.3",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
-    "typescript": "^5.4.5"
+    "@types/node": "^20.17.10",
+    "@types/react": "19.0.2",
+    "@types/react-dom": "19.0.2",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "15.1.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "@types/react": "19.0.2",
+    "@types/react-dom": "19.0.2"
   }
 }
