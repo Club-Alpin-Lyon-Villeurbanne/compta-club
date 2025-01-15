@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaCalendarAlt, FaUsers, FaInfoCircle } from "react-icons/fa";
+import { IconType } from 'react-icons';
 import dayjs from "dayjs";
 
 interface Event {
@@ -9,20 +10,41 @@ interface Event {
   status?: number;
 }
 
+interface InfoItemProps {
+  icon: IconType;
+  label: string;
+  value: string | number;
+}
+
 interface EventInfoProps {
   event: Event;
 }
 
+const getStatusLabel = (status?: number): string => {
+  switch (status) {
+    case 1:
+      return "Validé";
+    case 0:
+      return "Refusé";
+    case 2:
+      return "En attente";
+    case 3:
+      return "En cours de traitement";
+    default:
+      return "Non spécifié";
+  }
+};
+
 const EventInfo: React.FC<EventInfoProps> = ({ event }) => {
-  const InfoItem = ({ icon: Icon, label, value }) => (
-    <div className="flex items-center mr-6 mb-2">
-      <Icon className="text-blue-500 mr-2" />
+  const InfoItem: React.FC<InfoItemProps> = ({ icon: Icon, label, value }) => (
+    <div className="flex items-center mb-2 mr-6">
+      <Icon className="mr-2 text-blue-500" />
       <span>{label}: {value}</span>
     </div>
   );
 
   return (
-    <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
+    <div className="p-6 mb-6 bg-white rounded-lg shadow-sm">
       <div className="flex flex-wrap items-center text-sm text-gray-600">
         <InfoItem 
           icon={FaCalendarAlt} 
@@ -42,7 +64,7 @@ const EventInfo: React.FC<EventInfoProps> = ({ event }) => {
         <InfoItem 
           icon={FaInfoCircle} 
           label="Statut"
-          value={event.status ?? "Non spécifié"} 
+          value={getStatusLabel(event.status)} 
         />
       </div>
     </div>
