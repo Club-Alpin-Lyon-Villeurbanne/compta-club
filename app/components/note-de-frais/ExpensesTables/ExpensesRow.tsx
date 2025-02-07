@@ -12,7 +12,7 @@ interface ExpenseRowProps {
     report: ExpenseReport;
     isExpanded: boolean;
     onToggle: () => void;
-    onAction: (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECT) => void;
+    onAction: (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED) => void;
 }
 
 export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onToggle, onAction }) => {
@@ -68,7 +68,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                     <Badge status={report.status} />
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-sm text-center">
-                    {hasDetails && report.status !== ExpenseStatus.APPROVED && report.status !== ExpenseStatus.REJECT && (
+                    {hasDetails && report.status !== ExpenseStatus.APPROVED && report.status !== ExpenseStatus.REJECTED && (
                         <div className="flex justify-center space-x-2">
                             <button 
                                 className="bg-green-500 hover:bg-green-600 text-white font-bold p-1 rounded-full transition duration-300 ease-in-out"
@@ -78,7 +78,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                             </button>
                             <button 
                                 className="bg-red-500 hover:bg-red-600 text-white font-bold p-1 rounded-full transition duration-300 ease-in-out"
-                                onClick={() => onAction(report.id, ExpenseStatus.REJECT)}
+                                onClick={() => onAction(report.id, ExpenseStatus.REJECTED)}
                             >
                                 <FaTimes className="w-4 h-4" />
                             </button>

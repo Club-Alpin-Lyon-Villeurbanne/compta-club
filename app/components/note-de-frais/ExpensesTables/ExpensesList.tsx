@@ -20,26 +20,25 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
     params 
 }) => {
     const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
-    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+    const [expandedRows, setExpandedRows] = useState(new Set<number>());
     const { handleAction: originalHandleAction, error } = useExpenseActions(fetchData, session, params);
 
-    const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECT) => {
+    const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED) => {
         try {
             await originalHandleAction(reportId, action);
             setExpenseReports(prevReports => 
-                prevReports.map(report => 
+                prevReports.map((report: ExpenseReport) => 
                     report.id === reportId ? {...report, status: action} : report
                 )
             );
         } catch (err) {
             console.error("Failed to process action:", err);
-            // You might want to show an error message to the user here
         }
     }, [originalHandleAction]);
 
     const toggleRow = useCallback((id: number) => {
-        setExpandedRows(prev => {
-            const newSet = new Set(prev);
+        setExpandedRows(prevSet => {
+            const newSet = new Set(prevSet);
             if (newSet.has(id)) {
                 newSet.delete(id);
             } else {
@@ -52,20 +51,20 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
     return (
         <div className="w-full overflow-x-auto">
             {error && <ErrorAlert message={error} />}
-            <table className="min-w-full bg-white shadow-md rounded-lg">
+            <table className="min-w-full bg-white rounded-lg shadow-md">
                 <thead className="bg-gray-100">
                     <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note de frais</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demandeur</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Note de frais</th>
+                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Demandeur</th>
+                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Date</th>
+                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">Total</th>
+                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Type</th>
+                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Statut</th>
+                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                    {expenseReports.map(report => (
+                    {expenseReports.map((report: ExpenseReport) => (
                         <ExpenseRow
                             key={report.id}
                             report={report}

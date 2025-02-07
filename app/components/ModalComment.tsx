@@ -5,10 +5,10 @@ import Swal from "sweetalert2";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
 
 export const ModalComment = async (
-    action: ExpenseStatus.REJECT
+    action: ExpenseStatus.REJECTED
 ): Promise<string | null> => {
-    if (action !== ExpenseStatus.REJECT) {
-        console.error("ModalComment should only be called for REJECT actions");
+    if (action !== ExpenseStatus.REJECTED) {
+        console.error("ModalComment should only be called for REJECTED actions");
         return null;
     }
 

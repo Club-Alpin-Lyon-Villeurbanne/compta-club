@@ -9,7 +9,7 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
     const [error, setError] = useState<string | null>(null);
     const MySwal = withReactContent(Swal);
 
-    const patch = async (reportId: number, status: ExpenseStatus, comment: string = '') => {
+    const patch = async (reportId: number, status: ExpenseStatus, comment: string = ''): Promise<void> => {
         try {
             const response = await axiosAuth(
                 `/expense-reports/${reportId}`,
@@ -33,8 +33,8 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
 
     const handleAction = async (
         reportId: number,
-        action: ExpenseStatus.APPROVED | ExpenseStatus.REJECT
-    ) => {
+        action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED
+    ): Promise<void> => {
         try {
             if (action === ExpenseStatus.APPROVED) {
                 const result = await MySwal.fire({
@@ -52,7 +52,7 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
                     await patch(reportId, action);
                 }
             } else {
-                const inputComment = await ModalComment(ExpenseStatus.REJECT);
+                const inputComment = await ModalComment(ExpenseStatus.REJECTED);
                 if (inputComment !== null) {
                     await patch(reportId, action, inputComment);
                 }

@@ -22,14 +22,12 @@ interface EventInfoProps {
 
 const getStatusLabel = (status?: number): string => {
   switch (status) {
-    case 1:
-      return "Validé";
     case 0:
-      return "Refusé";
+      return "Non vu";
+    case 1:
+      return "Accepté";
     case 2:
-      return "En attente";
-    case 3:
-      return "En cours de traitement";
+      return "Refusé";
     default:
       return "Non spécifié";
   }

@@ -11,18 +11,18 @@ export default function ExpensesTable({ report }: { report: ExpenseReport }) {
     const renderStatusAlert = () => {
         if (report.status === ExpenseStatus.APPROVED) {
             return (
-                <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mt-6 flex items-start">
-                    <FaCheck className="text-green-500 mr-3 mt-1 flex-shrink-0" />
+                <div className="flex items-start p-4 mt-6 text-green-700 border border-green-200 rounded-lg bg-green-50">
+                    <FaCheck className="flex-shrink-0 mt-1 mr-3 text-green-500" />
                     <div>
                         <p className="font-semibold">Note de frais validée</p>
                         <p className="mt-1 text-sm">{report.statusComment}</p>
                     </div>
                 </div>
             );
-        } else if (report.status === ExpenseStatus.REJECT) {
+        } else if (report.status === ExpenseStatus.REJECTED) {
             return (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mt-6 flex items-start">
-                    <FaTimes className="text-red-500 mr-3 mt-1 flex-shrink-0" />
+                <div className="flex items-start p-4 mt-6 text-red-700 border border-red-200 rounded-lg bg-red-50">
+                    <FaTimes className="flex-shrink-0 mt-1 mr-3 text-red-500" />
                     <div>
                         <p className="font-semibold">Note de frais refusée</p>
                         <p className="mt-1 text-sm">{report.statusComment}</p>
@@ -35,26 +35,26 @@ export default function ExpensesTable({ report }: { report: ExpenseReport }) {
 
     return (
         <div className="w-full max-w-4xl mx-auto">
-            <div className="bg-white shadow-sm rounded-xl p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Détails des Dépenses</h2>
+            <div className="p-6 bg-white shadow-sm rounded-xl">
+                <h2 className="mb-6 text-2xl font-bold text-gray-800">Détails des Dépenses</h2>
 
                 <div className="space-y-8">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                        <h3 className="flex items-center text-lg font-semibold text-blue-700 mb-3">
+                    <div className="p-4 rounded-lg bg-blue-50">
+                        <h3 className="flex items-center mb-3 text-lg font-semibold text-blue-700">
                             <FaCar className="mr-2" /> Transport
                         </h3>
                         <TransportTable transport={report.details.transport} attachments={report.attachments} />
                     </div>
 
-                    <div className="bg-green-50 rounded-lg p-4">
-                        <h3 className="flex items-center text-lg font-semibold text-green-700 mb-3">
+                    <div className="p-4 rounded-lg bg-green-50">
+                        <h3 className="flex items-center mb-3 text-lg font-semibold text-green-700">
                             <FaBed className="mr-2" /> Hébergement
                         </h3>
                         <HebergementTable hebergement={report.details.accommodations} attachments={report.attachments} />
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-4">
-                        <h3 className="flex items-center text-lg font-semibold text-purple-700 mb-3">
+                    <div className="p-4 rounded-lg bg-purple-50">
+                        <h3 className="flex items-center mb-3 text-lg font-semibold text-purple-700">
                             <FaReceipt className="mr-2" /> Autres dépenses
                         </h3>
                         <OtherExpensesTable autres={report.details.others} attachments={report.attachments} />
