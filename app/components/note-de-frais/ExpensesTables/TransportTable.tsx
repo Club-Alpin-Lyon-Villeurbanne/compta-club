@@ -29,12 +29,12 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
     const transportInfo = getTransportInfo(transport.type);
 
     const ExpenseCard = ({ icon, title, amount, justificatif }) => (
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
             <div className="flex items-center mb-2">
                 {icon}
                 <h4 className="ml-2 font-semibold text-gray-700">{title}</h4>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
                 <span className="text-lg font-bold text-gray-900">{amount}€</span>
                 <Justificatif fileUrl={justificatif} />
             </div>
@@ -43,28 +43,28 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
 
     return (
         <div>
-            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-blue-700 mb-2 flex items-center">
+            <div className="p-4 mb-4 rounded-lg bg-blue-50">
+                <h3 className="flex items-center mb-2 text-lg font-semibold text-blue-700">
                     {transportInfo.icon}
                     <span className="ml-2">{transportInfo.label}</span>
                 </h3>
                 {transport.distance && (
-                    <p className="text-sm text-gray-600 flex items-center">
+                    <p className="flex items-center text-sm text-gray-600">
                         <FaRoute className="mr-2" /> Distance parcourue : {transport.distance} km
                     </p>
                 )}
                 {transport.passengerCount && (
-                    <p className="text-sm text-gray-600 flex items-center mt-1">
+                    <p className="flex items-center mt-1 text-sm text-gray-600">
                         <FaUsers className="mr-2" /> Nombre de passagers : {transport.passengerCount}
                     </p>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {transport.tollFee && (
                     <ExpenseCard 
                         icon={<FaRoad className="text-blue-500" />}
-                        title="Péage"
+                        title={transport.type === 'PERSONAL_VEHICLE' ? `Péage (sera divisé par ${config.DIVISION_PEAGE})` : 'Péage'}
                         amount={transport.tollFee}
                         justificatif={getFileUrlByExpenseId(attachments, 'tollFee')}
                     />
@@ -96,8 +96,18 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
                 {transport.distance && (
                     <ExpenseCard 
                         icon={<FaRoute className="text-indigo-500" />}
-                        title="Indemnités kilométriques"
-                        amount={(transport.distance * config.TAUX_KILOMETRIQUE_VOITURE).toFixed(2)}
+                        title={`Indemnités kilométriques (${
+                            transport.type === 'PERSONAL_VEHICLE' 
+                                ? config.TAUX_KILOMETRIQUE_VOITURE 
+                                : config.TAUX_KILOMETRIQUE_MINIBUS
+                        }€/km)`}
+                        amount={(
+                            transport.distance * (
+                                transport.type === 'PERSONAL_VEHICLE'
+                                    ? config.TAUX_KILOMETRIQUE_VOITURE
+                                    : config.TAUX_KILOMETRIQUE_MINIBUS
+                            )
+                        ).toFixed(2)}
                         justificatif={null}
                     />
                 )}

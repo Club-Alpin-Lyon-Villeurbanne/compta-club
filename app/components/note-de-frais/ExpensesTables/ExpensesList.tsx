@@ -5,6 +5,7 @@ import { ErrorAlert } from "../../ErrorAlert";
 import { ExpenseRow } from "./ExpensesRow";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
+import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";    
 
 interface ExpensesListProps {
     expenseReports: ExpenseReport[];
@@ -49,20 +50,20 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
     }, []);
 
     return (
-        <div className="w-full overflow-x-auto">
+        <div className="border rounded-md">
             {error && <ErrorAlert message={error} />}
-            <table className="min-w-full bg-white rounded-lg shadow-md">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Note de frais</th>
-                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Demandeur</th>
-                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Date</th>
-                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">Total</th>
-                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Type</th>
-                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Statut</th>
-                        <th className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">Actions</th>
-                    </tr>
-                </thead>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="text-left">Note de frais</TableHead>
+                        <TableHead className="text-left">Demandeur</TableHead>
+                        <TableHead className="text-left">Date</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-center">Type</TableHead>
+                        <TableHead className="text-center">Statut</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
                 <tbody className="divide-y divide-gray-200">
                     {expenseReports.map((report: ExpenseReport) => (
                         <ExpenseRow
@@ -74,7 +75,7 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
                         />
                     ))}
                 </tbody>
-            </table>
+            </Table>
         </div>
     );
 };

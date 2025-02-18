@@ -1,4 +1,4 @@
-import { Details } from '../interfaces/DetailsInterface';
+import { Details, Transport } from '../interfaces/DetailsInterface';
 import { config } from '../config';
 
 export function getFileUrlByExpenseId(attachments: any[], expenseId: string): string | undefined {
@@ -11,9 +11,44 @@ export function getFileUrlByExpenseId(attachments: any[], expenseId: string): st
 
 export const formatEuro = (amount: number) => `${amount?.toFixed(2)} €`;
 
-// Calcul le total pour chaque catégorie de dépenses
+function calculateTransportTotal(transport: Transport): number {
+    switch (transport.type) {
+        case "PERSONAL_VEHICLE":
+            const distance = transport.distance ?? 0;
+            const tollFee = transport.tollFee ?? 0;
+            return (distance * config.TAUX_KILOMETRIQUE_VOITURE) + 
+                   (tollFee / config.DIVISION_PEAGE);
+
+        case "CLUB_MINIBUS":
+            const clubDistance = transport.distance ?? 0;
+            const clubFuel = transport.fuelExpense ?? 0;
+            const clubToll = transport.tollFee ?? 0;
+            const clubPassengers = transport.passengerCount ?? 0;
+            if (clubPassengers <= 0) return 0;
+            
+            const clubTotal = (clubDistance * config.TAUX_KILOMETRIQUE_MINIBUS) + 
+                            clubFuel + clubToll;
+            return clubTotal / clubPassengers;
+
+        case "RENTAL_MINIBUS":
+            const rental = transport.rentalPrice ?? 0;
+            const rentalFuel = transport.fuelExpense ?? 0;
+            const rentalToll = transport.tollFee ?? 0;
+            const passengers = transport.passengerCount ?? 0;
+            if (passengers <= 0) return 0;
+            
+            return (rental + rentalFuel + rentalToll) / passengers;
+
+        case "PUBLIC_TRANSPORT":
+            return transport.ticketPrice ?? 0;
+
+        default:
+            return 0;
+    }
+}
+
 export function calculateTotals(details: Details) {
-    if (details === null) {
+    if (!details) {
         return {
             transportTotal: 0,
             accommodationsTotal: 0,
@@ -22,38 +57,22 @@ export function calculateTotals(details: Details) {
             accommodationsRemboursable: 0
         };
     }
-    let transportTotal: number;
 
-    // Calcul le total de transport selon le type de transport TODO: A modifier si on ajoute un nouveau type de transport
-    switch (details.transport.type) {
-        case "RENTAL_MINIBUS":
-            transportTotal = ((details.transport.tollFee || 0) +
-                (details.transport.fuelExpense || 0) +
-                (details.transport.rentalPrice || 0)) / (details.transport?.passengerCount || 1);
-            break;
-        case "PUBLIC_TRANSPORT":
-            transportTotal = (details.transport.ticketPrice || 0);
-            break;
-        case "CLUB_MINIBUS":
-            transportTotal = (details.transport.tollFee || 0) +
-                (details.transport.fuelExpense || 0);
-            break;
-        case "PERSONAL_VEHICLE":
-            transportTotal = (details.transport.tollFee || 0) +
-            (details.transport.distance || 0) * config.TAUX_KILOMETRIQUE_VOITURE;
-            break;
-        default:
-            transportTotal = 0;
+    if (typeof details === 'string') {
+        details = JSON.parse(details);
     }
 
-    // Calcul les totaux d'hébergement et autres dépenses
-    const accommodationsTotal = details.accommodations.reduce((total, acc) => total + acc.price, 0);
-    const othersTotal = details.others.reduce((total, other) => total + other.price, 0);
+    const transportTotal = calculateTransportTotal(details.transport);
 
-    // Calcul le montant remboursable pour les hébergements (max 60€/nuitée)
-    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => total + Math.min(acc.price, config.NUITEE_MAX_REMBOURSABLE), 0);
+    const accommodationsTotal = details.accommodations.reduce((total, acc) => 
+        total + (acc.price ?? 0), 0);
 
-    // Calcul le total remboursable (transport + hébergement + autres)
+    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => 
+        total + Math.min(acc.price ?? 0, config.NUITEE_MAX_REMBOURSABLE), 0);
+
+    const othersTotal = details.others.reduce((total, other) => 
+        total + (other.price ?? 0), 0);
+
     const totalRemboursable = transportTotal + accommodationsRemboursable + othersTotal;
 
     return {
@@ -63,4 +82,9 @@ export function calculateTotals(details: Details) {
         totalRemboursable,
         accommodationsRemboursable
     };
+}
+
+export const truncateText = (text: string, maxLength: number = 30): string => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };

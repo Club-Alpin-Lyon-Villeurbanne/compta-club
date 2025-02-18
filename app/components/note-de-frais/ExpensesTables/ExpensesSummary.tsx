@@ -3,7 +3,6 @@ import { Details } from "@/app/interfaces/DetailsInterface";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 import { config } from '@/app/config';
 import { FaMoneyBillWave, FaBed, FaCar, FaReceipt } from 'react-icons/fa';
-import { IconType } from 'react-icons';
 
 const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
     const {
@@ -29,35 +28,35 @@ const ExpensesSummary: React.FC<{ details: Details }> = ({ details }) => {
             </div>
             <div className="text-right">
                 <div className="text-sm font-semibold text-gray-900">{amount}</div>
-                {subAmount && <div className="text-xs text-gray-500 mt-1">{subAmount}</div>}
+                {subAmount && <div className="mt-1 text-xs text-gray-500">{subAmount}</div>}
             </div>
         </div>
     );
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
                 <h3 className="text-lg font-semibold text-gray-800">Résumé des dépenses</h3>
             </div>
             <div className="p-6 space-y-4">
                 <SummaryItem 
-                    icon={<FaMoneyBillWave className="text-green-500 text-lg" />}
+                    icon={<FaMoneyBillWave className="text-lg text-green-500" />}
                     label="Total remboursable"
                     amount={<span className="text-lg font-bold text-green-600">{formatEuro(totalRemboursable)}</span>}
                 />
                 <SummaryItem 
-                    icon={<FaBed className="text-blue-500 text-lg" />}
+                    icon={<FaBed className="text-lg text-blue-500" />}
                     label={`Hébergement (max ${config.NUITEE_MAX_REMBOURSABLE}€/nuitée)`}
                     amount={formatEuro(accommodationsTotal)}
                     subAmount={`dont ${formatEuro(accommodationsRemboursable)} remboursables`}
                 />
                 <SummaryItem 
-                    icon={<FaCar className="text-yellow-500 text-lg" />}
+                    icon={<FaCar className="text-lg text-yellow-500" />}
                     label="Transport"
                     amount={formatEuro(transportTotal)}
                 />
                 <SummaryItem 
-                    icon={<FaReceipt className="text-purple-500 text-lg" />}
+                    icon={<FaReceipt className="text-lg text-purple-500" />}
                     label="Autres dépenses"
                     amount={formatEuro(othersTotal)}
                 />

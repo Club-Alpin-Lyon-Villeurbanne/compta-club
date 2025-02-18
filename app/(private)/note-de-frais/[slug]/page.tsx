@@ -1,8 +1,9 @@
 "use client";
-import React, { useCallback, useEffect, useReducer, use } from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import useAxiosAuth from "@/app/lib/hooks/useAxiosAuth";
+
 import { ExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
 import Header from "@/app/components/note-de-frais/header";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
@@ -10,128 +11,109 @@ import ErrorMessage from "@/app/components/ErrorMessage";
 import EventInfo from "@/app/components/EventInfo";
 import ExpensesList from "@/app/components/note-de-frais/ExpensesTables/ExpensesList";
 
-// Types
-type State = {
-  event: Event | null;
-  ndfs: ExpenseReport[] | null;
-  loading: boolean;
-  error: string | null;
-};
+const ExpenseReportContent = ({
+  event,
+  expenseReports,
+  session,
+  fetchData,
+}: {
+  event: Event;
+  expenseReports: ExpenseReport[];
+  session: any;
+  fetchData: () => Promise<void>;
+}) => (
+  <main className="min-h-screen bg-gray-50">
+    <div className="container max-w-6xl px-4 py-8 mx-auto">
+      <Header commission={event.commission.id} titre={event.titre} id={event.id} />
+      <EventInfo event={event} />
+      <div className="p-6 bg-white rounded-lg shadow-sm">
+        <h2 className="mb-4 text-xl font-semibold text-gray-800">
+          Notes de frais
+        </h2>
+        <ExpensesList
+          expenseReports={expenseReports}
+          fetchData={fetchData}
+          session={session}
+          params={{ slug: event.id.toString() }}
+        />
+      </div>
+    </div>
+  </main>
+);
 
-type Action =
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: { event: Event; ndfs: ExpenseReport[] } }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'UPDATE_NDF_STATUS'; payload: { id: number; status: number } }
-  | { type: 'RESET' };
-
-// Reducer
-const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, loading: true, error: null };
-    case 'FETCH_SUCCESS':
-      return { ...state, loading: false, event: action.payload.event, ndfs: action.payload.ndfs, error: null };
-    case 'FETCH_ERROR':
-      return { ...state, loading: false, error: action.payload };
-    case 'UPDATE_NDF_STATUS':
-      return {
-        ...state,
-        ndfs: state.ndfs?.map(ndf =>
-          ndf.id === action.payload.id ? { ...ndf, status: action.payload.status } : ndf
-        ) ?? null
-      };
-    case 'RESET':
-      return { event: null, ndfs: null, loading: false, error: null };
-    default:
-      return state;
-  }
-};
-
-// Components
-
-
-
-
-
-
-// Main component
-export default function Home({ params }: { params: { slug: string } }) {
-  const unwrappedParams = use(params);
-  const { slug } = unwrappedParams;
-
+export default function ExpenseReportPage() {
+  // Au lieu d'extraire `{ params: { slug } }` de la signature :
+  const { slug } = useParams();  
+  const router = useRouter();
   const { data: session, status } = useSession();
   const axiosAuth = useAxiosAuth();
-  const [state, dispatch] = useReducer(reducer, {
-    event: null,
-    ndfs: null,
-    loading: true,
-    error: null,
-  });
 
-  const fetchData = useCallback(async () => {
-    dispatch({ type: 'FETCH_START' });
+  const [event, setEvent] = useState<Event | null>(null);
+  const [expenseReports, setExpenseReports] = useState<ExpenseReport[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchExpenseReports = async () => {
+    if (!session) return;
     try {
+      setIsLoading(true);
+      setError(null);
+
       const response = await axiosAuth(`/expense-reports?event=${slug}`);
-      if (response.data.length === 0) {
-        throw new Error("Aucune note de frais trouvée pour cet événement.");
-      }
-      const data = response.data.map((report: ExpenseReport) => ({
-        ...report,
-        details: JSON.parse(report.details)
-      }));
-      dispatch({ type: 'FETCH_SUCCESS', payload: { event: data[0].event, ndfs: data } });
-    } catch (err) {
-      dispatch({ type: 'FETCH_ERROR', payload: err.message || "Une erreur est survenue" });
-    }
-  }, [axiosAuth, slug]);
+      const reports = response.data;
 
-  const handleUpdateStatus = useCallback(async (id: number, status: number) => {
-    try {
-      await axiosAuth.put(`/expense-reports/${id}`, { status });
-      dispatch({ type: 'UPDATE_NDF_STATUS', payload: { id, status } });
+      if (!reports || reports.length === 0) {
+        setError("Aucune note de frais trouvée pour cet événement.");
+        return;
+      }
+
+      const parsedReports = reports.map((report: ExpenseReport) => ({
+        ...report,
+        details:
+          typeof report.details === "string"
+            ? JSON.parse(report.details)
+            : report.details,
+      }));
+
+      setEvent(parsedReports[0].event);
+      setExpenseReports(parsedReports);
     } catch (err) {
-      console.error("Erreur lors de la mise à jour du statut:", err);
-      // Vous pouvez ajouter ici une notification d'erreur pour l'utilisateur
+      setError("Une erreur est survenue lors du chargement des données");
+    } finally {
+      setIsLoading(false);
     }
-  }, [axiosAuth]);
+  };
 
   useEffect(() => {
-    if (session) fetchData();
-  }, [fetchData, session]);
+    fetchExpenseReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, axiosAuth, slug]);
 
-  if (status === "loading" || state.loading) {
+  // Redirection si non authentifié, en client-side :
+  if (!session && status !== "loading") {
+    router.push("/");
+    return null; // ou un loader
+  }
+
+  // Rendu conditionnel
+  if (status === "loading" || isLoading) {
     return <LoadingSpinner />;
   }
 
-  if (!session) {
-    redirect("/");
+  if (error) {
+    return <ErrorMessage message={error} />;
   }
 
-  if (state.error) {
-    return <ErrorMessage message={state.error} />;
-  }
-
-  if (!state.ndfs || !state.event) {
+  if (!expenseReports || !event) {
     return <ErrorMessage message="Aucun rapport de dépense trouvé" />;
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="container max-w-6xl px-4 py-8 mx-auto">
-        <Header
-          commission={state.event.commission.id}
-          titre={state.event.titre}
-          id={state.event.id}
-        />
-
-        <EventInfo event={state.event} />
-
-        <div className="p-6 bg-white rounded-lg shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold text-gray-800">Notes de frais</h2>
-          <ExpensesList expenseReports={state.ndfs} />
-        </div>
-      </div>
-    </main>
+    <ExpenseReportContent
+      event={event}
+      expenseReports={expenseReports}
+      session={session}
+      fetchData={fetchExpenseReports}
+    />
   );
 }

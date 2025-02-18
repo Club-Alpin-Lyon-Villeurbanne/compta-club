@@ -39,7 +39,7 @@ const Home: React.FC = () => {
             </h2>
           </div>
           <Filters />
-          <div className="px-4 py-4 -mx-4 overflow-x-auto sm:-mx-8 sm:px-8">
+          <div className="relative">
             <ReportTable reports={expenseReports} isLoading={isLoading} />
             <Pagination />
           </div>

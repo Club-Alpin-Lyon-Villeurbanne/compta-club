@@ -39,25 +39,28 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
             <table className="min-w-full leading-normal">
                 <thead>
                     <tr>
-                        <th className="w-12 px-1 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+                        <th className="w-8 px-1 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
                             Com.
                         </th>
-                        <th className="w-1/4 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+                        <th className="w-1/3 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
                             Note de frais
                         </th>
                         <th className="w-1/6 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
                             Demandeur
                         </th>
-                        <th className="w-24 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
                             Date sortie
                         </th>
-                        <th className="w-24 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
                             Soumission
                         </th>
-                        <th className="w-28 px-2 py-2 text-xs font-semibold tracking-wider text-center text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Type
+                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+                            Montant
                         </th>
                         <th className="w-24 px-2 py-2 text-xs font-semibold tracking-wider text-center text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
+                            Type
+                        </th>
+                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-center text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
                             Statut
                         </th>
                     </tr>
@@ -65,13 +68,13 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                 <tbody>
                     {isLoading ? (
                         <tr>
-                            <td colSpan={7} className="px-2 py-3 text-sm text-gray-600 border-b text-center">
+                            <td colSpan={8} className="px-2 py-3 text-sm text-center text-gray-600 border-b">
                                 Chargement des notes de frais...
                             </td>
                         </tr>
                     ) : !reportFiltered.length ? (
                         <tr>
-                            <td colSpan={7} className="px-2 py-3 text-sm text-gray-600 border-b text-center">
+                            <td colSpan={8} className="px-2 py-3 text-sm text-center text-gray-600 border-b">
                                 Aucune note de frais ne correspond aux critères de recherche.
                             </td>
                         </tr>
