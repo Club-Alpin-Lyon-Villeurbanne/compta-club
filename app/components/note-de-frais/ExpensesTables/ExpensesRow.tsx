@@ -70,7 +70,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                 <td className="px-4 py-2 text-sm text-center whitespace-nowrap">
                     {hasDetails && (
                         <div className="flex justify-center space-x-2">
-                            {report.status !== ExpenseStatus.APPROVED && report.status !== ExpenseStatus.REJECTED && (
+                            {(report.status === ExpenseStatus.SUBMITTED || report.status === ExpenseStatus.DRAFT) && (
                                 <>
                                     <button 
                                         className="p-1 font-bold text-white transition duration-300 ease-in-out bg-green-500 rounded-full hover:bg-green-600"
