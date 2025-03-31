@@ -31,12 +31,14 @@ const authOptions: NextAuthOptions = {
 
           if (response.ok) {
             const json = await response.json();
-
+            
+            // Décoder le token JWT pour obtenir les informations
             const claims = jose.decodeJwt(json.token);
+            
             const user: User = {
-              id: claims.id as string, // Ensure that 'id' is returned from your backend and added here
+              id: claims.id as string,
               accessToken: json.token,
-              accessTokenExpires: claims.exp * 1000,
+              accessTokenExpires: claims.exp ? claims.exp * 1000 : Date.now() + 24 * 60 * 60 * 1000,
               refreshToken: json.refresh_token,
               name: claims.nickname as string,
               email: claims.email as string,
@@ -61,41 +63,35 @@ const authOptions: NextAuthOptions = {
     signIn: "/",
   },
   callbacks: {
-    // async redirect({ url, baseUrl }) {
-    //   // Allows relative callback URLs
-    //   if (url.startsWith("/")) return `${baseUrl}${url}`
-    //   // Allows callback URLs on the same origin
-    //   else if (new URL(url).origin === baseUrl) return url
-    //   return baseUrl
-    // },
-    async jwt({ token, user, account, profile, trigger, session }) {
+    async redirect({ url, baseUrl }) {
+      // Si l'URL est relative, on la combine avec baseUrl
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Si l'URL est sur le même domaine, on la garde telle quelle
+      else if (new URL(url).origin === baseUrl) return url
+      // Sinon, on redirige vers la page d'accueil
+      return baseUrl
+    },
+    async jwt({ token, user, account }) {
       // Initial sign in
       if (account && user) {
+        const typedUser = user as User;
         return {
           ...token,
-          user,
-          accessToken: user.accessToken,
-          accessTokenExpires: user.accessTokenExpires,
-          refreshToken: user.refreshToken,
+          user: typedUser,
+          accessToken: typedUser.accessToken,
+          accessTokenExpires: typedUser.accessTokenExpires,
+          refreshToken: typedUser.refreshToken,
         };
       }
 
-      // Return previous token if the access token has not expired yet
-      // if (Date.now() < token.accessTokenExpires) {
-      //   return token
-      // }
-
-      // Access token has expired, try to update it
-      //return refreshAccessToken(token)
       return token;
     },
-    async session({ session, token, user }) {
+    async session({ session, token }) {
       if (token) {
         session.user = token.user as User;
         session.accessToken = token.accessToken as string;
         session.accessTokenExpires = token.accessTokenExpires as Number;
         session.refreshToken = token.refreshToken as string;
-        //session.error = token.error;
       }
 
       return session;

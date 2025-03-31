@@ -18,20 +18,13 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const result = await signIn("credentials", {
-        redirect: false,
+      await signIn("credentials", {
+        redirect: true,
         username: username,
         password: password,
       });
-
-      if (result?.error) {
-        setError("Identifiants incorrects. Veuillez réessayer.");
-      } else if (result?.ok) {
-        router.push('/note-de-frais');
-      }
     } catch (error) {
       setError("Une erreur est survenue. Veuillez réessayer plus tard.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -43,9 +36,9 @@ export default function LoginForm() {
           <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
             Adresse email
           </label>
-          <div className="mt-2 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaUser className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          <div className="relative mt-2">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <FaUser className="w-5 h-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="email"
@@ -65,9 +58,9 @@ export default function LoginForm() {
           <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
             Mot de passe
           </label>
-          <div className="mt-2 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaLock className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          <div className="relative mt-2">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <FaLock className="w-5 h-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="password"
@@ -84,7 +77,7 @@ export default function LoginForm() {
         </div>
 
         {error && (
-          <div className="text-red-500 text-sm mt-2">
+          <div className="mt-2 text-sm text-red-500">
             {error}
           </div>
         )}
