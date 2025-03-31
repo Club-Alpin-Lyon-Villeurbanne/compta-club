@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FaUser, FaLock } from 'react-icons/fa';
 
 export default function LoginForm() {
@@ -11,6 +11,15 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Vérifier s'il y a une erreur dans l'URL
+    const error = searchParams.get('error');
+    if (error) {
+      setError("Identifiants incorrects. Veuillez réessayer.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

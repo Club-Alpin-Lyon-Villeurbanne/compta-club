@@ -45,13 +45,12 @@ const authOptions: NextAuthOptions = {
             };
             return user;
           } else {
-            throw new Error("Erreur serveur", { cause: response });
+            throw new Error("Identifiants incorrects");
           }
         } catch (err) {
           console.error("Une erreur est survenue", err);
+          throw err;
         }
-
-        return null;
       },
     }),
   ],
@@ -61,6 +60,7 @@ const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/",
+    error: "/", // Rediriger vers la page de login en cas d'erreur
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
@@ -95,6 +95,14 @@ const authOptions: NextAuthOptions = {
       }
 
       return session;
+    },
+  },
+  events: {
+    async signIn({ user, account, profile, isNewUser }) {
+      console.log("Connexion réussie", user);
+    },
+    async signOut({ session, token }) {
+      console.log("Déconnexion", session);
     },
   },
 };
