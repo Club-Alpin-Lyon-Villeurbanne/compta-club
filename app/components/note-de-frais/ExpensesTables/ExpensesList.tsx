@@ -26,12 +26,14 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
 
     const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => {
         try {
-            await originalHandleAction(reportId, action);
-            setExpenseReports(prevReports => 
-                prevReports.map((report: ExpenseReport) => 
-                    report.id === reportId ? {...report, status: action} : report
-                )
-            );
+            const success = await originalHandleAction(reportId, action);
+            if (success) {
+                setExpenseReports(prevReports => 
+                    prevReports.map((report: ExpenseReport) => 
+                        report.id === reportId ? {...report, status: action} : report
+                    )
+                );
+            }
         } catch (err) {
             console.error("Failed to process action:", err);
         }
