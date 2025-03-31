@@ -33,7 +33,7 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
 
     const handleAction = async (
         reportId: number,
-        action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED
+        action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED
     ): Promise<void> => {
         try {
             if (action === ExpenseStatus.APPROVED) {
@@ -45,6 +45,21 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
                     confirmButtonText: 'Oui, approuver',
+                    cancelButtonText: 'Annuler'
+                });
+
+                if (result.isConfirmed) {
+                    await patch(reportId, action);
+                }
+            } else if (action === ExpenseStatus.ACCOUNTED) {
+                const result = await MySwal.fire({
+                    title: 'Confirmer la comptabilisation',
+                    text: "Voulez-vous vraiment marquer cette note de frais comme comptabilisée ?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Oui, comptabiliser',
                     cancelButtonText: 'Annuler'
                 });
 

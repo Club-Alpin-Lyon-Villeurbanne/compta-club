@@ -3,6 +3,7 @@ export enum ExpenseStatus {
   SUBMITTED = "submitted",
   REJECTED = "rejected",
   APPROVED = "approved",
+  ACCOUNTED = "accounted",
 }
 
 export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
@@ -15,6 +16,8 @@ export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
       return "Rejeté";
     case ExpenseStatus.APPROVED:
       return "Approuvé";
+    case ExpenseStatus.ACCOUNTED:
+      return "Comptabilisé";
     default:
       return "Inconnu";
   }
@@ -30,6 +33,8 @@ export const getExpenseStatusColor = (status: ExpenseStatus): string => {
       return "red";
     case ExpenseStatus.APPROVED:
       return "green";
+    case ExpenseStatus.ACCOUNTED:
+      return "purple";
     default:
       return "gray";
   }

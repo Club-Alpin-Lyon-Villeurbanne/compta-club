@@ -24,7 +24,7 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
     const [expandedRows, setExpandedRows] = useState(new Set<number>());
     const { handleAction: originalHandleAction, error } = useExpenseActions(fetchData, session, params);
 
-    const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED) => {
+    const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => {
         try {
             await originalHandleAction(reportId, action);
             setExpenseReports(prevReports => 
