@@ -3,7 +3,7 @@ import React from "react";
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
-import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaMoneyBillWave, FaGift, FaCheckDouble } from "react-icons/fa";
+import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaMoneyBillWave, FaGift, FaFileInvoiceDollar } from "react-icons/fa";
 import dayjs from "dayjs";
 import { Badge } from "../Badge";
 import ExpensesTable from "./ExpensesTable";
@@ -91,7 +91,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                                     className="p-1 font-bold text-white transition duration-300 ease-in-out bg-purple-500 rounded-full hover:bg-purple-600"
                                     onClick={() => onAction(report.id, ExpenseStatus.ACCOUNTED)}
                                 >
-                                    <FaCheckDouble className="w-4 h-4" />
+                                    <FaFileInvoiceDollar className="w-4 h-4" />
                                 </button>
                             )}
                         </div>

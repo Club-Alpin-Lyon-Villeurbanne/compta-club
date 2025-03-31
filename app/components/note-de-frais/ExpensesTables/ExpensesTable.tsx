@@ -5,7 +5,7 @@ import OtherExpensesTable from "@/app/components/note-de-frais/ExpensesTables/Ot
 import ExpensesSummary from "@/app/components/note-de-frais/ExpensesTables/ExpensesSummary";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
-import { FaCheck, FaTimes, FaInfoCircle, FaCar, FaBed, FaReceipt, FaCheckDouble } from 'react-icons/fa';
+import { FaCheck, FaTimes, FaInfoCircle, FaCar, FaBed, FaReceipt, FaFileInvoiceDollar } from 'react-icons/fa';
 
 export default function ExpensesTable({ report }: { report: ExpenseReport }) {
     const renderStatusAlert = () => {
@@ -32,7 +32,7 @@ export default function ExpensesTable({ report }: { report: ExpenseReport }) {
         } else if (report.status === ExpenseStatus.ACCOUNTED) {
             return (
                 <div className="flex items-start p-4 mt-6 text-purple-700 border border-purple-200 rounded-lg bg-purple-50">
-                    <FaCheckDouble className="flex-shrink-0 mt-1 mr-3 text-purple-500" />
+                    <FaFileInvoiceDollar className="flex-shrink-0 mt-1 mr-3 text-purple-500" />
                     <div>
                         <p className="font-semibold">Note de frais comptabilisée</p>
                         <p className="mt-1 text-sm">{report.statusComment}</p>
