@@ -29,21 +29,17 @@ const useAxiosAuth = () => {
         if (error.response?.status === 401 && !prevRequest.sent) {
           prevRequest.sent = true;
           try {
-            await refreshToken();
-            prevRequest.headers["Authorization"] = `Bearer ${session?.accessToken}`;
-            return axiosAuth(prevRequest);
+            const newToken = await refreshToken();
+            if (newToken) {
+              prevRequest.headers["Authorization"] = `Bearer ${newToken}`;
+              return axiosAuth(prevRequest);
+            }
           } catch (refreshError) {
-            // Au lieu de rediriger, déconnectez l'utilisateur
+            console.error("Erreur lors du rafraîchissement du token:", refreshError);
             await signOut({ redirect: false });
             router.push('/');
             return Promise.reject(refreshError);
           }
-        }
-        
-        if (error.response?.status >= 400 && error.response?.status < 500) {
-          // Au lieu de simplement rediriger, déconnectez l'utilisateur
-          await signOut({ redirect: false });
-          router.push('/');
         }
         
         return Promise.reject(error);
