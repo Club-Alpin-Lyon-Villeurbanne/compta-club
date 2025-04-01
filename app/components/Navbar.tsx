@@ -2,16 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { FaQuestionCircle, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
-import { signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/app/hooks/useAuth';
 
 function LogoutButton() {
+    const { logout } = useAuth();
+    
     return (
         <button
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={() => logout()}
             className="flex items-center px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700"
         >
             <FaSignOutAlt className="mr-2" />
@@ -21,7 +22,7 @@ function LogoutButton() {
 }
 
 export default function Navbar() {
-    const { data: session } = useSession();
+    const { isAuthenticated } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
 
@@ -102,7 +103,7 @@ export default function Navbar() {
                                 Aide
                             </Link>
                         </li>
-                        {session?.user && (
+                        {isAuthenticated && (
                             <li>
                                 <LogoutButton />
                             </li>

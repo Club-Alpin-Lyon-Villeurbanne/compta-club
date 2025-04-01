@@ -1,5 +1,3 @@
-
-import AuthProvider from '../AuthProvider'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import '../globals.css'
@@ -17,13 +15,11 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="font-sans antialiased bg-gray-200 flex flex-col min-h-screen">
-        <AuthProvider>
-          <Navbar />
-          <main className="flex-grow pt-20 mt-4 px-4 sm:px-6 lg:px-8">
-            {children}
-          </main>
-          <Footer />
-        </AuthProvider>
+        <Navbar />
+        <main className="flex-grow pt-20 mt-4 px-4 sm:px-6 lg:px-8">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   )

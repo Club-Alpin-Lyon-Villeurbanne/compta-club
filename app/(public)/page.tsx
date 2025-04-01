@@ -1,21 +1,20 @@
 'use client';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { FaSpinner } from 'react-icons/fa';
-import LoginForm from '../components/LoginForm';
+import { useAuth } from '@/app/hooks/useAuth';
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (session?.accessToken) {
+    if (isAuthenticated) {
       router.push('/note-de-frais');
     }
-  }, [session, router]);
+  }, [isAuthenticated, router]);
 
-  if (status === 'loading') {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
         <FaSpinner className="animate-spin text-blue-500 text-4xl" />
@@ -23,7 +22,7 @@ export default function HomePage() {
     );
   }
 
-  if (session) {
+  if (isAuthenticated) {
     return null; // Render nothing while redirecting
   }
 
@@ -36,7 +35,12 @@ export default function HomePage() {
         <p className="text-center text-gray-600 mb-8">
           La gestion simplifiée des notes de frais pour le Club Alpin de Lyon
         </p>
-        <LoginForm />
+        <a
+          href="/login"
+          className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          Se connecter
+        </a>
       </div>
     </div>
   );
