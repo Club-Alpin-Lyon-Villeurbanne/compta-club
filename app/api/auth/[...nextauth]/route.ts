@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { User } from "@/app/lib/definitions";
 import * as jose from "jose";
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",

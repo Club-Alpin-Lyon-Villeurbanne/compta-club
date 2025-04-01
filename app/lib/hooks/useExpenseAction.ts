@@ -5,7 +5,7 @@ import { ModalComment } from '@/app/components/ModalComment';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
-export const useExpenseActions = (fetchData: () => Promise<void>, session: any, params: { slug: string }) => {
+export const useExpenseActions = (session: any, params: { slug: string }) => {
     const [error, setError] = useState<string | null>(null);
     const MySwal = withReactContent(Swal);
 
@@ -21,13 +21,13 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
                     },
                 }
             );
-            if (response.status === 200 && session) {
-                await fetchData();
+            if (response.status === 200) {
                 setError(null);
             }
         } catch (err) {
             setError("Échec de la mise à jour du statut");
             console.error("Erreur lors de la mise à jour du statut de la note de frais:", err);
+            throw err;
         }
     };
 
@@ -58,8 +58,8 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
                 }
             }
         } catch (err) {
-            setError("Échec du traitement de l'action");
-            console.error("Erreur lors du traitement de l'action sur la note de frais:", err);
+            console.error("Failed to process action:", err);
+            throw err;
         }
     };
 

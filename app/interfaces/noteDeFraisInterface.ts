@@ -1,6 +1,14 @@
 import {Details} from "@/app/interfaces/DetailsInterface";
 import ExpenseStatus from "../enums/ExpenseStatus";
 
+export interface PaginatedResponse<T> {
+    data: T[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
 export interface ExpenseReport {
     id: number
     status: ExpenseStatus

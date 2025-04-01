@@ -1,41 +1,74 @@
 // ExpensesList.tsx
-import React, { useState, useCallback } from "react";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import React, { useState, useCallback, useEffect } from "react";
+import { ExpenseReport, PaginatedResponse } from "@/app/interfaces/noteDeFraisInterface";
 import { ErrorAlert } from "../../ErrorAlert";
 import { ExpenseRow } from "./ExpensesRow";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
-import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";    
+import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";
+import { Pagination } from "@/components/ui/pagination";
+import { useSearchParams } from 'next/navigation';
+import { axiosAuth } from '@/app/lib/axios';
 
 interface ExpensesListProps {
-    expenseReports: ExpenseReport[];
-    fetchData: () => Promise<void>;
+    initialData: PaginatedResponse<ExpenseReport>;
     session: any; // Replace 'any' with the actual session type
     params: { slug: string };
 }
 
 export const ExpensesList: React.FC<ExpensesListProps> = ({ 
-    expenseReports: initialExpenseReports, 
-    fetchData, 
+    initialData, 
     session, 
     params 
 }) => {
-    const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
+    const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialData.data);
     const [expandedRows, setExpandedRows] = useState(new Set<number>());
-    const { handleAction: originalHandleAction, error } = useExpenseActions(fetchData, session, params);
+    const [currentPage, setCurrentPage] = useState(initialData.page);
+    const [totalPages, setTotalPages] = useState(initialData.totalPages);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const { handleAction: originalHandleAction } = useExpenseActions(session, params);
+
+    const fetchExpenses = useCallback(async (page: number) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const status = searchParams.get('status');
+            const response = await axiosAuth(
+                `/expense-reports?page=${page}&pageSize=10${status ? `&status=${status}` : ''}`,
+                {
+                    method: "get",
+                }
+            );
+            
+            if (response.status === 200) {
+                const data: PaginatedResponse<ExpenseReport> = response.data;
+                setExpenseReports(data.data);
+                setTotalPages(data.totalPages);
+                setCurrentPage(data.page);
+            }
+        } catch (err) {
+            setError('Une erreur est survenue lors du chargement des notes de frais');
+            console.error('Error fetching expenses:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        fetchExpenses(currentPage);
+    }, [currentPage, searchParams]);
 
     const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED) => {
         try {
             await originalHandleAction(reportId, action);
-            setExpenseReports(prevReports => 
-                prevReports.map((report: ExpenseReport) => 
-                    report.id === reportId ? {...report, status: action} : report
-                )
-            );
+            // Rafraîchir la page courante après l'action
+            fetchExpenses(currentPage);
         } catch (err) {
             console.error("Failed to process action:", err);
         }
-    }, [originalHandleAction]);
+    }, [originalHandleAction, currentPage, fetchExpenses]);
 
     const toggleRow = useCallback((id: number) => {
         setExpandedRows(prevSet => {
@@ -76,6 +109,11 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
                     ))}
                 </tbody>
             </Table>
+            <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+            />
         </div>
     );
 };
