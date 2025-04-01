@@ -9,7 +9,7 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
     const [error, setError] = useState<string | null>(null);
     const MySwal = withReactContent(Swal);
 
-    const patch = async (reportId: number, status: ExpenseStatus, comment: string = ''): Promise<void> => {
+    const patch = async (reportId: number, status: ExpenseStatus, comment: string = ''): Promise<boolean> => {
         try {
             const response = await axiosAuth(
                 `/expense-reports/${reportId}`,
@@ -24,17 +24,20 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
             if (response.status === 200 && session) {
                 await fetchData();
                 setError(null);
+                return true;
             }
+            return false;
         } catch (err) {
             setError("Échec de la mise à jour du statut");
             console.error("Erreur lors de la mise à jour du statut de la note de frais:", err);
+            return false;
         }
     };
 
     const handleAction = async (
         reportId: number,
-        action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED
-    ): Promise<void> => {
+        action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED
+    ): Promise<boolean> => {
         try {
             if (action === ExpenseStatus.APPROVED) {
                 const result = await MySwal.fire({
@@ -49,17 +52,34 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
                 });
 
                 if (result.isConfirmed) {
-                    await patch(reportId, action);
+                    return await patch(reportId, action);
+                }
+            } else if (action === ExpenseStatus.ACCOUNTED) {
+                const result = await MySwal.fire({
+                    title: 'Confirmer la comptabilisation',
+                    text: "Voulez-vous vraiment marquer cette note de frais comme comptabilisée ?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Oui, comptabiliser',
+                    cancelButtonText: 'Annuler'
+                });
+
+                if (result.isConfirmed) {
+                    return await patch(reportId, action);
                 }
             } else {
                 const inputComment = await ModalComment(ExpenseStatus.REJECTED);
                 if (inputComment !== null) {
-                    await patch(reportId, action, inputComment);
+                    return await patch(reportId, action, inputComment);
                 }
             }
+            return false;
         } catch (err) {
             setError("Échec du traitement de l'action");
             console.error("Erreur lors du traitement de l'action sur la note de frais:", err);
+            return false;
         }
     };
 

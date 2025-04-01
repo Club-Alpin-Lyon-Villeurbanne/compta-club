@@ -24,14 +24,16 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
     const [expandedRows, setExpandedRows] = useState(new Set<number>());
     const { handleAction: originalHandleAction, error } = useExpenseActions(fetchData, session, params);
 
-    const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED) => {
+    const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => {
         try {
-            await originalHandleAction(reportId, action);
-            setExpenseReports(prevReports => 
-                prevReports.map((report: ExpenseReport) => 
-                    report.id === reportId ? {...report, status: action} : report
-                )
-            );
+            const success = await originalHandleAction(reportId, action);
+            if (success) {
+                setExpenseReports(prevReports => 
+                    prevReports.map((report: ExpenseReport) => 
+                        report.id === reportId ? {...report, status: action} : report
+                    )
+                );
+            }
         } catch (err) {
             console.error("Failed to process action:", err);
         }
