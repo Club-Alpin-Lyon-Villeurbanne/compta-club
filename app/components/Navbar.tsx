@@ -1,112 +1,129 @@
 'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
-import { FaQuestionCircle, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/app/lib/hooks/useAuth';
-import useAuthStore from '@/app/store/useAuthStore';
+import { FaUser, FaSignOutAlt, FaQuestionCircle, FaInfoCircle } from 'react-icons/fa';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const pathname = usePathname();
-    const { logout } = useAuth();
-    const { isAuthenticated } = useAuthStore();
+  const pathname = usePathname();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    const isActive = (path: string) => pathname === path;
+  useEffect(() => {
+    // Vérifier si l'utilisateur est authentifié au chargement du composant
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de l\'authentification:', error);
+        setIsAuthenticated(false);
+      }
+    };
 
-    return (
-        <nav className="fixed top-0 left-0 z-20 w-full bg-white shadow">
-            <div className="flex flex-wrap items-center justify-between p-4 mx-auto max-w-7xl">
-                <Link href="/" className="flex items-center shrink-0">
-                    <Image 
-                        src="https://www.clubalpinlyon.fr/img/logo.png" 
-                        className="w-auto h-10" 
-                        alt="Logo Club Alpin de Lyon" 
-                        height={59} 
-                        width={150}
-                        priority 
-                    />
-                </Link>
+    checkAuth();
+  }, []);
 
-                <div className="flex items-center md:hidden">
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"
-                    >
-                        {isMenuOpen ? <FaTimes /> : <FaBars />}
-                    </button>
-                </div>
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      setIsAuthenticated(false);
+      // Redirection vers la page d'accueil
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Erreur lors de la déconnexion:', err);
+    }
+  };
 
-                <div className={`${isMenuOpen ? 'block' : 'hidden'} w-full md:flex md:w-2/4 md:justify-center`}>
-                    <ul className="flex flex-col mt-4 md:flex-row md:items-center md:space-x-8 md:mt-0">
-                        <li>
-                            <Link 
-                                href="/" 
-                                className={`block py-2 px-3 ${
-                                    isActive('/') 
-                                        ? 'text-indigo-600' 
-                                        : 'text-gray-600 hover:text-indigo-600'
-                                }`}
-                            >
-                                Accueil
-                            </Link>
-                        </li>
-                        {isAuthenticated && (
-                            <li>
-                                <Link 
-                                    href="/note-de-frais" 
-                                    className={`block py-2 px-3 ${
-                                        pathname.startsWith('/note-de-frais') 
-                                            ? 'text-indigo-600' 
-                                            : 'text-gray-600 hover:text-indigo-600'
-                                    }`}
-                                >
-                                    Notes de frais
-                                </Link>
-                            </li>
-                        )}
-                        <li>
-                            <Link 
-                                href="/a-propos" 
-                                className={`block py-2 px-3 ${
-                                    isActive('/a-propos') 
-                                        ? 'text-indigo-600' 
-                                        : 'text-gray-600 hover:text-indigo-600'
-                                }`}
-                            >
-                                À propos
-                            </Link>
-                        </li>
-                    </ul>
-                </div>
-
-                <div className={`${isMenuOpen ? 'block' : 'hidden'} w-full md:flex md:w-1/4 md:justify-end`}>
-                    <ul className="flex flex-col mt-4 md:flex-row md:items-center md:space-x-4 md:mt-0">
-                        <li>
-                            <Link
-                                href="/aide"
-                                className="flex items-center px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-                            >
-                                <FaQuestionCircle className="mr-2" />
-                                Aide
-                            </Link>
-                        </li>
-                        {isAuthenticated && (
-                            <li>
-                                <button
-                                    onClick={logout}
-                                    className="flex items-center px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700"
-                                >
-                                    <FaSignOutAlt className="mr-2" />
-                                    Déconnexion
-                                </button>
-                            </li>
-                        )}
-                    </ul>
-                </div>
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
+      <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex items-center flex-shrink-0">
+              <Link href="/" className="flex items-center">
+                <Image
+                  src="/logo.png"
+                  alt="Logo Club Alpin de Lyon"
+                  width={40}
+                  height={40}
+                  className="mr-2"
+                />
+                <span className="text-xl font-bold text-indigo-600">
+                  Club Alpin de Lyon
+                </span>
+              </Link>
             </div>
-        </nav>
-    );
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              {isAuthenticated && (
+                <Link
+                  href="/note-de-frais"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    pathname === '/note-de-frais'
+                      ? 'border-indigo-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                >
+                  Notes de frais
+                </Link>
+              )}
+              <Link
+                href="/aide"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  pathname === '/aide'
+                    ? 'border-indigo-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              >
+                <FaQuestionCircle className="mr-1" />
+                Aide
+              </Link>
+              <Link
+                href="/about"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  pathname === '/about'
+                    ? 'border-indigo-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              >
+                <FaInfoCircle className="mr-1" />
+                À propos
+              </Link>
+            </div>
+          </div>
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <FaSignOutAlt className="mr-2" />
+                Déconnexion
+              </button>
+            ) : (
+              <Link
+                href="/"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <FaUser className="mr-2" />
+                Connexion
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
 }

@@ -1,6 +1,7 @@
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import '../globals.css'
+import { checkAuthOrRedirect } from '@/app/lib/fetchServer';
 
 export const metadata = {
   title: 'Gestion des notes de frais du Club Alpin de Lyon',
@@ -11,7 +12,10 @@ interface Props {
   children: React.ReactNode;
 }
 
-export default function PrivateLayout({ children }: Props) {
+export default async function PrivateLayout({ children }: Props) {
+  // Vérifier si l'utilisateur est authentifié
+  await checkAuthOrRedirect();
+  
   return (
     <html lang="fr">
       <body className="flex flex-col min-h-screen font-sans antialiased bg-gray-200">

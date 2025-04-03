@@ -1,33 +1,32 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { COOKIE_NAMES } from './app/lib/auth/types';
+import { COOKIE_NAMES } from '@/app/lib/auth/types';
 
 // Liste des routes publiques qui ne nécessitent pas d'authentification
-const publicRoutes = ['/', '/api/auth/login', '/api/auth/refresh', '/api/auth/logout'];
+const publicRoutes = ['/', '/login', '/api/auth/login', '/api/auth/refresh'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Vérifier si la route est publique
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next();
-  }
-  
-  // Vérifier si la route est une API
-  if (pathname.startsWith('/api/')) {
+  if (publicRoutes.some(route => pathname === route || pathname.startsWith('/_next') || pathname.startsWith('/static'))) {
     return NextResponse.next();
   }
   
   // Vérifier si l'utilisateur est authentifié
   const accessToken = request.cookies.get(COOKIE_NAMES.ACCESS_TOKEN);
-  const refreshToken = request.cookies.get(COOKIE_NAMES.REFRESH_TOKEN);
   
-  // Si aucun token n'est présent, rediriger vers la page de connexion
-  if (!accessToken && !refreshToken) {
-    return NextResponse.redirect(new URL('/', request.url));
+  if (!accessToken) {
+    // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
+    const url = new URL('/', request.url);
+    return NextResponse.redirect(url);
   }
   
-  return NextResponse.next();
+  // Ajouter un en-tête pour indiquer que l'utilisateur est authentifié
+  const response = NextResponse.next();
+  response.headers.set('x-auth-status', 'authenticated');
+  
+  return response;
 }
 
 export const config = {

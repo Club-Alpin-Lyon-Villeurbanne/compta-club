@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
 import Header from "@/app/components/note-de-frais/header";
@@ -45,7 +45,7 @@ export default function ExpenseReportPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchExpenseReports = async () => {
+  const fetchExpenseReports = useCallback(async () => {
     if (!slug) return;
 
     try {
@@ -78,13 +78,13 @@ export default function ExpenseReportPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
 
   useEffect(() => {
     if (slug) {
       fetchExpenseReports();
     }
-  }, [slug]);
+  }, [slug, fetchExpenseReports]);
 
   if (isLoading) {
     return <LoadingSpinner />;

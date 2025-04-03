@@ -1,4 +1,3 @@
-// ExpensesList.tsx
 import React, { useState, useCallback } from "react";
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import { ErrorAlert } from "../../ErrorAlert";

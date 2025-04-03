@@ -1,17 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/app/lib/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 import { FaSpinner } from 'react-icons/fa';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading, error } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login({ email, password });
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Identifiants invalides');
+      }
+      
+      // Redirection vers la page des notes de frais après connexion réussie
+      router.push('/note-de-frais');
+    } catch (err) {
+      setError('Identifiants invalides');
+      console.error('Erreur de connexion:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -27,8 +27,13 @@ export async function POST(request: NextRequest) {
     const data: AuthTokens = await response.json();
     console.log('Login successful, setting cookies');
 
-    // Création de la réponse
-    const res = NextResponse.json({ user: data.user });
+    // Création de la réponse avec les données dans le format attendu par le store
+    const res = NextResponse.json({
+      user: data.user,
+      token: data.token,
+      refresh_token: data.refresh_token,
+      isAuthenticated: true
+    });
 
     // Définition des cookies dans la réponse
     res.cookies.set(COOKIE_NAMES.ACCESS_TOKEN, data.token, {
@@ -45,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     return res;
   } catch (error) {
-    console.error('Erreur lors de la connexion:', error);
+    console.error('Login error:', error);
     return NextResponse.json(
       { error: 'Une erreur est survenue lors de la connexion' },
       { status: 500 }
