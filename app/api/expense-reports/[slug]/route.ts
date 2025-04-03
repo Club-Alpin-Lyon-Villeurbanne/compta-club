@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { COOKIE_NAMES } from '@/app/lib/auth/types';
+import { axiosAuth } from '@/app/lib/axios';
 
 async function refreshToken() {
   const cookieStore = await cookies();
@@ -10,37 +11,36 @@ async function refreshToken() {
     throw new Error('No refresh token available');
   }
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
+  try {
+    console.log('Attempting to refresh token...');
+    const response = await axiosAuth.post('/auth/refresh', {
+      refresh_token: refreshToken
+    });
 
-  if (!response.ok) {
+    const data = response.data;
+    console.log('Token refresh successful');
+    
+    cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, data.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 3600,
+    });
+
+    cookieStore.set(COOKIE_NAMES.REFRESH_TOKEN, data.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 604800,
+    });
+
+    return data.access_token;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
     throw new Error('Failed to refresh token');
   }
-
-  const data = await response.json();
-  
-  cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, data.access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 3600,
-  });
-
-  cookieStore.set(COOKIE_NAMES.REFRESH_TOKEN, data.refresh_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 604800,
-  });
-
-  return data.access_token;
 }
 
 export async function GET(
@@ -49,69 +49,74 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    console.log('Fetching expense report with slug:', slug);
+    console.log('Fetching expense report for slug:', slug);
     
-    const cookieStore = await cookies();
-    let accessToken = cookieStore.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
+    // Récupérer le token d'accès depuis les cookies de la requête
+    const accessToken = request.cookies.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
+    console.log('Access token present:', !!accessToken);
 
     if (!accessToken) {
-      console.log('No access token found');
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
       );
     }
+    
+    // Configurer axios avec le token d'accès
+    axiosAuth.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    console.log('Making API request to:', `/expense-reports?event=${slug}`);
+    
+    try {
+      // Faire la requête avec axios
+      const response = await axiosAuth.get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${slug}`);
+      console.log('API response status:', response.status);
+      return NextResponse.json(response.data);
+    } catch (error: any) {
+      console.error('API request failed:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
 
-    console.log('Access token found:', accessToken.substring(0, 10) + '...');
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/expense-reports/${slug}`;
-    console.log('API URL:', apiUrl);
-
-    let response = await fetch(apiUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('API response status:', response.status);
-
-    if (response.status === 401) {
-      console.log('Token expired, attempting refresh');
-      try {
-        accessToken = await refreshToken();
-        console.log('Token refreshed successfully');
-        
-        response = await fetch(apiUrl, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        console.log('Second API response status:', response.status);
-      } catch (error) {
-        console.error('Error refreshing token:', error);
-        return NextResponse.json(
-          { error: 'Session expirée, veuillez vous reconnecter' },
-          { status: 401 }
-        );
+      // Si l'erreur est 401, essayer de rafraîchir le token
+      if (error.response?.status === 401) {
+        try {
+          const newAccessToken = await refreshToken();
+          
+          // Réessayer avec le nouveau token
+          axiosAuth.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+          console.log('Retrying request with new token');
+          const response = await axiosAuth.get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${slug}`);
+          return NextResponse.json(response.data);
+        } catch (refreshError) {
+          console.error('Error refreshing token:', refreshError);
+          return NextResponse.json(
+            { error: 'Session expirée, veuillez vous reconnecter' },
+            { status: 401 }
+          );
+        }
       }
-    }
-
-    if (!response.ok) {
-      console.log('API error response:', response.status);
+      
+      // Pour les autres erreurs
       return NextResponse.json(
-        { error: 'Erreur lors de la récupération de la note de frais' },
-        { status: response.status }
+        { 
+          error: 'Erreur lors de la récupération de la note de frais',
+          details: error.response?.data || error.message
+        },
+        { status: error.response?.status || 500 }
       );
     }
-
-    const data = await response.json();
-    console.log('Successfully fetched expense report');
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching expense report:', error);
+  } catch (error: any) {
+    console.error('Unexpected error:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data
+    });
     return NextResponse.json(
-      { error: 'Une erreur est survenue' },
+      { 
+        error: 'Une erreur est survenue',
+        details: error.message
+      },
       { status: 500 }
     );
   }

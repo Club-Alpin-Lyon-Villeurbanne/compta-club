@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const data: AuthTokens = await response.json();
 
     // Mise à jour des cookies
-    cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, data.access_token, {
+    cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, data.token, {
       ...COOKIE_OPTIONS,
       maxAge: 3600, // 1 heure
     });

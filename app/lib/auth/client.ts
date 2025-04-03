@@ -16,7 +16,7 @@ export const fetchWithAutoRefresh = async (
     
     if (!accessToken) {
       console.log('No access token found');
-      window.location.href = '/login';
+      window.location.href = '/';
       throw new Error("Non authentifié");
     }
     
@@ -71,7 +71,7 @@ export const fetchWithAutoRefresh = async (
       } catch (error) {
         console.error('Error during refresh:', error);
         // Si le rafraîchissement échoue, on redirige vers la page de login
-        window.location.href = '/login';
+        window.location.href = '/';
         throw new Error("Session expirée");
       }
     }
@@ -80,7 +80,7 @@ export const fetchWithAutoRefresh = async (
   } catch (error) {
     console.error('Request error:', error);
     // En cas d'erreur réseau, on redirige vers la page de login
-    window.location.href = '/login';
+    window.location.href = '/';
     throw error;
   }
 }; 

@@ -5,6 +5,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
+  isAuthenticated: boolean;
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
   setRefreshToken: (refreshToken: string | null) => void;
@@ -15,10 +16,11 @@ const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
   refreshToken: null,
-  setUser: (user) => set({ user }),
+  isAuthenticated: false,
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
   setToken: (token) => set({ token }),
   setRefreshToken: (refreshToken) => set({ refreshToken }),
-  logout: () => set({ user: null, token: null, refreshToken: null }),
+  logout: () => set({ user: null, token: null, refreshToken: null, isAuthenticated: false }),
 }));
 
 export default useAuthStore; 

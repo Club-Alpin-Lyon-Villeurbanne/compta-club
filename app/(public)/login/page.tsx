@@ -1,45 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import useAuthStore from "@/app/store/authStore";
+import { useAuth } from "@/app/lib/hooks/useAuth";
+import { FaSpinner } from "react-icons/fa";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { setUser } = useAuthStore();
+  const { login, isLoading, error } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Identifiants invalides");
-      }
-
-      const data = await response.json();
-      setUser(data.user);
-
-      router.push("/note-de-frais");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    } finally {
-      setIsLoading(false);
-    }
+    await login({ email, password });
   };
 
   return (
@@ -54,7 +26,7 @@ export default function LoginPage() {
           <div className="-space-y-px rounded-md shadow-sm">
             <div>
               <label htmlFor="email" className="sr-only">
-                Adresse email
+                Adresse email top
               </label>
               <input
                 id="email"
@@ -96,7 +68,14 @@ export default function LoginPage() {
               disabled={isLoading}
               className="relative flex justify-center w-full px-3 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md group hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Connexion en cours..." : "Se connecter"}
+              {isLoading ? (
+                <>
+                  <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                  Connexion en cours...
+                </>
+              ) : (
+                "Se connecter"
+              )}
             </button>
           </div>
         </form>

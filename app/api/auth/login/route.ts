@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { COOKIE_NAMES, COOKIE_OPTIONS, AuthTokens } from '@/app/lib/auth/types';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password } = body;
+    console.log('Login attempt for:', email);
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth`, {
       method: 'POST',
@@ -14,8 +14,10 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({ email, password }),
     });
+    console.log('API response status:', response.status);
 
     if (!response.ok) {
+      console.log('Login failed with status:', response.status);
       return NextResponse.json(
         { error: 'Identifiants invalides' },
         { status: 401 }
@@ -23,24 +25,25 @@ export async function POST(request: NextRequest) {
     }
 
     const data: AuthTokens = await response.json();
+    console.log('Login successful, setting cookies');
 
-    // Configuration des cookies
-    const cookieStore = await cookies();
+    // Création de la réponse
+    const res = NextResponse.json({ user: data.user });
 
-    // Cookie pour le token d'accès
-    cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, data.token, {
+    // Définition des cookies dans la réponse
+    res.cookies.set(COOKIE_NAMES.ACCESS_TOKEN, data.token, {
       ...COOKIE_OPTIONS,
       maxAge: 3600, // 1 heure
     });
+    console.log('Access token cookie set');
 
-    // Cookie pour le token de rafraîchissement
-    cookieStore.set(COOKIE_NAMES.REFRESH_TOKEN, data.refresh_token, {
+    res.cookies.set(COOKIE_NAMES.REFRESH_TOKEN, data.refresh_token, {
       ...COOKIE_OPTIONS,
       maxAge: 604800, // 7 jours
     });
+    console.log('Refresh token cookie set');
 
-    // Retourne les informations de l'utilisateur (sans les tokens)
-    return NextResponse.json({ user: data.user });
+    return res;
   } catch (error) {
     console.error('Erreur lors de la connexion:', error);
     return NextResponse.json(

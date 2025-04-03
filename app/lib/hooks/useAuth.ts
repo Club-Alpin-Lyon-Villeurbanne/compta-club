@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from '../axios';
-import useAuthStore from '@/app/store/useAuthStore';
+import useAuthStore from '@/app/store/authStore';
 
 interface LoginCredentials {
   email: string;
@@ -12,17 +11,28 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { setToken, logout, isAuthenticated } = useAuthStore();
+  const { setUser, logout, isAuthenticated } = useAuthStore();
 
   const login = async (credentials: LoginCredentials) => {
     try {
       setIsLoading(true);
       setError(null);
       
-      const response = await axios.post('/auth', credentials);
-      const { token } = response.data;
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+        credentials: 'include',
+      });
       
-      setToken(token);
+      if (!response.ok) {
+        throw new Error('Identifiants invalides');
+      }
+      
+      const data = await response.json();
+      setUser(data.user);
       router.push('/note-de-frais');
     } catch (err) {
       setError('Identifiants invalides');
@@ -32,9 +42,25 @@ export const useAuth = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      // Appeler l'endpoint de déconnexion pour supprimer les cookies
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      // Mettre à jour l'état local
+      logout();
+      
+      // Rediriger vers la page d'accueil
+      router.push('/');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      // Même en cas d'erreur, on met à jour l'état local et on redirige
+      logout();
+      router.push('/');
+    }
   };
 
   return {

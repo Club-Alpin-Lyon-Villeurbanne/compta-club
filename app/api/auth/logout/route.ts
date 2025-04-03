@@ -4,12 +4,12 @@ import { COOKIE_NAMES, COOKIE_OPTIONS } from '@/app/lib/auth/types';
 
 export async function POST() {
   try {
-    // Création de la réponse
     const res = NextResponse.json({ success: true });
 
-    // Suppression des cookies
-    cookies().delete(COOKIE_NAMES.ACCESS_TOKEN);
-    cookies().delete(COOKIE_NAMES.REFRESH_TOKEN);
+    console.log('Deleting cookies');
+    const cookieStore = await cookies();
+    cookieStore.delete(COOKIE_NAMES.ACCESS_TOKEN);
+    cookieStore.delete(COOKIE_NAMES.REFRESH_TOKEN);
 
     return res;
   } catch (error) {

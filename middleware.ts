@@ -4,29 +4,31 @@ import { COOKIE_NAMES } from './app/lib/auth/types';
 
 // Liste des routes publiques
 const publicRoutes = [
-  '/login', 
+  '/', 
+  '/a-propos',
+  '/aide',
   '/api/auth/login', 
   '/api/auth/refresh',
-  '/api/expense-reports'
+  '/api/auth/logout'
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
+  
   // Vérifier si la route est publique
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  if (publicRoutes.some(route => pathname === route || pathname.startsWith('/_next'))) {
     return NextResponse.next();
   }
-
+  
   // Vérifier si l'utilisateur est authentifié
   const accessToken = request.cookies.get(COOKIE_NAMES.ACCESS_TOKEN);
-
+  
   if (!accessToken) {
-    // Rediriger vers la page de login
-    const url = new URL('/login', request.url);
-    return NextResponse.redirect(url);
+    // Rediriger vers la page de connexion si non authentifié
+    const loginUrl = new URL('/', request.url);
+    return NextResponse.redirect(loginUrl);
   }
-
+  
   return NextResponse.next();
 }
 

@@ -17,10 +17,10 @@ export default function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
       <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
+        <h1 className="mb-8 text-3xl font-bold text-center text-gray-900">
           Bienvenue sur Compta-Club
         </h1>
-        <p className="text-center text-gray-600 mb-8">
+        <p className="mb-8 text-center text-gray-600">
           La gestion simplifiée des notes de frais pour le Club Alpin de Lyon
         </p>
         <LoginForm />
