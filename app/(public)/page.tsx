@@ -1,31 +1,18 @@
 'use client';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { FaSpinner } from 'react-icons/fa';
 import LoginForm from '../components/LoginForm';
+import useAuthStore from '@/app/store/useAuthStore';
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (session?.accessToken) {
+    if (isAuthenticated) {
       router.push('/note-de-frais');
     }
-  }, [session, router]);
-
-  if (status === 'loading') {
-    return (
-      <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
-        <FaSpinner className="animate-spin text-blue-500 text-4xl" />
-      </div>
-    );
-  }
-
-  if (session) {
-    return null; // Render nothing while redirecting
-  }
+  }, [isAuthenticated, router]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">

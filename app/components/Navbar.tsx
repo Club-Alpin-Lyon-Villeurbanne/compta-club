@@ -2,28 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { FaQuestionCircle, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
-import { signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-
-function LogoutButton() {
-    return (
-        <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="flex items-center px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700"
-        >
-            <FaSignOutAlt className="mr-2" />
-            Déconnexion
-        </button>
-    );
-}
+import { useAuth } from '@/app/lib/hooks/useAuth';
+import useAuthStore from '@/app/store/useAuthStore';
 
 export default function Navbar() {
-    const { data: session } = useSession();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
+    const { logout } = useAuth();
+    const { isAuthenticated } = useAuthStore();
 
     const isActive = (path: string) => pathname === path;
 
@@ -64,18 +53,20 @@ export default function Navbar() {
                                 Accueil
                             </Link>
                         </li>
-                        <li>
-                            <Link 
-                                href="/note-de-frais" 
-                                className={`block py-2 px-3 ${
-                                    pathname.startsWith('/note-de-frais') 
-                                        ? 'text-indigo-600' 
-                                        : 'text-gray-600 hover:text-indigo-600'
-                                }`}
-                            >
-                                Notes de frais
-                            </Link>
-                        </li>
+                        {isAuthenticated && (
+                            <li>
+                                <Link 
+                                    href="/note-de-frais" 
+                                    className={`block py-2 px-3 ${
+                                        pathname.startsWith('/note-de-frais') 
+                                            ? 'text-indigo-600' 
+                                            : 'text-gray-600 hover:text-indigo-600'
+                                    }`}
+                                >
+                                    Notes de frais
+                                </Link>
+                            </li>
+                        )}
                         <li>
                             <Link 
                                 href="/a-propos" 
@@ -102,9 +93,15 @@ export default function Navbar() {
                                 Aide
                             </Link>
                         </li>
-                        {session?.user && (
+                        {isAuthenticated && (
                             <li>
-                                <LogoutButton />
+                                <button
+                                    onClick={logout}
+                                    className="flex items-center px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700"
+                                >
+                                    <FaSignOutAlt className="mr-2" />
+                                    Déconnexion
+                                </button>
                             </li>
                         )}
                     </ul>

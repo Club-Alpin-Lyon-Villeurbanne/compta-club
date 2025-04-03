@@ -5,7 +5,7 @@ import { ModalComment } from '@/app/components/ModalComment';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
-export const useExpenseActions = (fetchData: () => Promise<void>, session: any, params: { slug: string }) => {
+export const useExpenseActions = (fetchData: () => Promise<void>, params: { slug: string }) => {
     const [error, setError] = useState<string | null>(null);
     const MySwal = withReactContent(Swal);
 
@@ -21,7 +21,7 @@ export const useExpenseActions = (fetchData: () => Promise<void>, session: any, 
                     },
                 }
             );
-            if (response.status === 200 && session) {
+            if (response.status === 200) {
                 await fetchData();
                 setError(null);
                 return true;

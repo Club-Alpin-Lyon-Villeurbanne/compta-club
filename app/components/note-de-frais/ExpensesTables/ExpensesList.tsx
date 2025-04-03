@@ -10,19 +10,17 @@ import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";
 interface ExpensesListProps {
     expenseReports: ExpenseReport[];
     fetchData: () => Promise<void>;
-    session: any; // Replace 'any' with the actual session type
     params: { slug: string };
 }
 
 export const ExpensesList: React.FC<ExpensesListProps> = ({ 
     expenseReports: initialExpenseReports, 
     fetchData, 
-    session, 
     params 
 }) => {
     const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
     const [expandedRows, setExpandedRows] = useState(new Set<number>());
-    const { handleAction: originalHandleAction, error } = useExpenseActions(fetchData, session, params);
+    const { handleAction: originalHandleAction, error } = useExpenseActions(fetchData, params);
 
     const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => {
         try {

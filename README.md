@@ -39,8 +39,6 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
 3. Configurez les variables d'environnement en créant un fichier `.env` à la racine du projet avec les valeurs suivantes :
    ```env
    NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000/api
-   NEXTAUTH_URL=http://localhost:3000
-   NEXTAUTH_SECRET=topsecret
    NEXT_PUBLIC_WEBSITE_BASE_URL=https://www.clubalpinlyon.top
    ```
 
