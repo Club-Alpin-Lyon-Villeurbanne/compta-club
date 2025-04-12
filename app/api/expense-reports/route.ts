@@ -1,55 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { COOKIE_NAMES } from '@/app/lib/auth/types';
-import { get } from '@/app/lib/fetchServer';
-
-async function refreshToken() {
-  const cookieStore = await cookies();
-  const refreshToken = cookieStore.get(COOKIE_NAMES.REFRESH_TOKEN)?.value;
-
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to refresh token');
-  }
-
-  const data = await response.json();
-  
-  // Mettre à jour les cookies avec les nouveaux tokens
-  cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, data.access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 3600, // 1 heure
-  });
-
-  cookieStore.set(COOKIE_NAMES.REFRESH_TOKEN, data.refresh_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 604800, // 7 jours
-  });
-
-  return data.access_token;
-}
 
 export async function GET(request: NextRequest) {
   try {
-    // Récupérer les notes de frais depuis l'API Symfony
-    const expenseReports = await get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports`);
+    // Récupérer les cookies
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+
+    console.log('Token d\'accès:', accessToken ? 'présent' : 'absent');
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: 'Non authentifié' },
+        { status: 401 }
+      );
+    }
+
+    // Récupérer les paramètres de requête
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const commission = searchParams.get('commission');
+    const page = searchParams.get('page') || '1';
+    const limit = searchParams.get('limit') || '10';
+
+    // Construire l'URL de l'API avec les paramètres
+    let apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/expense-reports?page=${page}&limit=${limit}`;
     
+    if (status) {
+      apiUrl += `&status=${status}`;
+    }
+    
+    if (commission) {
+      apiUrl += `&commission=${commission}`;
+    }
+
+    console.log('URL de l\'API:', apiUrl);
+
+    // Récupérer les notes de frais depuis l'API Symfony
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Auth-Token': accessToken,
+      },
+      cache: 'no-store',
+    });
+
+    console.log('Réponse de l\'API Symfony:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Erreur de l\'API Symfony:', errorData);
+      return NextResponse.json(
+        { error: errorData.error || `Erreur ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const expenseReports = await response.json();
+    console.log('Données de l\'API Symfony:', { count: expenseReports.length || 0 });
     return NextResponse.json(expenseReports);
   } catch (error) {
     console.error('Erreur lors de la récupération des notes de frais:', error);

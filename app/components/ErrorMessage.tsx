@@ -4,10 +4,25 @@ import { FaExclamationTriangle, FaHome } from 'react-icons/fa';
 
 interface ErrorMessageProps {
   message: string;
+  variant?: 'alert' | 'page';
+  showHomeButton?: boolean;
 }
 
-const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
+export default function ErrorMessage({ 
+  message, 
+  variant = 'alert',
+  showHomeButton = true 
+}: ErrorMessageProps) {
   const router = useRouter();
+
+  if (variant === 'alert') {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <strong className="font-bold">Error: </strong>
+        <span className="block sm:inline">{message}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="container px-4 py-8 mx-auto">
@@ -19,18 +34,18 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
           Oups ! Une erreur est survenue
         </h2>
         <p className="mb-6 text-center text-gray-600">{message}</p>
-        <div className="flex justify-center">
-          <button
-            onClick={() => router.push('/')}
-            className="flex items-center px-4 py-2 font-bold text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-          >
-            <FaHome className="mr-2" />
-            Retour à l'accueil
-          </button>
-        </div>
+        {showHomeButton && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center px-4 py-2 font-bold text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            >
+              <FaHome className="mr-2" />
+              Retour à l'accueil
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default ErrorMessage;
+}

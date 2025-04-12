@@ -2,15 +2,10 @@ import { useRouter } from 'next/navigation';
 import { patch } from '../fetchClient';
 import Swal from 'sweetalert2';
 
-interface ExpenseReport {
-  slug: string;
-  status: string;
-}
-
-export function useExpenseActions() {
+export function useExpenseActions(fetchData: () => Promise<void>) {
   const router = useRouter();
 
-  const handleAction = async (expense: ExpenseReport, action: 'approved' | 'rejected' | 'accounted') => {
+  const handleAction = async (reportId: number, action: 'approved' | 'rejected' | 'accounted') => {
     try {
       if (action === 'approved') {
         const result = await Swal.fire({
@@ -23,7 +18,7 @@ export function useExpenseActions() {
         });
 
         if (!result.isConfirmed) {
-          return;
+          return false;
         }
       }
 
@@ -44,10 +39,10 @@ export function useExpenseActions() {
         });
 
         if (!comment) {
-          return;
+          return false;
         }
 
-        await patch(`/api/expense-reports/${expense.slug}`, {
+        await patch(`/api/expense-reports/${reportId}`, {
           status: 'rejected',
           comment,
         });
@@ -64,15 +59,16 @@ export function useExpenseActions() {
         });
 
         if (!result.isConfirmed) {
-          return;
+          return false;
         }
       }
 
-      await patch(`/api/expense-reports/${expense.slug}`, {
+      await patch(`/api/expense-reports/${reportId}`, {
         status: action,
       });
 
-      router.refresh();
+      await fetchData();
+      return true;
     } catch (error) {
       console.error('Erreur lors de l\'action sur la note de frais:', error);
       Swal.fire({
@@ -80,6 +76,7 @@ export function useExpenseActions() {
         text: 'Une erreur est survenue lors de l\'action sur la note de frais.',
         icon: 'error',
       });
+      return false;
     }
   };
 

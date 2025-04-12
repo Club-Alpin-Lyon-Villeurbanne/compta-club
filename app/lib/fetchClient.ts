@@ -33,15 +33,6 @@ export async function fetchClient<T = any>(
       credentials: 'include', // Inclure les cookies dans la requête
     });
 
-    // Gérer les erreurs d'authentification
-    if (response.status === 401) {
-      // Rediriger vers la page de connexion
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      }
-      throw new Error('Non authentifié');
-    }
-
     // Vérifier si la réponse est OK
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

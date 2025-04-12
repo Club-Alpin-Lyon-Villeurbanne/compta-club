@@ -1,21 +1,22 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { COOKIE_NAMES, COOKIE_OPTIONS } from '@/app/lib/auth/types';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const res = NextResponse.json({ success: true });
+    // Créer une réponse de succès
+    const response = NextResponse.json(
+      { message: 'Déconnexion réussie' },
+      { status: 200 }
+    );
 
-    console.log('Deleting cookies');
-    const cookieStore = await cookies();
-    cookieStore.delete(COOKIE_NAMES.ACCESS_TOKEN);
-    cookieStore.delete(COOKIE_NAMES.REFRESH_TOKEN);
+    // Supprimer les cookies d'authentification
+    response.cookies.delete('access_token');
+    response.cookies.delete('refresh_token');
 
-    return res;
+    return response;
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error('Erreur lors de la déconnexion:', error);
     return NextResponse.json(
-      { error: 'Une erreur est survenue' },
+      { error: 'Erreur lors de la déconnexion' },
       { status: 500 }
     );
   }

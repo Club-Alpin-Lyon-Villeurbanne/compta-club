@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { patch, get } from '@/app/lib/fetchServer';
+import { get, patch } from '@/app/lib/fetchServer';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const expenseReport = await get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${params.slug}`);
+    // Attendre les paramètres avant de les utiliser
+    const { slug } = await context.params;
+    
+    // Récupérer les notes de frais depuis l'API Symfony
+    const expenseReport = await get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${slug}`);
+    
     return NextResponse.json(expenseReport);
   } catch (error) {
     console.error('Erreur lors de la récupération de la note de frais:', error);
@@ -20,15 +24,19 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    // Attendre les paramètres avant de les utiliser
+    const { slug } = await context.params;
+    
     const body = await request.json();
     const { status, comment } = body;
 
-    const expenseReport = await patch(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${params.slug}`, {
+    // Mettre à jour la note de frais
+    const expenseReport = await patch(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports/${slug}`, {
       status,
-      ...(comment && { comment }),
+      comment,
     });
 
     return NextResponse.json(expenseReport);

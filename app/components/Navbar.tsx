@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FaUser, FaSignOutAlt, FaQuestionCircle, FaInfoCircle } from 'react-icons/fa';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 export default function Navbar() {
@@ -11,25 +10,16 @@ export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est authentifié au chargement du composant
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/check', {
-          credentials: 'include',
-        });
-        
-        if (response.ok) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error('Erreur lors de la vérification de l\'authentification:', error);
-        setIsAuthenticated(false);
-      }
+    // Écouter l'événement de changement d'état d'authentification
+    const handleAuthStateChange = (event: CustomEvent) => {
+      setIsAuthenticated(event.detail.isAuthenticated);
     };
 
-    checkAuth();
+    window.addEventListener('authStateChanged', handleAuthStateChange as EventListener);
+
+    return () => {
+      window.removeEventListener('authStateChanged', handleAuthStateChange as EventListener);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -52,15 +42,8 @@ export default function Navbar() {
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
-            <div className="flex items-center flex-shrink-0">
+            <div className="flex items-center">
               <Link href="/" className="flex items-center">
-                <Image
-                  src="/logo.png"
-                  alt="Logo Club Alpin de Lyon"
-                  width={40}
-                  height={40}
-                  className="mr-2"
-                />
                 <span className="text-xl font-bold text-indigo-600">
                   Club Alpin de Lyon
                 </span>
