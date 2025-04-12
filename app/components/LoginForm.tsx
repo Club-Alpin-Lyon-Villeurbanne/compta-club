@@ -27,7 +27,14 @@ export default function LoginForm() {
       });
       
       if (!response.ok) {
-        setError('Identifiants invalides');
+        // Vérifier si c'est une erreur d'authentification ou une erreur serveur
+        if (response.status === 401) {
+          setError('Identifiants invalides');
+        } else if (response.status >= 500) {
+          setError('Le serveur est temporairement indisponible. Veuillez réessayer plus tard.');
+        } else {
+          setError('Une erreur est survenue. Veuillez réessayer.');
+        }
         return;
       }
       
@@ -38,7 +45,12 @@ export default function LoginForm() {
       // Redirection vers la page des notes de frais après connexion réussie
       router.push('/note-de-frais');
     } catch (err) {
-      setError('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
+      // Détecter les erreurs de réseau ou d'API indisponible
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('Impossible de se connecter au serveur. Veuillez vérifier votre connexion internet ou réessayer plus tard.');
+      } else {
+        setError('Une erreur inattendue est survenue. Veuillez réessayer.');
+      }
       console.error('Erreur de connexion:', err);
     } finally {
       setIsLoading(false);
