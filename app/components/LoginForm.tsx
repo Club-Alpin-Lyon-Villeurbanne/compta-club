@@ -27,7 +27,8 @@ export default function LoginForm() {
       });
       
       if (!response.ok) {
-        throw new Error('Identifiants invalides');
+        setError('Identifiants invalides');
+        return;
       }
       
       // Mettre à jour l'état d'authentification dans le Navbar
@@ -37,7 +38,7 @@ export default function LoginForm() {
       // Redirection vers la page des notes de frais après connexion réussie
       router.push('/note-de-frais');
     } catch (err) {
-      setError('Identifiants invalides');
+      setError('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
       console.error('Erreur de connexion:', err);
     } finally {
       setIsLoading(false);
