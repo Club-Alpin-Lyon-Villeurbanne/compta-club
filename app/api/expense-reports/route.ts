@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { COOKIE_NAMES } from '../../lib/constants';
 
 export async function GET(request: NextRequest) {
   try {
-    // Récupérer les cookies
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('access_token')?.value;
-
-    console.log('Token d\'accès:', accessToken ? 'présent' : 'absent');
+    const accessToken = cookieStore.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
 
     if (!accessToken) {
       return NextResponse.json(
@@ -16,36 +14,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Récupérer les paramètres de requête
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const commission = searchParams.get('commission');
-    const page = searchParams.get('page') || '1';
-    const limit = searchParams.get('limit') || '10';
-
-    // Construire l'URL de l'API avec les paramètres
-    let apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/expense-reports?page=${page}&limit=${limit}`;
-    
-    if (status) {
-      apiUrl += `&status=${status}`;
-    }
-    
-    if (commission) {
-      apiUrl += `&commission=${commission}`;
-    }
-
-    console.log('URL de l\'API:', apiUrl);
-
-    // Récupérer les notes de frais depuis l'API Symfony
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'X-Auth-Token': accessToken,
       },
       cache: 'no-store',
     });
 
-    console.log('Réponse de l\'API Symfony:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

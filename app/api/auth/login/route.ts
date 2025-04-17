@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { COOKIE_NAMES } from '../../../lib/constants';
 
 // Options pour les cookies
 const COOKIE_OPTIONS = {
@@ -55,9 +56,10 @@ export async function POST(request: NextRequest) {
     );
 
     // Définir les cookies
-    res.cookies.set('access_token', token, COOKIE_OPTIONS);
-    res.cookies.set('refresh_token', refresh_token, COOKIE_OPTIONS);
+    res.cookies.set(COOKIE_NAMES.ACCESS_TOKEN, token, COOKIE_OPTIONS);
+    res.cookies.set(COOKIE_NAMES.REFRESH_TOKEN, refresh_token, COOKIE_OPTIONS);
 
+    // Retourner la réponse avec les cookies
     return res;
   } catch (error) {
     console.error('Erreur lors de la connexion:', error);

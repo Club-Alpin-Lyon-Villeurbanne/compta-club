@@ -38,6 +38,27 @@ curl -X POST https://www.clubalpinlyon.top/api/auth \
 }
 ```
 
+### Refresh Token
+
+Permet de rafraîchir un token JWT expiré en échangeant un refresh_token. Cet endpoint n'est pas encore implémenté.
+
+```bash
+curl -X POST https://www.clubalpinlyon.top/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "votre_refresh_token"
+  }'
+```
+
+#### Réponse attendue (200)
+
+```json
+{
+  "token": "nouveau_token_jwt",
+  "refresh_token": "nouveau_refresh_token"
+}
+```
+
 ### Utilisation des tokens
 
 Pour les requêtes authentifiées, incluez le token JWT dans le header `Authorization` :
@@ -60,19 +81,37 @@ curl -X GET https://www.clubalpinlyon.top/api/expense-reports \
 
 #### Réponse réussie (200)
 
+Retourne un tableau d'objets `ExpenseReport` contenant toutes les informations de chaque note de frais :
+
 ```json
-{
-  "hydra:member": [
-    {
-      "id": 1,
-      "title": "Titre de la note de frais",
-      "status": "draft",
-      "createdAt": "2024-03-15T10:00:00+00:00",
-      "updatedAt": "2024-03-15T10:00:00+00:00"
-    }
-  ],
-  "hydra:totalItems": 1
-}
+[
+  {
+    "id": 1,
+    "status": "submitted",
+    "refundRequired": true,
+    "user": { "id": 12, "firstname": "Jean", "lastname": "Dupont" },
+    "event": {
+      "id": 5,
+      "commission": { "id": 2, "name": "Escalade" },
+      "tsp": "2024-03-15T10:00:00+00:00",
+      "tspEnd": "2024-03-16T18:00:00+00:00",
+      "titre": "Stage escalade printemps",
+      "code": "ESC-2024-01",
+      "rdv": "Lyon",
+      "participationsCount": 10,
+      "status": 1,
+      "statusLegal": 1
+    },
+    "createdAt": "2024-03-17T14:23:00+00:00",
+    "statusComment": null,
+    "details": {
+      "transport": { "type": "train", "ticketPrice": 50 },
+      "accommodations": [],
+      "others": []
+    },
+    "attachments": []
+  }
+]
 ```
 
 ## Gestion des erreurs

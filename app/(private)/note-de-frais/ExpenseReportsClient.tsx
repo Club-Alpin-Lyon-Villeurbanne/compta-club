@@ -7,6 +7,7 @@ import ReportTable from "@/app/components/note-de-frais/ReportTable";
 import Pagination from "@/app/components/note-de-frais/Pagination";
 import useStore from "@/app/store/useStore";
 import ErrorMessage from "@/app/components/ErrorMessage";
+import { FaSpinner } from "react-icons/fa";
 
 const ExpenseReportsClient = () => {
   const router = useRouter();
@@ -14,38 +15,50 @@ const ExpenseReportsClient = () => {
   const expenseReports = useStore((state) => state.expenseReports);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setError(null);
+        setLoading(true);
+        
+        // Récupérer les notes de frais
         const response = await fetch('/api/expense-reports', {
           credentials: 'include',
         });
         
-        if (response.status === 401) {
-          // Si non authentifié, rediriger vers la page de connexion
-          router.push('/');
-          return;
-        }
-        
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Erreur lors de la récupération des notes de frais');
+          
+          // Vérifier si l'erreur est liée à l'authentification (401 ou 403)
+          if (response.status === 401 || response.status === 403) {
+            // Éviter la boucle infinie en vérifiant si nous sommes déjà en train de rediriger
+            if (!isRedirecting) {
+              setIsRedirecting(true);
+              // Rediriger vers la page d'accueil pour se reconnecter
+              router.push('/');
+            }
+            return;
+          }
+          
+          // Pour les autres erreurs, afficher un message d'erreur
+          setError(errorData.error || 'Erreur lors de la récupération des notes de frais');
+          return;
         }
         
         const data = await response.json();
         setExpenseReports(data);
       } catch (error) {
         console.error('Error:', error);
-        setError(error instanceof Error ? error.message : 'Erreur lors de la récupération des notes de frais');
+        setError('Une erreur est survenue lors de la récupération des données. Veuillez réessayer plus tard.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [setExpenseReports, router]);
+  }, [setExpenseReports, router, isRedirecting]);
 
   if (error) {
     return <ErrorMessage message={error} />;
@@ -62,8 +75,16 @@ const ExpenseReportsClient = () => {
           </div>
           <Filters />
           <div className="relative">
-            <ReportTable reports={expenseReports} isLoading={loading} />
-            <Pagination />
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <FaSpinner className="w-8 h-8 text-indigo-600 animate-spin" />
+              </div>
+            ) : (
+              <>
+                <ReportTable reports={expenseReports} isLoading={loading} />
+                <Pagination />
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,7 @@
+import { redirect } from 'next/navigation';
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
+import { isAuthenticated as isAuthenticatedServer } from '../lib/auth.server';
 import '../globals.css'
 
 // Indiquer à Next.js que ce layout doit être rendu dynamiquement
@@ -15,6 +17,14 @@ interface Props {
 }
 
 export default async function PrivateLayout({ children }: Props) {
+  // Vérifier si l'utilisateur est authentifié
+  const authenticated = await isAuthenticatedServer();
+  
+  // Si l'utilisateur n'est pas authentifié, rediriger vers la page d'accueil
+  if (!authenticated) {
+    redirect('/');
+  }
+
   return (
     <div className="flex flex-col min-h-screen font-sans antialiased bg-gray-200">
       <Navbar />

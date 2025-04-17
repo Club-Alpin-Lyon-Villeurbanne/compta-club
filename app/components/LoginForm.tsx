@@ -38,9 +38,6 @@ export default function LoginForm() {
         return;
       }
       
-      // Mettre à jour l'état d'authentification dans le Navbar
-      const event = new CustomEvent('authStateChanged', { detail: { isAuthenticated: true } });
-      window.dispatchEvent(event);
       
       // Redirection vers la page des notes de frais après connexion réussie
       router.push('/note-de-frais');

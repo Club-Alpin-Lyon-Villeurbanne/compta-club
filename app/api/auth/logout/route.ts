@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { COOKIE_NAMES } from '../../../lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,8 +10,8 @@ export async function POST(request: NextRequest) {
     );
 
     // Supprimer les cookies d'authentification
-    response.cookies.delete('access_token');
-    response.cookies.delete('refresh_token');
+    response.cookies.delete(COOKIE_NAMES.ACCESS_TOKEN);
+    response.cookies.delete(COOKIE_NAMES.REFRESH_TOKEN);
 
     return response;
   } catch (error) {
