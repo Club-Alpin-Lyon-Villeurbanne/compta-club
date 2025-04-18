@@ -3,7 +3,9 @@
 Cette application est une interface utilisateur (UI) permettant aux membres du Club Alpin de Lyon de soumettre et de gérer leurs notes de frais. Elle facilite également la gestion comptable pour les bénévoles responsables.
 Les notes de frais sont soumises par les encadrants sur le site web du Club Alpin de Lyon.
 
-> ⚠️ **Note importante** : Cette application s'appuie sur [l'API du site web du Club Alpin de Lyon](https://www.clubalpinlyon.fr/api) pour récupérer les données et gérer l'authentification.
+> ⚠️ **Note importante** :
+> - Cette application s'appuie sur [l'API du site web du Club Alpin de Lyon](https://www.clubalpinlyon.fr/api) pour récupérer les données et gérer l'authentification.
+> - Pour plus de détails sur les endpoints et leur usage, consultez la [documentation de l'API](./API.md).
 
 ![Capture d'écran de l'application de comptabilité](./capture-compta-club.png)
 
@@ -36,12 +38,10 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
    pnpm install
    ```
 
-3. Configurez les variables d'environnement en créant un fichier `.env` à la racine du projet avec les valeurs suivantes :
+3. Configurez les variables d'environnement en créant un fichier `.env` à la racine du projet (ou copiez `.env.example` si fourni) et ajoutez les variables suivantes :
    ```env
    NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000/api
-   NEXTAUTH_URL=http://localhost:3000
-   NEXTAUTH_SECRET=topsecret
-   NEXT_PUBLIC_WEBSITE_BASE_URL=https://www.clubalpinlyon.top
+   NEXT_PUBLIC_WEBSITE_BASE_URL=http://localhost:3000
    ```
 
    > 💡 **Astuce :** Assurez-vous que l'API backend est opérationnelle à l'URL spécifiée dans `NEXT_PUBLIC_BACKEND_BASE_URL`.
@@ -90,24 +90,47 @@ Nous accueillons volontiers les contributions ! Voici comment vous pouvez aider 
 
 ## **🧪 Tests**
 
-Actuellement, aucun test n'est implémenté.
+### **Tests E2E avec Playwright**
+
+Les tests end-to-end sont implémentés avec Playwright. Pour exécuter les tests :
+
+1. Assurez-vous d'avoir un fichier `.env.test` à la racine du projet avec les identifiants de test :
+   ```env
+   VALID_EMAIL=votre-email@example.com
+   VALID_PASSWORD=votre-mot-de-passe
+   ```
+
+2. Lancez les tests avec la commande :
+   ```bash
+   pnpm test:e2e
+   ```
+
+3. Pour lancer les tests avec l'interface utilisateur de Playwright :
+   ```bash
+   pnpm test:e2e:ui
+   ```
+
+Les tests E2E vérifient le flux d'authentification et d'autres fonctionnalités principales de l'application.
 
 ## **🏗️ Architecture technique**
 
 ### **🛠️ Technologies utilisées**
-- **Frontend** : Next.js
-- **Authentification** : NextAuth
-- **Backend** : API du site web du Club Alpin de Lyon (non inclus dans ce projet)
+- **Frontend** : Next.js 13 (App Router)
+- **Authentification** : JSON Web Tokens (JWT) via cookies gérés par des routes API Next.js
+- **Backend** : API du site web du Club Alpin de Lyon (https://www.clubalpinlyon.fr/api)
 
 ### **📁 Structure du projet**
-- `/app` : Dossier principal contenant les routes et composants de l'application
-  - `/(public)` : Routes publiques (accueil, à propos, etc.)
-  - `/(protected)` : Routes protégées nécessitant une authentification
-  - `/api` : Routes API de l'application
-  - `/components` : Composants réutilisables
-  - `/lib` : Utilitaires, hooks et configurations
-  - `/types` : Types TypeScript partagés
-- `/public` : Assets statiques (images, fonts, etc.)
+- `/app` : Code source Next.js (App Router)
+  - `/(public)`  : Pages accessibles sans authentification (home, à propos, aide)
+  - `/(private)` : Pages protégées (gestion des notes de frais)
+  - `/api`     : Routes API internes (auth, expense-reports, expenses)
+  - `/components` : Composants spécifiques à l’application
+  - `/lib`      : Utilitaires partagés (fetchClient, fetchServer, auth, constants)
+  - `/store`    : Zustand store (état des filtres & pagination)
+  - `/enums`, `/interfaces` : Types TypeScript (ExpenseReport, User, etc.)
+- `/components/ui` : Composants UI réutilisables (tables, formulaires...)  
+- `/public`       : Assets statiques (images, favicon, etc.)
+- `/tests`        : Tests end-to-end Playwright
 
 ## **📬 Contact**
 

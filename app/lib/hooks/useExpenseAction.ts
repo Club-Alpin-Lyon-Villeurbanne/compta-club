@@ -1,87 +1,86 @@
-import { useState } from 'react';
-import ExpenseStatus from "@/app/enums/ExpenseStatus";
-import { axiosAuth } from '../axios';
-import { ModalComment } from '@/app/components/ModalComment';
+import { useRouter } from 'next/navigation';
+import { patch } from '../fetchClient';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
 
-export const useExpenseActions = (fetchData: () => Promise<void>, session: any, params: { slug: string }) => {
-    const [error, setError] = useState<string | null>(null);
-    const MySwal = withReactContent(Swal);
+export function useExpenseActions(fetchData: () => Promise<void>) {
+  const router = useRouter();
 
-    const patch = async (reportId: number, status: ExpenseStatus, comment: string = ''): Promise<boolean> => {
-        try {
-            const response = await axiosAuth(
-                `/expense-reports/${reportId}`,
-                {
-                    method: "patch",
-                    data: {
-                        status,
-                        statusComment: comment,
-                    },
-                }
-            );
-            if (response.status === 200 && session) {
-                await fetchData();
-                setError(null);
-                return true;
-            }
-            return false;
-        } catch (err) {
-            setError("Échec de la mise à jour du statut");
-            console.error("Erreur lors de la mise à jour du statut de la note de frais:", err);
-            return false;
+  const handleAction = async (reportId: number, action: 'approved' | 'rejected' | 'accounted') => {
+    try {
+      if (action === 'approved') {
+        const result = await Swal.fire({
+          title: 'Êtes-vous sûr ?',
+          text: 'Voulez-vous vraiment approuver cette note de frais ?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Oui, approuver',
+          cancelButtonText: 'Annuler',
+        });
+
+        if (!result.isConfirmed) {
+          return false;
         }
-    };
+      }
 
-    const handleAction = async (
-        reportId: number,
-        action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED
-    ): Promise<boolean> => {
-        try {
-            if (action === ExpenseStatus.APPROVED) {
-                const result = await MySwal.fire({
-                    title: 'Confirmer l\'approbation',
-                    text: "Voulez-vous vraiment approuver cette note de frais ?",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Oui, approuver',
-                    cancelButtonText: 'Annuler'
-                });
-
-                if (result.isConfirmed) {
-                    return await patch(reportId, action);
-                }
-            } else if (action === ExpenseStatus.ACCOUNTED) {
-                const result = await MySwal.fire({
-                    title: 'Confirmer la comptabilisation',
-                    text: "Voulez-vous vraiment marquer cette note de frais comme comptabilisée ?",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Oui, comptabiliser',
-                    cancelButtonText: 'Annuler'
-                });
-
-                if (result.isConfirmed) {
-                    return await patch(reportId, action);
-                }
-            } else {
-                const inputComment = await ModalComment(ExpenseStatus.REJECTED);
-                if (inputComment !== null) {
-                    return await patch(reportId, action, inputComment);
-                }
+      if (action === 'rejected') {
+        const { value: comment } = await Swal.fire({
+          title: 'Motif du rejet',
+          input: 'textarea',
+          inputLabel: 'Commentaire',
+          inputPlaceholder: 'Entrez votre commentaire...',
+          showCancelButton: true,
+          confirmButtonText: 'Rejeter',
+          cancelButtonText: 'Annuler',
+          inputValidator: (value: string) => {
+            if (!value) {
+              return 'Vous devez entrer un commentaire !';
             }
-            return false;
-        } catch (err) {
-            setError("Échec du traitement de l'action");
-            console.error("Erreur lors du traitement de l'action sur la note de frais:", err);
-            return false;
-        }
-    };
+          },
+        });
 
-    return { handleAction, error };
-};
+        if (!comment) {
+          return false;
+        }
+
+        await patch(`/api/expense-reports/${reportId}`, {
+          status: 'rejected',
+          comment,
+        });
+      }
+
+      if (action === 'accounted') {
+        const result = await Swal.fire({
+          title: 'Êtes-vous sûr ?',
+          text: 'Voulez-vous vraiment comptabiliser cette note de frais ?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Oui, comptabiliser',
+          cancelButtonText: 'Annuler',
+        });
+
+        if (!result.isConfirmed) {
+          return false;
+        }
+      }
+
+      await patch(`/api/expense-reports/${reportId}`, {
+        status: action,
+      });
+
+      await fetchData();
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de l\'action sur la note de frais:', error);
+      Swal.fire({
+        title: 'Erreur',
+        text: 'Une erreur est survenue lors de l\'action sur la note de frais.',
+        icon: 'error',
+      });
+      return false;
+    }
+  };
+
+  return {
+    handleAction,
+  };
+}

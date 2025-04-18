@@ -1,7 +1,6 @@
-// ExpensesList.tsx
 import React, { useState, useCallback } from "react";
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
-import { ErrorAlert } from "../../ErrorAlert";
+import ErrorMessage from "../../ErrorMessage";
 import { ExpenseRow } from "./ExpensesRow";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
@@ -10,71 +9,50 @@ import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";
 interface ExpensesListProps {
     expenseReports: ExpenseReport[];
     fetchData: () => Promise<void>;
-    session: any; // Replace 'any' with the actual session type
     params: { slug: string };
 }
 
-export const ExpensesList: React.FC<ExpensesListProps> = ({ 
-    expenseReports: initialExpenseReports, 
-    fetchData, 
-    session, 
-    params 
-}) => {
-    const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
-    const [expandedRows, setExpandedRows] = useState(new Set<number>());
-    const { handleAction: originalHandleAction, error } = useExpenseActions(fetchData, session, params);
+export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetchData, params }) => {
+    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+    const { handleAction } = useExpenseActions(fetchData);
 
-    const handleAction = useCallback(async (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => {
-        try {
-            const success = await originalHandleAction(reportId, action);
-            if (success) {
-                setExpenseReports(prevReports => 
-                    prevReports.map((report: ExpenseReport) => 
-                        report.id === reportId ? {...report, status: action} : report
-                    )
-                );
-            }
-        } catch (err) {
-            console.error("Failed to process action:", err);
+    const toggleRow = (reportId: number) => {
+        const newExpandedRows = new Set(expandedRows);
+        if (newExpandedRows.has(reportId)) {
+            newExpandedRows.delete(reportId);
+        } else {
+            newExpandedRows.add(reportId);
         }
-    }, [originalHandleAction]);
+        setExpandedRows(newExpandedRows);
+    };
 
-    const toggleRow = useCallback((id: number) => {
-        setExpandedRows(prevSet => {
-            const newSet = new Set(prevSet);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-            }
-            return newSet;
-        });
-    }, []);
+    if (!expenseReports || expenseReports.length === 0) {
+        return <ErrorMessage message="Aucune note de frais trouvée" variant="alert" />;
+    }
 
     return (
-        <div className="border rounded-md">
-            {error && <ErrorAlert message={error} />}
+        <div className="overflow-x-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="text-left">Note de frais</TableHead>
-                        <TableHead className="text-left">Demandeur</TableHead>
-                        <TableHead className="text-left">Date</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="text-center">Type</TableHead>
-                        <TableHead className="text-center">Statut</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
+                        <TableHead>Utilisateur</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Actions</TableHead>
                     </TableRow>
                 </TableHeader>
-                <tbody className="divide-y divide-gray-200">
-                    {expenseReports.map((report: ExpenseReport) => (
-                        <ExpenseRow
-                            key={report.id}
-                            report={report}
-                            isExpanded={expandedRows.has(report.id)}
-                            onToggle={() => toggleRow(report.id)}
-                            onAction={handleAction}
-                        />
+                <tbody>
+                    {expenseReports.map((report) => (
+                        <React.Fragment key={report.id}>
+                            <ExpenseRow
+                                report={report}
+                                isExpanded={expandedRows.has(report.id)}
+                                onToggle={() => toggleRow(report.id)}
+                                onAction={handleAction}
+                            />
+                        </React.Fragment>
                     ))}
                 </tbody>
             </Table>

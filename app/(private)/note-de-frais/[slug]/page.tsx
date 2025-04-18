@@ -1,9 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter, useParams } from "next/navigation";
-import useAxiosAuth from "@/app/lib/hooks/useAxiosAuth";
-
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { ExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
 import Header from "@/app/components/note-de-frais/header";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
@@ -14,12 +11,10 @@ import ExpensesList from "@/app/components/note-de-frais/ExpensesTables/Expenses
 const ExpenseReportContent = ({
   event,
   expenseReports,
-  session,
   fetchData,
 }: {
   event: Event;
   expenseReports: ExpenseReport[];
-  session: any;
   fetchData: () => Promise<void>;
 }) => (
   <main className="min-h-screen bg-gray-50">
@@ -33,7 +28,6 @@ const ExpenseReportContent = ({
         <ExpensesList
           expenseReports={expenseReports}
           fetchData={fetchData}
-          session={session}
           params={{ slug: event.id.toString() }}
         />
       </div>
@@ -42,25 +36,27 @@ const ExpenseReportContent = ({
 );
 
 export default function ExpenseReportPage() {
-  // Au lieu d'extraire `{ params: { slug } }` de la signature :
-  const { slug } = useParams();  
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const axiosAuth = useAxiosAuth();
+  const params = useParams();
+  const slug = params?.slug;
 
   const [event, setEvent] = useState<Event | null>(null);
   const [expenseReports, setExpenseReports] = useState<ExpenseReport[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchExpenseReports = async () => {
-    if (!session) return;
+  const fetchExpenseReports = useCallback(async () => {
+    if (!slug) return;
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await axiosAuth(`/expense-reports?event=${slug}`);
-      const reports = response.data;
+      const response = await fetch(`/api/expense-reports/${slug}`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des notes de frais');
+      }
+      const reports = await response.json();
 
       if (!reports || reports.length === 0) {
         setError("Aucune note de frais trouvée pour cet événement.");
@@ -82,21 +78,15 @@ export default function ExpenseReportPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
 
   useEffect(() => {
-    fetchExpenseReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, axiosAuth, slug]);
+    if (slug) {
+      fetchExpenseReports();
+    }
+  }, [slug, fetchExpenseReports]);
 
-  // Redirection si non authentifié, en client-side :
-  if (!session && status !== "loading") {
-    router.push("/");
-    return null; // ou un loader
-  }
-
-  // Rendu conditionnel
-  if (status === "loading" || isLoading) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
@@ -104,15 +94,14 @@ export default function ExpenseReportPage() {
     return <ErrorMessage message={error} />;
   }
 
-  if (!expenseReports || !event) {
-    return <ErrorMessage message="Aucun rapport de dépense trouvé" />;
+  if (!event || !expenseReports) {
+    return <ErrorMessage message="Aucune donnée disponible" />;
   }
 
   return (
     <ExpenseReportContent
       event={event}
       expenseReports={expenseReports}
-      session={session}
       fetchData={fetchExpenseReports}
     />
   );

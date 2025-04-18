@@ -28,7 +28,13 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
 
     const transportInfo = getTransportInfo(transport.type);
 
-    const ExpenseCard = ({ icon, title, amount, justificatif }) => (
+    interface ExpenseCardProps {
+        icon: React.ReactNode;
+        title: string;
+        amount: number | string;
+        justificatif?: string;
+    }
+    const ExpenseCard: React.FC<ExpenseCardProps> = ({ icon, title, amount, justificatif }) => (
         <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
             <div className="flex items-center mb-2">
                 {icon}
@@ -36,7 +42,7 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
             </div>
             <div className="flex items-center justify-between">
                 <span className="text-lg font-bold text-gray-900">{amount}€</span>
-                <Justificatif fileUrl={justificatif} />
+                <Justificatif fileUrl={justificatif ?? undefined} />
             </div>
         </div>
     );
@@ -108,7 +114,6 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
                                     : config.TAUX_KILOMETRIQUE_MINIBUS
                             )
                         ).toFixed(2)}
-                        justificatif={null}
                     />
                 )}
             </div>

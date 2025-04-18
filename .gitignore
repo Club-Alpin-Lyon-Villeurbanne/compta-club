@@ -7,6 +7,8 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
 
 # next.js
 /.next/
@@ -25,21 +27,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
-.env*.local
-
+# Environment variables
+# Ignore all .env files (containing secrets)
+.env*
+!.env.example
+ 
 # vercel
 .vercel
 
-# typescript
+# TypeScript
 *.tsbuildinfo
-next-env.d.ts
 
 
 .vscode/
+.idea/
+.eslintcache
 
-# local env files
-.env.local
-
+# (env files handled above)
 # Sentry Config File
 .env.sentry-build-plugin
