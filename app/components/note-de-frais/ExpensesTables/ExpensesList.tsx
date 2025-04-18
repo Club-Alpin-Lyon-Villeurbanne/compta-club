@@ -35,6 +35,7 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetc
             <Table>
                 <TableHeader>
                     <TableRow>
+                        <TableHead>Sortie</TableHead>
                         <TableHead>Utilisateur</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Montant</TableHead>

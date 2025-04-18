@@ -65,7 +65,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                     </div>
                 </td>
                 <td className="px-4 py-2 text-sm text-center whitespace-nowrap">
-                    <Badge status={report.status} />
+                    <Badge status={report.status} statusComment={report.statusComment} />
                 </td>
                 <td className="px-4 py-2 text-sm text-center whitespace-nowrap">
                     {hasDetails && (
