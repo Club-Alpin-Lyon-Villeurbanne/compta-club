@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    console.log('Tentative de connexion avec:', { email });
 
     // Appel à l'API Symfony pour l'authentification
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth`, {
@@ -25,7 +24,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('Réponse de l\'API Symfony:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -37,7 +35,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('Réponse complète de l\'API Symfony:', data);
     
     const { token, refresh_token } = data;
 

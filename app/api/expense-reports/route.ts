@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
     }
 
     const expenseReports = await response.json();
-    console.log('Données de l\'API Symfony:', { count: expenseReports.length || 0 });
     return NextResponse.json(expenseReports);
   } catch (error) {
     console.error('Erreur lors de la récupération des notes de frais:', error);

@@ -40,10 +40,10 @@ curl -X POST https://www.clubalpinlyon.top/api/auth \
 
 ### Refresh Token
 
-Permet de rafraîchir un token JWT expiré en échangeant un refresh_token. Cet endpoint n'est pas encore implémenté.
+Permet de rafraîchir un token JWT expiré en échangeant un refresh_token.
 
 ```bash
-curl -X POST https://www.clubalpinlyon.top/api/auth/refresh \
+curl -X POST https://www.clubalpinlyon.top/api/token/refresh \
   -H "Content-Type: application/json" \
   -d '{
     "refresh_token": "votre_refresh_token"
@@ -131,7 +131,7 @@ Les dates sont au format ISO 8601 : `YYYY-MM-DDTHH:mm:ss+00:00`
 ## Sécurité
 
 - Les tokens JWT expirent après 1 heure
-- Les refresh tokens sont valides plus longtemps
+- Les refresh tokens sont valides 5 jours (https://github.com/Club-Alpin-Lyon-Villeurbanne/caflyon/blob/173280da6f8296279165709f1ace69e2d74ca1aa/config/packages/gesdinet_jwt_refresh_token.yaml#L3)
 - Toutes les requêtes doivent être effectuées en HTTPS
 - Les tokens sont stockés dans des cookies httpOnly
 
