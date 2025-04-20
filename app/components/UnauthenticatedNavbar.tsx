@@ -1,4 +1,5 @@
-'use client';
+"use client";
+import Image from 'next/image';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,13 +9,14 @@ export default function UnauthenticatedNavbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-white shadow">
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex items-center flex-shrink-0">
-              <Link href="/" className="text-xl font-bold text-indigo-600">
-                Compta Club
+              <Link href="/" className="flex items-center">
+                <Image src="/images/logo.png" alt="Club Alpin Français" width={32} height={32} />
+                <span className="ml-2 text-xl font-bold text-indigo-600">Compta Club</span>
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

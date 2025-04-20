@@ -27,11 +27,29 @@ export async function fetchClient<T = any>(
       fullUrl = `${url}?${searchParams.toString()}`;
     }
 
-    // Effectuer la requête
-    const response = await fetch(fullUrl, {
+    // Effectuer la requête initiale
+    let response = await fetch(fullUrl, {
       ...options,
       credentials: 'include', // Inclure les cookies dans la requête
     });
+
+    // Si le token a expiré (401), tenter un rafraîchissement puis réessayer
+    if (response.status === 401) {
+      // Appeler le point de terminaison de vérification/rafraîchissement
+      const refreshRes = await fetch('/api/auth/check', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (!refreshRes.ok) {
+        const refreshError = await refreshRes.json().catch(() => ({}));
+        throw new Error(refreshError.error || 'Non authentifié');
+      }
+      // Réessayer la requête initiale avec le token rafraîchi
+      response = await fetch(fullUrl, {
+        ...options,
+        credentials: 'include',
+      });
+    }
 
     // Vérifier si la réponse est OK
     if (!response.ok) {

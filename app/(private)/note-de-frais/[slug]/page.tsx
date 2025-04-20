@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
 import Header from "@/app/components/note-de-frais/header";
+import { get } from "@/app/lib/fetchClient";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import EventInfo from "@/app/components/EventInfo";
@@ -52,11 +53,8 @@ export default function ExpenseReportPage() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/expense-reports/${slug}`);
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des notes de frais');
-      }
-      const reports = await response.json();
+      // Récupération des notes de frais avec gestion automatique du token
+      const reports = await get<ExpenseReport[]>(`/api/expense-reports/${slug}`);
 
       if (!reports || reports.length === 0) {
         setError("Aucune note de frais trouvée pour cet événement.");

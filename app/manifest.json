@@ -1,0 +1,16 @@
+{
+  "name": "Compta Club",
+  "short_name": "Compta Club",
+  "description": "Application de gestion des notes de frais pour le Club Alpin Français",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/favicon/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+} 
