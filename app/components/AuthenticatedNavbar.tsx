@@ -29,68 +29,66 @@ export default function AuthenticatedNavbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-10 bg-white border-b border-gray-200">
+    <nav className="sticky top-0 z-10 bg-white border-b border-gray-100">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
-          <div className="flex">
-            <div className="flex items-center flex-shrink-0">
-              <Link href="/note-de-frais" className="flex items-center space-x-3 group">
-                <div className="relative flex items-center justify-center w-12 h-12 transition-all duration-300 bg-white rounded-lg shadow-md group-hover:shadow-lg">
-                  <Image 
-                    src="/images/logo.png" 
-                    alt="Logo Club Alpin de Lyon" 
-                    width={48} 
-                    height={48}
-                    className="object-contain"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-bold text-gray-900">Compta Club</span>
-                  <span className="text-sm text-gray-500">Club Alpin de Lyon</span>
-                </div>
-              </Link>
-            </div>
-            <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
-              <Link
-                href="/note-de-frais"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/note-de-frais'
-                    ? 'border-blue-600 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
-              >
-                Notes de frais
-              </Link>
-
-              <Link
-                href="/aide"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/aide'
-                    ? 'border-blue-600 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
-              >
-                <FaQuestionCircle className="mr-1" />
-                Aide
-              </Link>
-
-              <Link
-                href="/a-propos"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/a-propos'
-                    ? 'border-blue-600 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
-              >
-                <FaInfoCircle className="mr-1" />
-                À propos
-              </Link>
-            </div>
+          <div className="flex items-center">
+            <Link href="/note-de-frais" className="flex items-center space-x-4 group">
+              <div className="relative flex items-center justify-center overflow-hidden transition-all duration-300 bg-white shadow-sm w-14 h-14 rounded-xl group-hover:shadow-md">
+                <Image 
+                  src="/images/logo.png" 
+                  alt="Logo Club Alpin de Lyon" 
+                  width={56} 
+                  height={56}
+                  className="object-contain p-1"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight text-gray-900">Compta Club</span>
+                <span className="text-sm font-medium text-gray-500">Club Alpin de Lyon</span>
+              </div>
+            </Link>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+
+          <div className="hidden sm:flex sm:items-center sm:space-x-1">
+            <Link
+              href="/note-de-frais"
+              className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                pathname === '/note-de-frais'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Notes de frais
+            </Link>
+
+            <Link
+              href="/aide"
+              className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                pathname === '/aide'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <FaQuestionCircle className="mr-2" />
+              Aide
+            </Link>
+
+            <Link
+              href="/a-propos"
+              className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                pathname === '/a-propos'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <FaInfoCircle className="mr-2" />
+              À propos
+            </Link>
+
             <button
               onClick={handleLogout}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium leading-4 text-white transition-colors duration-200 bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors duration-200 bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <FaSignOutAlt className="mr-2" />
               Déconnexion

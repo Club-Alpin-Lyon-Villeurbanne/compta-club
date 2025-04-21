@@ -10,12 +10,15 @@ export default async function Home() {
 
   // Sinon, afficher le formulaire de connexion
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 py-12 bg-gray-50 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-3xl font-extrabold text-center text-gray-900">
+    <div className="flex items-center justify-center h-full">
+      <div className="w-full max-w-sm p-8 bg-white shadow-sm rounded-xl">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-center text-gray-900">
             Connexion
           </h2>
+          <p className="mt-2 text-sm text-center text-gray-600">
+            Connectez-vous pour accéder à votre espace
+          </p>
         </div>
         <LoginForm />
       </div>
