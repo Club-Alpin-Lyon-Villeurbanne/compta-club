@@ -1,55 +1,57 @@
-'use client';
-
+"use client";
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaUser, FaQuestionCircle, FaInfoCircle } from 'react-icons/fa';
+import { FaQuestionCircle, FaInfoCircle } from 'react-icons/fa';
 
 export default function UnauthenticatedNavbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-white shadow">
+    <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex items-center flex-shrink-0">
-              <Link href="/" className="text-xl font-bold text-indigo-600">
-                Compta Club
-              </Link>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
-                href="/help"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/help'
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
-              >
-                <FaQuestionCircle className="mr-1" />
-                Aide
-              </Link>
-
-              <Link
-                href="/about"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/about'
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
-              >
-                <FaInfoCircle className="mr-1" />
-                À propos
-              </Link>
-            </div>
+        <div className="flex justify-between h-20">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center space-x-4 group">
+              <div className="relative flex items-center justify-center w-14 h-14 bg-white rounded-xl shadow-sm group-hover:shadow-md transition-all duration-300 overflow-hidden">
+                <Image 
+                  src="/images/logo.png" 
+                  alt="Logo Club Alpin de Lyon" 
+                  width={56} 
+                  height={56}
+                  className="object-contain p-1"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-gray-900 tracking-tight">Compta Club</span>
+                <span className="text-sm text-gray-500 font-medium">Club Alpin de Lyon</span>
+              </div>
+            </Link>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+
+          <div className="hidden sm:flex sm:items-center sm:space-x-1">
             <Link
-              href="/"
-              className="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              href="/help"
+              className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                pathname === '/help'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
             >
-              <FaUser className="mr-2" />
-              Connexion
+              <FaQuestionCircle className="mr-2" />
+              Aide
+            </Link>
+
+            <Link
+              href="/about"
+              className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                pathname === '/about'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <FaInfoCircle className="mr-2" />
+              À propos
             </Link>
           </div>
         </div>
