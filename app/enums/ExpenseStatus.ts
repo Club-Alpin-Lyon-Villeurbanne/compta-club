@@ -1,5 +1,4 @@
 export enum ExpenseStatus {
-  DRAFT = "draft",
   SUBMITTED = "submitted",
   REJECTED = "rejected",
   APPROVED = "approved",
@@ -8,8 +7,6 @@ export enum ExpenseStatus {
 
 export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
   switch (status) {
-    case ExpenseStatus.DRAFT:
-      return "Brouillon";
     case ExpenseStatus.SUBMITTED:
       return "Soumis";
     case ExpenseStatus.REJECTED:
@@ -25,8 +22,6 @@ export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
 
 export const getExpenseStatusColor = (status: ExpenseStatus): string => {
   switch (status) {
-    case ExpenseStatus.DRAFT:
-      return "gray";
     case ExpenseStatus.SUBMITTED:
       return "blue";
     case ExpenseStatus.REJECTED:
