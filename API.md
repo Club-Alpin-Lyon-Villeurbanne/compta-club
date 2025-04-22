@@ -114,6 +114,89 @@ Retourne un tableau d'objets `ExpenseReport` contenant toutes les informations d
 ]
 ```
 
+### Mise à jour du statut d'une note de frais
+
+Permet de mettre à jour le statut d'une note de frais spécifique (ex : approuver, rejeter, comptabiliser, etc.).
+
+#### Endpoint
+
+```http
+PATCH https://www.clubalpinlyon.top/api/expense-reports/{id}
+```
+
+- Remplacez `{id}` par l'identifiant de la note de frais à mettre à jour.
+- Le champ `status` peut prendre différentes valeurs selon la logique métier (ex : `approved`, `rejected`, `accounted`).
+- Pour le rejet (`rejected`), le champ `comment` est requis.
+
+#### Exemple : Approuver une note de frais
+
+```bash
+curl -X PATCH https://www.clubalpinlyon.top/api/expense-reports/1 \
+  -H "Authorization: Bearer votre_token_jwt" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "approved"
+  }'
+```
+
+#### Exemple : Rejeter une note de frais
+
+```bash
+curl -X PATCH https://www.clubalpinlyon.top/api/expense-reports/1 \
+  -H "Authorization: Bearer votre_token_jwt" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "rejected",
+    "comment": "Justificatif manquant"
+  }'
+```
+
+#### Body attendu
+
+- Pour approuver ou comptabiliser :
+
+```json
+{
+  "status": "approved"
+}
+```
+
+- Pour rejeter :
+
+```json
+{
+  "status": "rejected",
+  "comment": "Motif du rejet obligatoire"
+}
+```
+
+#### Réponse réussie (200)
+
+Retourne l'objet `ExpenseReport` mis à jour :
+
+```json
+{
+  "id": 1,
+  "status": "approved",
+  // ... autres champs comme dans la réponse de la liste
+}
+```
+
+#### Réponse d'erreur (400, 401, 403, 404)
+
+```json
+{
+  "error": "Statut ou commentaire invalide, ou accès non autorisé"
+}
+```
+
+#### Codes HTTP
+- 200 : Succès, note de frais mise à jour
+- 400 : Statut ou commentaire fourni invalide
+- 401 : Non authentifié
+- 403 : Non autorisé à modifier cette note de frais
+- 404 : Note de frais non trouvée
+
 ## Gestion des erreurs
 
 L'API utilise les codes HTTP standards :
