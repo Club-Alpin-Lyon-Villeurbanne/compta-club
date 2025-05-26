@@ -126,7 +126,7 @@ PATCH https://www.clubalpinlyon.top/api/expense-reports/{id}
 
 - Remplacez `{id}` par l'identifiant de la note de frais à mettre à jour.
 - Le champ `status` peut prendre différentes valeurs selon la logique métier (ex : `approved`, `rejected`, `accounted`).
-- Pour le rejet (`rejected`), le champ `comment` est requis.
+- Pour le rejet (`rejected`), le champ `statusComment` est requis.
 
 #### Exemple : Approuver une note de frais
 
@@ -147,7 +147,7 @@ curl -X PATCH https://www.clubalpinlyon.top/api/expense-reports/1 \
   -H "Content-Type: application/json" \
   -d '{
     "status": "rejected",
-    "comment": "Justificatif manquant"
+    "statusComment": "Justificatif manquant"
   }'
 ```
 
@@ -166,7 +166,7 @@ curl -X PATCH https://www.clubalpinlyon.top/api/expense-reports/1 \
 ```json
 {
   "status": "rejected",
-  "comment": "Motif du rejet obligatoire"
+  "statusComment": "Motif du rejet obligatoire"
 }
 ```
 

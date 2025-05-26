@@ -44,7 +44,7 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
 
         await patch(`/api/expense-reports/${reportId}`, {
           status: 'rejected',
-          comment,
+          statusComment: comment,
         });
       }
 
