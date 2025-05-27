@@ -44,7 +44,10 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
           return false;
         }
 
-        statusComment = comment;
+        await patch(`/api/expense-reports/${reportId}`, {
+          status: 'rejected',
+          statusComment: comment,
+        });
       }
 
       if (action === 'accounted') {
