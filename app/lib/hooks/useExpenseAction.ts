@@ -7,6 +7,8 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
 
   const handleAction = async (reportId: number, action: 'approved' | 'rejected' | 'accounted') => {
     try {
+      let statusComment: string | undefined;
+
       if (action === 'approved') {
         const result = await Swal.fire({
           title: 'Êtes-vous sûr ?',
@@ -42,10 +44,7 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
           return false;
         }
 
-        await patch(`/api/expense-reports/${reportId}`, {
-          status: 'rejected',
-          statusComment: comment,
-        });
+        statusComment = comment;
       }
 
       if (action === 'accounted') {
@@ -65,6 +64,7 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
 
       await patch(`/api/expense-reports/${reportId}`, {
         status: action,
+        ...(statusComment && { statusComment })
       });
 
       await fetchData();
