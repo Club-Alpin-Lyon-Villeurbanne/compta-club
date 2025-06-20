@@ -62,10 +62,11 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
           return false;
         }
       }
-
-      await patch(`/api/expense-reports/${reportId}`, {
-        status: action,
-      });
+      if (action !== 'rejected') {
+        await patch(`/api/expense-reports/${reportId}`, {
+          status: action,
+        });
+      }
 
       await fetchData();
       return true;

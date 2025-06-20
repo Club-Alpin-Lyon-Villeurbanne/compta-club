@@ -32,12 +32,14 @@ export async function PATCH(
     
     const body = await request.json();
     const { status, comment } = body;
+    console.log(body);
 
     // Mettre à jour la note de frais
     const expenseReport = await patch(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports/${slug}`, {
       status,
-      comment,
+      statusComment: comment,
     });
+    console.log(expenseReport);
 
     return NextResponse.json(expenseReport);
   } catch (error) {
