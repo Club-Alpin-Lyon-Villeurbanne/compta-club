@@ -15,6 +15,7 @@ Les notes de frais sont soumises par les encadrants sur le site web du Club Alpi
 - ✅ Validation des demandes de remboursement par les administrateurs.
 - 📜 Visualisation de l'historique des frais.
 - 🔔 Notifications pour les actions à effectuer.
+- 📄 Export PDF des notes de frais approuvées/comptabilisées.
 
 ## **🚀 Prérequis**
 
@@ -38,10 +39,17 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
    pnpm install
    ```
 
-3. Configurez les variables d'environnement en créant un fichier `.env` à la racine du projet (ou copiez `.env.example` si fourni) et ajoutez les variables suivantes :
+3. Configurez les variables d'environnement en créant un fichier `.env` à la racine du projet (copiez `.env.exemple`) et ajoutez les variables suivantes :
+   ```bash
+   cp .env.exemple .env.local
+   ```
+   
+   Puis modifiez `.env.local` selon vos besoins :
    ```env
    NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000/api
    NEXT_PUBLIC_WEBSITE_BASE_URL=http://localhost:3000
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api
+   NEXT_PUBLIC_CLUB_NAME="Nom de votre club"  # Optionnel, par défaut "CLUB ALPIN DE LYON"
    ```
 
    > 💡 **Astuce :** Assurez-vous que l'API backend est opérationnelle à l'URL spécifiée dans `NEXT_PUBLIC_BACKEND_BASE_URL`.
@@ -94,7 +102,7 @@ Nous accueillons volontiers les contributions ! Voici comment vous pouvez aider 
 
 Les tests end-to-end sont implémentés avec Playwright. Pour exécuter les tests :
 
-1. Assurez-vous d'avoir un fichier `.env.test` à la racine du projet avec les identifiants de test :
+1. Assurez-vous d'avoir un fichier `.env.test.local` à la racine du projet avec les identifiants de test :
    ```env
    VALID_EMAIL=votre-email@example.com
    VALID_PASSWORD=votre-mot-de-passe
@@ -115,19 +123,24 @@ Les tests E2E vérifient le flux d'authentification et d'autres fonctionnalités
 ## **🏗️ Architecture technique**
 
 ### **🛠️ Technologies utilisées**
-- **Frontend** : Next.js 13 (App Router)
-- **Authentification** : JSON Web Tokens (JWT) via cookies gérés par des routes API Next.js
+- **Frontend** : Next.js 15 (App Router)
+- **Authentification** : JSON Web Tokens (JWT) via cookies httpOnly gérés par des routes API Next.js
 - **Backend** : API du site web du Club Alpin de Lyon (https://www.clubalpinlyon.fr/api)
+- **State Management** : Zustand
+- **Styling** : Tailwind CSS + shadcn/ui
+- **PDF Generation** : jsPDF + jspdf-autotable
+- **Monitoring** : Sentry (production)
 
 ### **📁 Structure du projet**
 - `/app` : Code source Next.js (App Router)
   - `/(public)`  : Pages accessibles sans authentification (home, à propos, aide)
   - `/(private)` : Pages protégées (gestion des notes de frais)
-  - `/api`     : Routes API internes (auth, expense-reports, expenses)
-  - `/components` : Composants spécifiques à l’application
+  - `/api`     : Routes API internes (auth, expense-reports)
+  - `/components` : Composants spécifiques à l'application
   - `/lib`      : Utilitaires partagés (fetchClient, fetchServer, auth, constants)
   - `/store`    : Zustand store (état des filtres & pagination)
   - `/enums`, `/interfaces` : Types TypeScript (ExpenseReport, User, etc.)
+  - `/utils`    : Utilitaires (helper, pdfGenerator)
 - `/components/ui` : Composants UI réutilisables (tables, formulaires...)  
 - `/public`       : Assets statiques (images, favicon, etc.)
 - `/tests`        : Tests end-to-end Playwright
