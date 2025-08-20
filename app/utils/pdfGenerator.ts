@@ -38,24 +38,24 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   doc.setFontSize(10);
   
   const generalInfo = [
-    ['Demandeur:', `${report.user.firstname} ${report.user.lastname}`],
-    ['Événement:', report.event.titre],
-    ['Commission:', report.event.commission.name],
+    ['Demandeur:', `${report.user.firstname || ''} ${report.user.lastname || ''}`],
+    ['Événement:', report.event.titre || 'N/A'],
+    ['Commission:', report.event.commission?.name || 'N/A'],
     ['Code événement:', report.event.code || 'N/A'],
-    ['Date événement:', new Date(report.event.tsp).toLocaleDateString('fr-FR')],
-    ['Date fin événement:', new Date(report.event.tspEnd).toLocaleDateString('fr-FR')],
+    ['Date événement:', report.event.tsp ? new Date(report.event.tsp).toLocaleDateString('fr-FR') : 'N/A'],
+    ['Date fin événement:', report.event.tspEnd ? new Date(report.event.tspEnd).toLocaleDateString('fr-FR') : 'N/A'],
     ['Lieu de RDV:', report.event.rdv || 'N/A'],
     ['Participants:', report.event.participationsCount?.toString() || 'N/A'],
-    ['Date de soumission:', new Date(report.createdAt).toLocaleDateString('fr-FR')],
+    ['Date de soumission:', report.createdAt ? new Date(report.createdAt).toLocaleDateString('fr-FR') : 'N/A'],
     ['Type de demande:', report.refundRequired ? 'Remboursement' : 'Don au club'],
   ];
   
   let yPosition = 65;
   generalInfo.forEach(([label, value]) => {
     doc.setFont('helvetica', 'bold');
-    doc.text(label, 14, yPosition);
+    doc.text(String(label || ''), 14, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(value, 60, yPosition);
+    doc.text(String(value || ''), 60, yPosition);
     yPosition += 7;
   });
   
@@ -65,7 +65,7 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
     doc.setFont('helvetica', 'bold');
     doc.text('Motif du rejet:', 14, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(report.statusComment, 60, yPosition);
+    doc.text(String(report.statusComment || ''), 60, yPosition);
     yPosition += 10;
   }
   
@@ -197,7 +197,7 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   }
   
   // Nom du fichier
-  const fileName = `note-de-frais-${report.event.code || report.event.id}-${report.user.lastname}.pdf`;
+  const fileName = `note-de-frais-${report.event.code || report.event.id || 'document'}-${report.user.lastname || 'export'}.pdf`;
   
   // Téléchargement
   doc.save(fileName);
