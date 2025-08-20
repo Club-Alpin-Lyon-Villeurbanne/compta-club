@@ -4,8 +4,10 @@ import React, { useState } from "react";
 import Image from 'next/image';
 import { Badge } from './Badge';
 import { config } from '@/app/config';
-import { FaCalendarAlt, FaClipboardList, FaGift, FaMoneyBillWave, FaCopy } from 'react-icons/fa';
+import { FaCalendarAlt, FaClipboardList, FaGift, FaMoneyBillWave, FaCopy, FaFilePdf } from 'react-icons/fa';
 import { calculateTotals, formatEuro, truncateText } from '@/app/utils/helper';
+import { generateExpenseReportPDF } from '@/app/utils/pdfGenerator';
+import { ExpenseStatus } from '@/app/enums/ExpenseStatus';
 
 interface ReportRowProps {
     report: ExpenseReport;
@@ -27,6 +29,10 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
         navigator.clipboard.writeText(textToCopy);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleDownloadPDF = () => {
+        generateExpenseReportPDF(report);
     };
 
     return (
@@ -99,7 +105,18 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                 </p>
             </td>
             <td className="w-24 px-2 py-2 text-sm text-center bg-white border-b border-gray-200">
-                <Badge status={report.status} />
+                <div className="flex items-center justify-center gap-2">
+                    <Badge status={report.status} />
+                    {(report.status === ExpenseStatus.APPROVED || report.status === ExpenseStatus.ACCOUNTED) && (
+                        <button
+                            onClick={handleDownloadPDF}
+                            className="p-1.5 text-red-600 transition-colors rounded hover:bg-red-50"
+                            title="Télécharger en PDF"
+                        >
+                            <FaFilePdf className="text-lg" />
+                        </button>
+                    )}
+                </div>
             </td>
         </tr>
     );
