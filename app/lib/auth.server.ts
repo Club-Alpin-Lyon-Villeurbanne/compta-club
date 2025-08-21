@@ -14,9 +14,9 @@ export async function isAuthenticated(): Promise<boolean> {
       return false;
     }
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/expense-reports`;
-    // Vérifier la validité du token
+    // Vérifier la validité du token - Utiliser GET car HEAD retourne 500
     let response = await fetch(apiUrl, {
-      method: 'HEAD',
+      method: 'GET',
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: 'no-store',
     });

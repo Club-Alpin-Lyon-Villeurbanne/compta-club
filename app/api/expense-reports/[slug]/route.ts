@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { get, patch } from '@/app/lib/fetchServer';
+import { parseApiResponse } from '@/app/utils/apiParser';
 
 export async function GET(
   request: NextRequest,
@@ -10,14 +11,19 @@ export async function GET(
     const { slug } = await context.params;
     
     // Récupérer les notes de frais depuis l'API Symfony
-    const expenseReport = await get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${slug}`);
+    const data = await get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${slug}`);
+    const expenseReports = parseApiResponse(data);
     
-    return NextResponse.json(expenseReport);
-  } catch (error) {
+    return NextResponse.json(expenseReports);
+  } catch (error: any) {
     console.error('Erreur lors de la récupération de la note de frais:', error);
+    const status = error.status || 500;
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération de la note de frais' },
-      { status: 500 }
+      { 
+        error: error.message || 'Erreur lors de la récupération de la note de frais',
+        details: error.toString() 
+      },
+      { status }
     );
   }
 }
@@ -42,11 +48,15 @@ export async function PATCH(
     console.log(expenseReport);
 
     return NextResponse.json(expenseReport);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erreur lors de la mise à jour de la note de frais:', error);
+    const status = error.status || 500;
     return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour de la note de frais' },
-      { status: 500 }
+      { 
+        error: error.message || 'Erreur lors de la mise à jour de la note de frais',
+        details: error.toString() 
+      },
+      { status }
     );
   }
 } 

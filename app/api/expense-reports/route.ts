@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { COOKIE_NAMES } from '../../lib/constants';
+import { parseApiResponse, extractApiError } from '../../utils/apiParser';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports`, {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/expense-reports`;
+    console.log('Appel API vers:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -23,15 +27,29 @@ export async function GET(request: NextRequest) {
 
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Erreur de l\'API Symfony:', errorData);
+      const errorText = await response.text().catch(() => '');
+      console.error('Erreur de l\'API Symfony:', errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = errorText;
+      }
+      
       return NextResponse.json(
-        { error: errorData.error || `Erreur ${response.status}` },
+        { 
+          error: extractApiError(errorData, response.status),
+          details: errorData
+        },
         { status: response.status }
       );
     }
 
-    const expenseReports = await response.json();
+    const data = await response.json();
+    
+    const expenseReports = parseApiResponse(data);
+    
     return NextResponse.json(expenseReports);
   } catch (error) {
     console.error('Erreur lors de la récupération des notes de frais:', error);

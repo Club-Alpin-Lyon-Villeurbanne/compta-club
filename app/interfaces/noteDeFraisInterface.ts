@@ -21,7 +21,8 @@ export interface User {
 
 export interface Commission {
     id: number
-    name: string
+    title: string
+    code?: string
 }
 
 export interface Event {

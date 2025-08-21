@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Vérifier la validité du token en faisant une requête HEAD vers /expense-reports
+    // Vérifier la validité du token en faisant une requête GET vers /expense-reports
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/expense-reports`;
     
     const response = await fetch(apiUrl, {
-      method: 'HEAD',
+      method: 'GET', // Utiliser GET au lieu de HEAD car l'API retourne 500 avec HEAD
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },

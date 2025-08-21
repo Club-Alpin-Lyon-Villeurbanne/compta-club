@@ -61,16 +61,9 @@ export default function ExpenseReportPage() {
         return;
       }
 
-      const parsedReports = reports.map((report: ExpenseReport) => ({
-        ...report,
-        details:
-          typeof report.details === "string"
-            ? JSON.parse(report.details)
-            : report.details,
-      }));
-
-      setEvent(parsedReports[0].event);
-      setExpenseReports(parsedReports);
+      // Les détails sont déjà parsés dans l'API
+      setEvent(reports[0].event);
+      setExpenseReports(reports);
     } catch (err) {
       setError("Une erreur est survenue lors du chargement des données");
     } finally {
