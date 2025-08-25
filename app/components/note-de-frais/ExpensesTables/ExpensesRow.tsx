@@ -3,10 +3,11 @@ import React from "react";
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
-import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaMoneyBillWave, FaGift, FaFileInvoiceDollar } from "react-icons/fa";
+import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaMoneyBillWave, FaGift, FaFileInvoiceDollar, FaFilePdf } from "react-icons/fa";
 import dayjs from "dayjs";
 import { Badge } from "../Badge";
 import ExpensesTable from "./ExpensesTable";
+import { generateExpenseReportPDF } from '@/app/utils/pdfGenerator';
 
 interface ExpenseRowProps {
     report: ExpenseReport;
@@ -18,6 +19,10 @@ interface ExpenseRowProps {
 export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onToggle, onAction }) => {
     const hasDetails = report.details !== null;
 
+    const handleDownloadPDF = () => {
+        generateExpenseReportPDF(report);
+    };
+
     return (
         <>
             <tr className="transition-colors duration-200 hover:bg-gray-50">
@@ -26,7 +31,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                     onClick={onToggle}
                 >
                     <div className="flex items-center">
-                        {report.event.titre}
+                        {report.sortie.titre}
                         {hasDetails && (
                             isExpanded ? 
                                 <FaAngleUp className="ml-2 text-blue-500" /> : 
@@ -37,13 +42,13 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                 <td className="px-4 py-2 text-sm whitespace-nowrap">
                     <div className="flex items-center">
                         <FaUser className="mr-2 text-gray-400" />
-                        <span className="truncate max-w-[120px]">{report.user.firstname} {report.user.lastname}</span>
+                        <span className="truncate max-w-[120px]">{report.utilisateur.prenom} {report.utilisateur.nom}</span>
                     </div>
                 </td>
                 <td className="px-4 py-2 text-sm whitespace-nowrap">
                     <div className="flex items-center">
                         <FaCalendarAlt className="mr-2 text-gray-400" />
-                        {dayjs(report.event.tsp).format("DD/MM/YY")}
+                        {dayjs(report.sortie.dateDebut).format("DD/MM/YY")}
                     </div>
                 </td>
                 <td className="px-4 py-2 text-sm text-right whitespace-nowrap">
@@ -65,11 +70,21 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                     </div>
                 </td>
                 <td className="px-4 py-2 text-sm text-center whitespace-nowrap">
-                    <Badge status={report.status} statusComment={report.statusComment} />
+                    <Badge status={report.status} statusComment={report.commentaireStatut} />
                 </td>
                 <td className="px-4 py-2 text-sm text-center whitespace-nowrap">
                     {hasDetails && (
                         <div className="flex justify-center space-x-2">
+                            {/* Bouton PDF pour les notes approuvées ou comptabilisées */}
+                            {(report.status === ExpenseStatus.APPROVED || report.status === ExpenseStatus.ACCOUNTED) && (
+                                <button
+                                    onClick={handleDownloadPDF}
+                                    className="p-1.5 text-red-600 transition-colors rounded hover:bg-red-50"
+                                    title="Télécharger en PDF"
+                                >
+                                    <FaFilePdf className="w-4 h-4" />
+                                </button>
+                            )}
                             {(report.status === ExpenseStatus.SUBMITTED) && (
                                 <>
                                     <button 

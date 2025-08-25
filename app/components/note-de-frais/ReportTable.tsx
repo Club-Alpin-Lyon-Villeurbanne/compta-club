@@ -19,10 +19,10 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
 
     const reportFiltered = reports.filter((report) => {
         const matchesStatus = status === 'Toutes' || report.status === status;
-        const matchesSearchTerm = report.event.titre.toLowerCase().includes(searchTerm);
-        const matchesDate = !dateFilter || new Date(report.event.tsp).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
+        const matchesSearchTerm = report.sortie.titre.toLowerCase().includes(searchTerm);
+        const matchesDate = !dateFilter || new Date(report.sortie.dateDebut).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
         const matchesRequester = !requesterFilter || 
-            (report.user.firstname.toLowerCase() + " " + report.user.lastname.toLowerCase()).includes(requesterFilter);
+            (report.utilisateur.prenom.toLowerCase() + " " + report.utilisateur.nom.toLowerCase()).includes(requesterFilter);
         const matchesType = !typeFilter || 
             (typeFilter === 'don' && !report.refundRequired) || 
             (typeFilter === 'remboursement' && report.refundRequired);

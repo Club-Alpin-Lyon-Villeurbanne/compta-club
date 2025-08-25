@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.0",
-    "@sentry/nextjs": "^8.54.0",
+    "@sentry/nextjs": "^8.55.0",
     "@types/jspdf": "^2.0.0",
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",

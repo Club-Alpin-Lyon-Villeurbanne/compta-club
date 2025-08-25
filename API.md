@@ -64,7 +64,7 @@ curl -X POST https://www.clubalpinlyon.top/api/token/refresh \
 Pour les requêtes authentifiées, incluez le token JWT dans le header `Authorization` :
 
 ```bash
-curl -X GET https://www.clubalpinlyon.top/api/expense-reports \
+curl -X GET https://www.clubalpinlyon.top/api/notes-de-frais \
   -H "Authorization: Bearer votre_token_jwt"
 ```
 
@@ -75,43 +75,52 @@ curl -X GET https://www.clubalpinlyon.top/api/expense-reports \
 Récupère la liste des notes de frais de l'utilisateur connecté.
 
 ```bash
-curl -X GET https://www.clubalpinlyon.top/api/expense-reports \
+curl -X GET https://www.clubalpinlyon.top/api/notes-de-frais \
   -H "Authorization: Bearer votre_token_jwt"
 ```
 
 #### Réponse réussie (200)
 
-Retourne un tableau d'objets `ExpenseReport` contenant toutes les informations de chaque note de frais :
+**Note importante** : L'API retourne maintenant les données dans un format structuré avec pagination :
 
 ```json
-[
+{
+  "data": [
+    {
   {
     "id": 1,
     "status": "submitted",
     "refundRequired": true,
-    "user": { "id": 12, "firstname": "Jean", "lastname": "Dupont" },
-    "event": {
+    "utilisateur": { "id": 12, "prenom": "Jean", "nom": "Dupont" },
+    "sortie": {
       "id": 5,
       "commission": { "id": 2, "name": "Escalade" },
-      "tsp": "2024-03-15T10:00:00+00:00",
-      "tspEnd": "2024-03-16T18:00:00+00:00",
+      "dateDebut": "2024-03-15T10:00:00+00:00",
+      "dateFin": "2024-03-16T18:00:00+00:00",
       "titre": "Stage escalade printemps",
       "code": "ESC-2024-01",
-      "rdv": "Lyon",
+      "lieuRendezVous": "Lyon",
       "participationsCount": 10,
       "status": 1,
       "statusLegal": 1
     },
-    "createdAt": "2024-03-17T14:23:00+00:00",
-    "statusComment": null,
+    "dateCreation": "2024-03-17T14:23:00+00:00",
+    "commentaireStatut": null,
     "details": {
       "transport": { "type": "train", "ticketPrice": 50 },
       "accommodations": [],
       "others": []
     },
-    "attachments": []
+      "piecesJointes": []
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "perPage": 20,
+    "total": 10,
+    "pages": 1
   }
-]
+}
 ```
 
 ### Mise à jour du statut d'une note de frais
@@ -121,7 +130,7 @@ Permet de mettre à jour le statut d'une note de frais spécifique (ex : approuv
 #### Endpoint
 
 ```http
-PATCH https://www.clubalpinlyon.top/api/expense-reports/{id}
+PATCH https://www.clubalpinlyon.top/api/notes-de-frais/{id}
 ```
 
 - Remplacez `{id}` par l'identifiant de la note de frais à mettre à jour.
@@ -131,7 +140,7 @@ PATCH https://www.clubalpinlyon.top/api/expense-reports/{id}
 #### Exemple : Approuver une note de frais
 
 ```bash
-curl -X PATCH https://www.clubalpinlyon.top/api/expense-reports/1 \
+curl -X PATCH https://www.clubalpinlyon.top/api/notes-de-frais/1 \
   -H "Authorization: Bearer votre_token_jwt" \
   -H "Content-Type: application/json" \
   -d '{
@@ -142,12 +151,12 @@ curl -X PATCH https://www.clubalpinlyon.top/api/expense-reports/1 \
 #### Exemple : Rejeter une note de frais
 
 ```bash
-curl -X PATCH https://www.clubalpinlyon.top/api/expense-reports/1 \
+curl -X PATCH https://www.clubalpinlyon.top/api/notes-de-frais/1 \
   -H "Authorization: Bearer votre_token_jwt" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "rejected",
-    "statusComment": "Justificatif manquant"
+    "commentaireStatut": "Justificatif manquant"
   }'
 ```
 
