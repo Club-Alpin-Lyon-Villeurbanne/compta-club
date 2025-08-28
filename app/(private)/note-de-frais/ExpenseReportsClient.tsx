@@ -8,6 +8,7 @@ import Pagination from "@/app/components/note-de-frais/Pagination";
 import useStore from "@/app/store/useStore";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import { FaSpinner } from "react-icons/fa";
+import { get } from "@/app/lib/fetchClient";
 
 const ExpenseReportsClient = () => {
   const router = useRouter();
@@ -23,35 +24,31 @@ const ExpenseReportsClient = () => {
         setError(null);
         setLoading(true);
         
-        // Récupérer les notes de frais
-        const response = await fetch('/api/expense-reports', {
-          credentials: 'include',
-        });
+        // Récupérer les notes de frais avec gestion automatique du refresh token
+        const data = await get('/api/expense-reports');
         
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          
-          // Vérifier si l'erreur est liée à l'authentification (401 ou 403)
-          if (response.status === 401 || response.status === 403) {
-            // Éviter la boucle infinie en vérifiant si nous sommes déjà en train de rediriger
-            if (!isRedirecting) {
-              setIsRedirecting(true);
-              // Rediriger vers la page d'accueil pour se reconnecter
-              router.push('/');
-            }
-            return;
+        // Vérifier que les données sont bien un tableau
+        if (Array.isArray(data)) {
+          setExpenseReports(data);
+        } else {
+          console.error('Données reçues non valides:', data);
+          setError('Format de données invalide reçu du serveur');
+          setExpenseReports([]);
+        }
+      } catch (error: any) {
+        console.error('Error:', error);
+        
+        // Si l'erreur est liée à l'authentification après le refresh token
+        if (error.message?.includes('Non authentifié')) {
+          if (!isRedirecting) {
+            setIsRedirecting(true);
+            router.push('/');
           }
-          
-          // Pour les autres erreurs, afficher un message d'erreur
-          setError(errorData.error || 'Erreur lors de la récupération des notes de frais');
           return;
         }
         
-        const data = await response.json();
-        setExpenseReports(data);
-      } catch (error) {
-        console.error('Error:', error);
-        setError('Une erreur est survenue lors de la récupération des données. Veuillez réessayer plus tard.');
+        setError(error.message || 'Une erreur est survenue lors de la récupération des données.');
+        setExpenseReports([]);
       } finally {
         setLoading(false);
       }

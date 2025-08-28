@@ -15,7 +15,7 @@ export default function ExpensesTable({ report }: { report: ExpenseReport }) {
                     <FaCheck className="flex-shrink-0 mt-1 mr-3 text-green-500" />
                     <div>
                         <p className="font-semibold">Note de frais validée</p>
-                        <p className="mt-1 text-sm">{report.statusComment}</p>
+                        <p className="mt-1 text-sm">{report.commentaireStatut}</p>
                     </div>
                 </div>
             );
@@ -25,7 +25,7 @@ export default function ExpensesTable({ report }: { report: ExpenseReport }) {
                     <FaTimes className="flex-shrink-0 mt-1 mr-3 text-red-500" />
                     <div>
                         <p className="font-semibold">Note de frais refusée</p>
-                        <p className="mt-1 text-sm">{report.statusComment}</p>
+                        <p className="mt-1 text-sm">{report.commentaireStatut}</p>
                     </div>
                 </div>
             );
@@ -35,7 +35,7 @@ export default function ExpensesTable({ report }: { report: ExpenseReport }) {
                     <FaFileInvoiceDollar className="flex-shrink-0 mt-1 mr-3 text-purple-500" />
                     <div>
                         <p className="font-semibold">Note de frais comptabilisée</p>
-                        <p className="mt-1 text-sm">{report.statusComment}</p>
+                        <p className="mt-1 text-sm">{report.commentaireStatut}</p>
                     </div>
                 </div>
             );
@@ -53,21 +53,21 @@ export default function ExpensesTable({ report }: { report: ExpenseReport }) {
                         <h3 className="flex items-center mb-3 text-lg font-semibold text-blue-700">
                             <FaCar className="mr-2" /> Transport
                         </h3>
-                        <TransportTable transport={report.details.transport} attachments={report.attachments} />
+                        <TransportTable transport={report.details.transport} attachments={report.piecesJointes} />
                     </div>
 
                     <div className="p-4 rounded-lg bg-green-50">
                         <h3 className="flex items-center mb-3 text-lg font-semibold text-green-700">
                             <FaBed className="mr-2" /> Hébergement
                         </h3>
-                        <HebergementTable hebergement={report.details.accommodations} attachments={report.attachments} />
+                        <HebergementTable hebergement={report.details.accommodations} attachments={report.piecesJointes} />
                     </div>
 
                     <div className="p-4 rounded-lg bg-purple-50">
                         <h3 className="flex items-center mb-3 text-lg font-semibold text-purple-700">
                             <FaReceipt className="mr-2" /> Autres dépenses
                         </h3>
-                        <OtherExpensesTable autres={report.details.others} attachments={report.attachments} />
+                        <OtherExpensesTable autres={report.details.others} attachments={report.piecesJointes} />
                     </div>
                 </div>
 

@@ -2,6 +2,9 @@ import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ReportRow from './ReportRow';
 import React from "react";
 import useStore from "@/app/store/useStore";
+import { useSortableTable } from '@/app/hooks/useSortableTable';
+import SortableHeader from './SortableHeader';
+import { calculateTotals } from '@/app/utils/helper';
 
 interface ReportTableProps {
     reports: ExpenseReport[];
@@ -17,12 +20,30 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
     const requesterFilter = useStore((state) => state.requesterFilter).toLowerCase();
     const typeFilter = useStore((state) => state.typeFilter);
 
-    const reportFiltered = reports.filter((report) => {
+    // Vérifier que reports est bien un tableau
+    if (!Array.isArray(reports)) {
+        console.error('Reports is not an array:', reports);
+        return (
+            <div className="inline-block min-w-full overflow-hidden rounded-lg shadow">
+                <div className="p-4 text-center text-red-600">
+                    Erreur lors du chargement des données
+                </div>
+            </div>
+        );
+    }
+
+    // Ajouter le montant calculé à chaque rapport pour le tri
+    const reportsWithAmount = reports.map(report => ({
+        ...report,
+        calculatedAmount: calculateTotals(report.details).totalRemboursable
+    }));
+
+    const reportFiltered = reportsWithAmount.filter((report) => {
         const matchesStatus = status === 'Toutes' || report.status === status;
-        const matchesSearchTerm = report.event.titre.toLowerCase().includes(searchTerm);
-        const matchesDate = !dateFilter || new Date(report.event.tsp).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
+        const matchesSearchTerm = report.sortie.titre.toLowerCase().includes(searchTerm);
+        const matchesDate = !dateFilter || new Date(report.sortie.heureRendezVous).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
         const matchesRequester = !requesterFilter || 
-            (report.user.firstname.toLowerCase() + " " + report.user.lastname.toLowerCase()).includes(requesterFilter);
+            (report.utilisateur.prenom.toLowerCase() + " " + report.utilisateur.nom.toLowerCase()).includes(requesterFilter);
         const matchesType = !typeFilter || 
             (typeFilter === 'don' && !report.refundRequired) || 
             (typeFilter === 'remboursement' && report.refundRequired);
@@ -30,39 +51,84 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
         return matchesStatus && matchesSearchTerm && matchesDate && matchesRequester && matchesType;
     });
 
+    // Utiliser le hook de tri
+    const { sortedData, sortConfig, handleSort } = useSortableTable(reportFiltered);
+
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const paginatedReports = reportFiltered.slice(startIndex, endIndex);
+    const paginatedReports = sortedData.slice(startIndex, endIndex);
 
     return (
         <div className="inline-block min-w-full overflow-hidden rounded-lg shadow">
             <table className="min-w-full leading-normal">
                 <thead>
                     <tr>
-                        <th className="w-8 px-1 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Com.
-                        </th>
-                        <th className="w-1/3 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Note de frais
-                        </th>
-                        <th className="w-1/6 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Demandeur
-                        </th>
-                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Date sortie
-                        </th>
-                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Soumission
-                        </th>
-                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Montant
-                        </th>
-                        <th className="w-24 px-2 py-2 text-xs font-semibold tracking-wider text-center text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Type
-                        </th>
-                        <th className="w-20 px-2 py-2 text-xs font-semibold tracking-wider text-center text-gray-600 uppercase bg-gray-100 border-b-2 border-gray-200">
-                            Statut
-                        </th>
+                        <SortableHeader
+                            label="Com."
+                            sortKey="event.commission.id"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-8 px-1 py-2"
+                        />
+                        <SortableHeader
+                            label="Note de frais"
+                            sortKey="event.titre"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-1/3 px-2 py-2"
+                        />
+                        <SortableHeader
+                            label="Demandeur"
+                            sortKey="user.lastname"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-1/6 px-2 py-2"
+                        />
+                        <SortableHeader
+                            label="Date sortie"
+                            sortKey="event.tsp"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-20 px-2 py-2"
+                        />
+                        <SortableHeader
+                            label="Soumission"
+                            sortKey="createdAt"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-20 px-2 py-2"
+                        />
+                        <SortableHeader
+                            label="Montant"
+                            sortKey="calculatedAmount"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-20 px-2 py-2"
+                        />
+                        <SortableHeader
+                            label="Type"
+                            sortKey="refundRequired"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-24 px-2 py-2"
+                            align="center"
+                        />
+                        <SortableHeader
+                            label="Statut"
+                            sortKey="status"
+                            currentSortKey={sortConfig.key}
+                            sortDirection={sortConfig.direction}
+                            onSort={handleSort}
+                            className="w-20 px-2 py-2"
+                            align="center"
+                        />
                     </tr>
                 </thead>
                 <tbody>

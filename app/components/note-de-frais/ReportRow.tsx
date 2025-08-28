@@ -14,16 +14,16 @@ interface ReportRowProps {
 }
 
 const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
-    const [imgSrc, setImgSrc] = useState(`https://www.clubalpinlyon.fr/ftp/commission/${report.event.commission.id}/picto-dark.png`);
+    const [imgSrc, setImgSrc] = useState(`https://www.clubalpinlyon.fr/ftp/commission/${report.sortie.commission.id}/picto-dark.png`);
     const [copied, setCopied] = useState(false);
     const totals = calculateTotals(report.details);
 
     const handleCopy = () => {
         const textToCopy = [
-            report.event.titre,
-            `${report.user.firstname} ${report.user.lastname}`,
-            new Date(report.event.tsp).toLocaleDateString(),
-            report.event.commission.name
+            report.sortie.titre,
+            `${report.utilisateur.prenom} ${report.utilisateur.nom}`,
+            new Date(report.sortie.heureRendezVous).toLocaleDateString(),
+            report.sortie.commission.title
         ].join('-').toUpperCase();
 
         navigator.clipboard.writeText(textToCopy);
@@ -53,8 +53,8 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
             <td className="w-1/4 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="flex items-center gap-1 text-gray-900 truncate whitespace-nowrap">
                     <FaClipboardList className="text-gray-500" />
-                    <Link href={`/note-de-frais/${report.event.id}`} className="hover:underline" title={report.event.titre}>
-                        {truncateText(report.event.titre, 40)}
+                    <Link href={`/note-de-frais/${report.sortie.id}`} className="hover:underline" title={report.sortie.titre}>
+                        {truncateText(report.sortie.titre, 40)}
                     </Link>
                     <button
                         onClick={handleCopy}
@@ -67,21 +67,21 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
             </td>
             <td className="w-1/6 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 truncate whitespace-nowrap">
-                    <Link href={`/note-de-frais/${report.event.id}`} className="hover:underline">
-                        {report.user.firstname + " " + report.user.lastname}
+                    <Link href={`/note-de-frais/${report.sortie.id}`} className="hover:underline">
+                        {report.utilisateur.prenom + " " + report.utilisateur.nom}
                     </Link>
                 </p>
             </td>
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 whitespace-nowrap">
                     <FaCalendarAlt className="inline-block mr-1 text-gray-500" />
-                    {new Date(report.event.tsp).toLocaleDateString()}
+                    {new Date(report.sortie.heureRendezVous).toLocaleDateString()}
                 </p>
             </td>
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 whitespace-nowrap">
                     <FaCalendarAlt className="inline-block mr-1 text-gray-500" />
-                    {new Date(report.createdAt).toLocaleDateString()}
+                    {new Date(report.dateCreation).toLocaleDateString()}
                 </p>
             </td>
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">

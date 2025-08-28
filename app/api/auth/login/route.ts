@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Erreur de l\'API Symfony:', errorData);
       return NextResponse.json(
         { error: 'Identifiants invalides' },
         { status: 401 }
@@ -39,7 +38,6 @@ export async function POST(request: NextRequest) {
     const { token, refresh_token } = data;
 
     if (!token || !refresh_token) {
-      console.error('Tokens manquants dans la réponse:', { token: !!token, refresh_token: !!refresh_token });
       return NextResponse.json(
         { error: 'Erreur lors de la connexion: tokens manquants' },
         { status: 500 }

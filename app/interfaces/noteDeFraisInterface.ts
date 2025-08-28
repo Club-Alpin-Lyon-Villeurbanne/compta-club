@@ -5,18 +5,18 @@ export interface ExpenseReport {
     id: number
     status: ExpenseStatus
     refundRequired: boolean
-    user: User
-    event: Event
-    createdAt: string
-    statusComment: any
+    utilisateur: User
+    sortie: Event
+    dateCreation: string
+    commentaireStatut: any
     details: Details
-    attachments: any[]
+    piecesJointes: any[]
 }
 
 export interface User {
     id: number
-    firstname: string
-    lastname: string
+    prenom: string
+    nom: string
 }
 
 export interface Commission {
@@ -28,11 +28,11 @@ export interface Commission {
 export interface Event {
     id: number
     commission: Commission
-    tsp: string
-    tspEnd: string
+    heureRendezVous: string
+    heureRetour: string
     titre: string
     code: string
-    rdv: string
+    lieuRendezVous: string
     participationsCount: number
     status: number
     statusLegal: number

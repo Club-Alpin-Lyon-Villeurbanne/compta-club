@@ -4,8 +4,8 @@ import { IconType } from 'react-icons';
 import dayjs from "dayjs";
 
 interface Event {
-  tsp: string;
-  tspEnd: string;
+  heureRendezVous: string;
+  heureRetour: string;
   participationsCount?: number;
   status?: number;
 }
@@ -47,12 +47,12 @@ const EventInfo: React.FC<EventInfoProps> = ({ event }) => {
         <InfoItem 
           icon={FaCalendarAlt} 
           label="Début" 
-          value={dayjs(event.tsp).format('DD/MM/YYYY')} 
+          value={dayjs(event.heureRendezVous).format('DD/MM/YYYY')} 
         />
         <InfoItem 
           icon={FaCalendarAlt} 
           label="Fin" 
-          value={dayjs(event.tspEnd).format('DD/MM/YYYY')} 
+          value={dayjs(event.heureRetour).format('DD/MM/YYYY')} 
         />
         <InfoItem 
           icon={FaUsers} 

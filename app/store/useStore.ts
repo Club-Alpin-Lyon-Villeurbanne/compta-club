@@ -32,7 +32,9 @@ const useStore = create<StoreState>((set) => ({
     dateFilter: '',
     requesterFilter: '',
     typeFilter: '',
-    setExpenseReports: (reports) => set({ expenseReports: reports }),
+    setExpenseReports: (reports) => set({ 
+        expenseReports: Array.isArray(reports) ? reports : [] 
+    }),
     setStatus: (status) => set({ status }),
     setItemsPerPage: (items) => set({ itemsPerPage: items }),
     setCurrentPage: (page) => set({ currentPage: page }),
