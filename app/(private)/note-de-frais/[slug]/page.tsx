@@ -69,7 +69,7 @@ export default function ExpenseReportPage() {
             : report.details,
       }));
 
-      setEvent(parsedReports[0].event);
+      setEvent(parsedReports[0].sortie);
       setExpenseReports(parsedReports);
     } catch (err) {
       setError("Une erreur est survenue lors du chargement des données");

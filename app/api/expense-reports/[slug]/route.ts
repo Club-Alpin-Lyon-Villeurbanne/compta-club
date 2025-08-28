@@ -10,8 +10,8 @@ export async function GET(
     const { slug } = await context.params;
     
     // Récupérer les notes de frais depuis l'API Symfony
-    const expenseReport = await get(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports?event=${slug}`);
-    
+    const apiResponse = await get(`${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais?event=${slug}`);
+    const expenseReport = apiResponse.data || apiResponse;
     return NextResponse.json(expenseReport);
   } catch (error) {
     console.error('Erreur lors de la récupération de la note de frais:', error);
@@ -31,15 +31,13 @@ export async function PATCH(
     const { slug } = await context.params;
     
     const body = await request.json();
-    const { status, statusComment } = body;
-    console.log(body);
+    const { status, commentaireStatut } = body;
 
     // Mettre à jour la note de frais
-    const expenseReport = await patch(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports/${slug}`, {
+    const expenseReport = await patch(`${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais/${slug}`, {
       status,
-      statusComment,
+      commentaireStatut,
     });
-    console.log(expenseReport);
 
     return NextResponse.json(expenseReport);
   } catch (error) {

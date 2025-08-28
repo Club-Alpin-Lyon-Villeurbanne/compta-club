@@ -1,11 +1,11 @@
 import { Details, Transport } from '../interfaces/DetailsInterface';
 import { config } from '../config';
 
-export function getFileUrlByExpenseId(attachments: any[], expenseId: string): string | undefined {
-    if (!attachments || attachments.length === 0) {
+export function getFileUrlByExpenseId(piecesJointes: any[], expenseId: string): string | undefined {
+    if (!piecesJointes || piecesJointes.length === 0) {
         return undefined;
     }
-    return attachments.find(att => att.expenseId === expenseId)?.fileUrl;
+    return piecesJointes.find(att => att.expenseId === expenseId)?.fileUrl;
 }
 
 

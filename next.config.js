@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 // Base Next.js config
 const nextConfig = {
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.ignoreWarnings = [
+        ...(config.ignoreWarnings || []),
+        { module: /require-in-the-middle/ },
+        { module: /@opentelemetry\/instrumentation/ },
+      ];
+    }
+    return config;
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

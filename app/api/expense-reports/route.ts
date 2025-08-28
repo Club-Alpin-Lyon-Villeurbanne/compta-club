@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expense-reports`, {
+    // Ajouter le paramètre pour désactiver la pagination
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`);
+    url.searchParams.append('pagination', 'false');
+    
+    const response = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -24,14 +28,15 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Erreur de l\'API Symfony:', errorData);
       return NextResponse.json(
         { error: errorData.error || `Erreur ${response.status}` },
         { status: response.status }
       );
     }
 
-    const expenseReports = await response.json();
+    const apiResponse = await response.json();
+    // Extraire les données du nouveau format
+    const expenseReports = apiResponse.data || apiResponse;
     return NextResponse.json(expenseReports);
   } catch (error) {
     console.error('Erreur lors de la récupération des notes de frais:', error);

@@ -7,14 +7,12 @@ import { COOKIE_NAMES } from './constants';
  */
 export async function isAuthenticated(): Promise<boolean> {
   try {
-    // Récupérer les cookies (API asynchrone)
     const cookieStore = await cookies();
     const accessToken = cookieStore.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
     if (!accessToken) {
       return false;
     }
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/expense-reports`;
-    // Vérifier la validité du token
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`;
     let response = await fetch(apiUrl, {
       method: 'HEAD',
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -24,7 +22,6 @@ export async function isAuthenticated(): Promise<boolean> {
       // Token expiré, tenter rafraîchissement
       const refreshToken = cookieStore.get(COOKIE_NAMES.REFRESH_TOKEN)?.value;
       if (!refreshToken) {
-        console.log('❌ Server auth check - Refresh token absent');
         return false;
       }
       // Appel à l'API externe pour rafraîchir le token
@@ -37,13 +34,11 @@ export async function isAuthenticated(): Promise<boolean> {
         }
       );
       if (!refreshRes.ok) {
-        console.log('❌ Server auth check - Échec du rafraîchissement du token');
         return false;
       }
       const data = await refreshRes.json();
       const { token: newAccess, refresh_token: newRefresh } = data;
       if (!newAccess || !newRefresh) {
-        console.log('❌ Server auth check - Données de rafraîchissement invalides');
         return false;
       }
       response = await fetch(apiUrl, {
@@ -51,10 +46,10 @@ export async function isAuthenticated(): Promise<boolean> {
         headers: { Authorization: `Bearer ${newAccess}` },
         cache: 'no-store',
       });
+      return response.ok;
     }
     return response.ok;
   } catch (error) {
-    console.error('Server auth check failed:', error);
     return false;
   }
 }
