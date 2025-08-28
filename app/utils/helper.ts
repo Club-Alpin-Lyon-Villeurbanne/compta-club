@@ -60,7 +60,16 @@ export function calculateTotals(details: Details) {
     }
 
     if (typeof details === 'string') {
-        details = JSON.parse(details);
+        try {
+            details = JSON.parse(details);
+        } catch (error) {
+            console.error('Erreur lors du parsing des détails:', error);
+            return {
+                totalRemboursable: 0,
+                totalGeneral: 0,
+                totalPrice: 0
+            };
+        }
     }
 
     const transportTotal = details.transport ? calculateTransportTotal(details.transport) : 0;
@@ -94,20 +103,4 @@ export function calculateTotals(details: Details) {
 export const truncateText = (text: string, maxLength: number = 30): string => {
   if (!text) return '';
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
-
-export const parseDate = (dateValue: any): string => {
-  if (!dateValue) return 'N/A';
-  
-  // Si c'est un timestamp Unix (nombre ou chaîne de chiffres)
-  if (typeof dateValue === 'number' || /^\d+$/.test(dateValue)) {
-    const timestamp = typeof dateValue === 'string' ? parseInt(dateValue) : dateValue;
-    // Si c'est un timestamp Unix (en secondes), convertir en millisecondes
-    const date = new Date(timestamp < 10000000000 ? timestamp * 1000 : timestamp);
-    return !isNaN(date.getTime()) ? date.toLocaleDateString('fr-FR') : 'N/A';
-  }
-  
-  // Si c'est une chaîne de date
-  const date = new Date(dateValue);
-  return !isNaN(date.getTime()) ? date.toLocaleDateString('fr-FR') : 'N/A';
 };

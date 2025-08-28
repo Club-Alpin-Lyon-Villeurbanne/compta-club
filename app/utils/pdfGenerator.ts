@@ -10,9 +10,15 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   const pageWidth = doc.internal.pageSize.width;
   
   // Parser les details si c'est une chaîne JSON
-  const details = typeof report.details === 'string' 
-    ? JSON.parse(report.details) 
-    : report.details;
+  let details;
+  try {
+    details = typeof report.details === 'string' 
+      ? JSON.parse(report.details) 
+      : report.details;
+  } catch (error) {
+    console.error('Erreur lors du parsing des détails:', error);
+    details = { transport: null, accommodations: [], others: [] };
+  }
   
   const totals = calculateTotals(details);
   
@@ -244,15 +250,6 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
     );
   }
   
-  // Si plusieurs pages, s'assurer que le footer est sur chaque page
-  if (totalPages > 1) {
-    doc.setPage(1);
-    doc.text(
-      `Généré le ${new Date().toLocaleDateString('fr-FR')}`,
-      14,
-      doc.internal.pageSize.height - 10
-    );
-  }
   
   // Nom du fichier
   const fileName = `note-de-frais-${report.sortie.code || report.sortie.id}-${report.utilisateur.nom}.pdf`;
