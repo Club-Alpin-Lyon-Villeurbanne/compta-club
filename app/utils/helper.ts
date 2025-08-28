@@ -54,7 +54,8 @@ export function calculateTotals(details: Details) {
             accommodationsTotal: 0,
             othersTotal: 0,
             totalRemboursable: 0,
-            accommodationsRemboursable: 0
+            accommodationsRemboursable: 0,
+            totalPrice: 0
         };
     }
 
@@ -62,29 +63,51 @@ export function calculateTotals(details: Details) {
         details = JSON.parse(details);
     }
 
-    const transportTotal = calculateTransportTotal(details.transport);
+    const transportTotal = details.transport ? calculateTransportTotal(details.transport) : 0;
 
-    const accommodationsTotal = details.accommodations.reduce((total, acc) => 
-        total + (acc.price ?? 0), 0);
+    const accommodationsTotal = (details.accommodations && Array.isArray(details.accommodations)) 
+        ? details.accommodations.reduce((total, acc) => total + (acc.price ?? 0), 0)
+        : 0;
 
-    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => 
-        total + Math.min(acc.price ?? 0, config.NUITEE_MAX_REMBOURSABLE), 0);
+    const accommodationsRemboursable = (details.accommodations && Array.isArray(details.accommodations))
+        ? details.accommodations.reduce((total, acc) => 
+            total + Math.min(acc.price ?? 0, config.NUITEE_MAX_REMBOURSABLE), 0)
+        : 0;
 
-    const othersTotal = details.others.reduce((total, other) => 
-        total + (other.price ?? 0), 0);
+    const othersTotal = (details.others && Array.isArray(details.others))
+        ? details.others.reduce((total, other) => total + (other.price ?? 0), 0)
+        : 0;
 
     const totalRemboursable = transportTotal + accommodationsRemboursable + othersTotal;
+    const totalPrice = transportTotal + accommodationsTotal + othersTotal;
 
     return {
         transportTotal,
         accommodationsTotal,
         othersTotal,
         totalRemboursable,
-        accommodationsRemboursable
+        accommodationsRemboursable,
+        totalPrice
     };
 }
 
 export const truncateText = (text: string, maxLength: number = 30): string => {
   if (!text) return '';
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
+export const parseDate = (dateValue: any): string => {
+  if (!dateValue) return 'N/A';
+  
+  // Si c'est un timestamp Unix (nombre ou chaîne de chiffres)
+  if (typeof dateValue === 'number' || /^\d+$/.test(dateValue)) {
+    const timestamp = typeof dateValue === 'string' ? parseInt(dateValue) : dateValue;
+    // Si c'est un timestamp Unix (en secondes), convertir en millisecondes
+    const date = new Date(timestamp < 10000000000 ? timestamp * 1000 : timestamp);
+    return !isNaN(date.getTime()) ? date.toLocaleDateString('fr-FR') : 'N/A';
+  }
+  
+  // Si c'est une chaîne de date
+  const date = new Date(dateValue);
+  return !isNaN(date.getTime()) ? date.toLocaleDateString('fr-FR') : 'N/A';
 };

@@ -1,6 +1,7 @@
 /**
  * Utilitaire pour effectuer des requêtes fetch côté client
  */
+import { extractApiError } from '@/app/utils/apiParser';
 
 /**
  * Options pour les requêtes fetch
@@ -53,8 +54,17 @@ export async function fetchClient<T = any>(
 
     // Vérifier si la réponse est OK
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Erreur ${response.status}`);
+      const errorText = await response.text().catch(() => '');
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = errorText;
+      }
+      
+      const errorMessage = extractApiError(errorData, response.status);
+      throw new Error(errorMessage);
     }
 
     // Retourner les données
