@@ -21,14 +21,15 @@ export interface User {
 
 export interface Commission {
     id: number
-    name: string
+    title: string
+    code?: string
 }
 
 export interface Event {
     id: number
     commission: Commission
-    dateDebut: string
-    dateFin: string
+    heureRendezVous: string
+    heureRetour: string
     titre: string
     code: string
     lieuRendezVous: string

@@ -48,7 +48,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
                 <td className="px-4 py-2 text-sm whitespace-nowrap">
                     <div className="flex items-center">
                         <FaCalendarAlt className="mr-2 text-gray-400" />
-                        {dayjs(report.sortie.dateDebut).format("DD/MM/YY")}
+                        {dayjs(report.sortie.heureRendezVous).format("DD/MM/YY")}
                     </div>
                 </td>
                 <td className="px-4 py-2 text-sm text-right whitespace-nowrap">

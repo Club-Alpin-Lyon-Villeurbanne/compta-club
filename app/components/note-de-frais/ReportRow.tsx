@@ -22,8 +22,8 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
         const textToCopy = [
             report.sortie.titre,
             `${report.utilisateur.prenom} ${report.utilisateur.nom}`,
-            new Date(report.sortie.dateDebut).toLocaleDateString(),
-            report.sortie.commission.name
+            new Date(report.sortie.heureRendezVous).toLocaleDateString(),
+            report.sortie.commission.title
         ].join('-').toUpperCase();
 
         navigator.clipboard.writeText(textToCopy);
@@ -75,7 +75,7 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 whitespace-nowrap">
                     <FaCalendarAlt className="inline-block mr-1 text-gray-500" />
-                    {new Date(report.sortie.dateDebut).toLocaleDateString()}
+                    {new Date(report.sortie.heureRendezVous).toLocaleDateString()}
                 </p>
             </td>
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">

@@ -20,7 +20,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
     const reportFiltered = reports.filter((report) => {
         const matchesStatus = status === 'Toutes' || report.status === status;
         const matchesSearchTerm = report.sortie.titre.toLowerCase().includes(searchTerm);
-        const matchesDate = !dateFilter || new Date(report.sortie.dateDebut).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
+        const matchesDate = !dateFilter || new Date(report.sortie.heureRendezVous).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
         const matchesRequester = !requesterFilter || 
             (report.utilisateur.prenom.toLowerCase() + " " + report.utilisateur.nom.toLowerCase()).includes(requesterFilter);
         const matchesType = !typeFilter || 

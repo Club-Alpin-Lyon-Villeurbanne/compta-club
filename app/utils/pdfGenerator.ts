@@ -52,14 +52,14 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   const generalInfoCol1 = [
     ['Demandeur:', `${report.utilisateur.prenom} ${report.utilisateur.nom}`],
     ['Événement:', report.sortie.titre],
-    ['Commission:', report.sortie.commission.name],
+    ['Commission:', report.sortie.commission.title],
     ['Code événement:', report.sortie.code || 'N/A'],
     ['Lieu de RDV:', report.sortie.lieuRendezVous || 'N/A'],
   ];
   
   const generalInfoCol2 = [
-    ['Date début:', report.sortie.dateDebut ? new Date(report.sortie.dateDebut).toLocaleDateString('fr-FR') : 'N/A'],
-    ['Date fin:', report.sortie.dateFin ? new Date(report.sortie.dateFin).toLocaleDateString('fr-FR') : 'N/A'],
+    ['Date début:', report.sortie.heureRendezVous ? new Date(report.sortie.heureRendezVous).toLocaleDateString('fr-FR') : 'N/A'],
+    ['Date fin:', report.sortie.heureRetour ? new Date(report.sortie.heureRetour).toLocaleDateString('fr-FR') : 'N/A'],
     ['Participants:', report.sortie.participationsCount?.toString() || 'N/A'],
     ['Date soumission:', report.dateCreation ? new Date(report.dateCreation).toLocaleDateString('fr-FR') : 'N/A'],
     ['Type de demande:', report.refundRequired ? 'Remboursement' : 'Don au club'],
