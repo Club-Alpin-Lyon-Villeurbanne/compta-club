@@ -10,9 +10,15 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   const pageWidth = doc.internal.pageSize.width;
   
   // Parser les details si c'est une chaîne JSON
-  const details = typeof report.details === 'string' 
-    ? JSON.parse(report.details) 
-    : report.details;
+  let details;
+  try {
+    details = typeof report.details === 'string' 
+      ? JSON.parse(report.details) 
+      : report.details;
+  } catch (error) {
+    console.error('Erreur lors du parsing des détails:', error);
+    details = { transport: null, accommodations: [], others: [] };
+  }
   
   const totals = calculateTotals(details);
   
@@ -208,30 +214,42 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
     theme: 'plain',
     styles: { fontSize: 11 },
     columnStyles: {
-      0: { fontStyle: 'bold', halign: 'right' },
-      1: { halign: 'left' },
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 'auto' }
     },
-    margin: { left: 80, right: 14 },
+    margin: { left: 14, right: 14 },
   });
   
   // Pied de page
-  const pageCount = doc.internal.pages.length - 1;
-  for (let i = 1; i <= pageCount; i++) {
+  doc.setFontSize(8);
+  doc.setTextColor(128, 128, 128);
+  doc.setFont('helvetica', 'italic');
+  
+  // Ajouter la date de génération en bas de page
+  const footerY = doc.internal.pageSize.height - 10;
+  doc.text(
+    `Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`,
+    pageWidth / 2,
+    footerY,
+    { align: 'center' }
+  );
+  
+  // Ajouter le nom du club à gauche
+  doc.setFont('helvetica', 'normal');
+  doc.text(config.CLUB_NAME, 14, footerY);
+  
+  // Ajouter le numéro de page à droite
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
     doc.text(
-      `Page ${i} / ${pageCount}`,
-      pageWidth / 2,
-      doc.internal.pageSize.height - 10,
-      { align: 'center' }
-    );
-    doc.text(
-      `Généré le ${new Date().toLocaleDateString('fr-FR')}`,
-      14,
-      doc.internal.pageSize.height - 10
+      `Page ${i} / ${totalPages}`,
+      pageWidth - 14,
+      footerY,
+      { align: 'right' }
     );
   }
+  
   
   // Nom du fichier
   const fileName = `note-de-frais-${report.sortie.code || report.sortie.id}-${report.utilisateur.nom}.pdf`;

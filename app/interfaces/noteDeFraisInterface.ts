@@ -8,9 +8,9 @@ export interface ExpenseReport {
     utilisateur: User
     sortie: Event
     dateCreation: string
-    commentaireStatut: any
+    commentaireStatut: string | null
     details: Details
-    piecesJointes: any[]
+    piecesJointes: Attachment[]
 }
 
 export interface User {
@@ -36,6 +36,12 @@ export interface Event {
     participationsCount: number
     status: number
     statusLegal: number
+}
+
+export interface Attachment {
+    id: number
+    expenseId: string
+    fileUrl: string
 }
 
 
