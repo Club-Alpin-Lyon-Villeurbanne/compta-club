@@ -123,6 +123,33 @@ curl -X GET https://www.clubalpinlyon.top/api/notes-de-frais \
 }
 ```
 
+#### Liste non paginée
+
+Ajoutez le paramètre `pagination=false` pour désactiver la pagination (format de réponse = tableau brut) :
+
+```bash
+curl -X GET "https://www.clubalpinlyon.top/api/notes-de-frais?pagination=false" \
+  -H "Authorization: Bearer votre_token_jwt"
+```
+
+Réponse (200):
+
+```json
+[
+  {
+    "id": 1,
+    "status": "approved",
+    "refundRequired": false,
+    "utilisateur": { "id": 1, "prenom": "Admin", "nom": "SUPER" },
+    "sortie": { "id": 11, "status": 1, "statusLegal": 1, "titre": "..." },
+    "dateCreation": "2025-08-20T15:07:03+02:00",
+    "commentaireStatut": null,
+    "details": "{...}",
+    "piecesJointes": []
+  }
+]
+```
+
 ### Mise à jour du statut d'une note de frais
 
 Permet de mettre à jour le statut d'une note de frais spécifique (ex : approuver, rejeter, comptabiliser, etc.).
