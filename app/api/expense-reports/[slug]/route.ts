@@ -9,8 +9,11 @@ export async function GET(
     // Attendre les paramètres avant de les utiliser
     const { slug } = await context.params;
     
-    // Récupérer les notes de frais depuis l'API Symfony
-    const apiResponse = await get(`${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais?event=${slug}`);
+    // Récupérer les notes de frais depuis l'API Symfony, sans pagination
+    const apiResponse = await get(
+      `${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`,
+      { params: { event: slug, pagination: 'false' } }
+    );
     const expenseReport = apiResponse.data || apiResponse;
     return NextResponse.json(expenseReport);
   } catch (error) {
