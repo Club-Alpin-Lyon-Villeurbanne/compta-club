@@ -65,7 +65,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                     <tr>
                         <SortableHeader
                             label="Com."
-                            sortKey="event.commission.id"
+                            sortKey="sortie.commission.id"
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}
@@ -73,7 +73,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                         />
                         <SortableHeader
                             label="Note de frais"
-                            sortKey="event.titre"
+                            sortKey="sortie.titre"
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}
@@ -81,7 +81,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                         />
                         <SortableHeader
                             label="Demandeur"
-                            sortKey="user.lastname"
+                            sortKey="utilisateur.nom"
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}
@@ -89,7 +89,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                         />
                         <SortableHeader
                             label="Date sortie"
-                            sortKey="event.tsp"
+                            sortKey="sortie.heureRendezVous"
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}
@@ -97,7 +97,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                         />
                         <SortableHeader
                             label="Soumission"
-                            sortKey="createdAt"
+                            sortKey="dateCreation"
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}

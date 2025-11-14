@@ -5,6 +5,39 @@
 import { cookies } from 'next/headers';
 
 /**
+ * Extrait le message d'erreur d'une réponse API
+ */
+function extractApiError(errorData: any, statusCode: number): string {
+  // Erreurs serveur (500+)
+  if (statusCode >= 500) {
+    if (typeof errorData === 'string') {
+      return errorData 
+        ? `Erreur serveur (${statusCode}): ${errorData}`
+        : `Erreur serveur (${statusCode}): Le serveur a rencontré une erreur interne`;
+    }
+    
+    if (typeof errorData === 'object' && errorData !== null) {
+      return errorData.error || 
+             errorData.message || 
+             `Erreur serveur (${statusCode}): Une erreur interne s'est produite`;
+    }
+    
+    return `Erreur serveur (${statusCode}): Le serveur a rencontré une erreur interne`;
+  }
+  
+  // Autres erreurs (400, 401, 403, 404, etc.)
+  if (typeof errorData === 'string' && errorData) {
+    return errorData;
+  }
+  
+  if (typeof errorData === 'object' && errorData !== null) {
+    return errorData.error || errorData.message || `Erreur ${statusCode}`;
+  }
+  
+  return `Erreur ${statusCode}`;
+}
+
+/**
  * Options pour les requêtes fetch
  */
 interface FetchOptions extends RequestInit {
@@ -45,8 +78,19 @@ export async function fetchServer<T = any>(
 
     // Vérifier si la réponse est OK
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Erreur ${response.status}`);
+      const errorText = await response.text().catch(() => '');
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = errorText;
+      }
+      
+      const errorMessage = extractApiError(errorData, response.status);
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      throw error;
     }
 
     // Retourner les données

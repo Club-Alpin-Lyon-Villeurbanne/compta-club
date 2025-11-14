@@ -54,33 +54,49 @@ export function calculateTotals(details: Details) {
             accommodationsTotal: 0,
             othersTotal: 0,
             totalRemboursable: 0,
-            accommodationsRemboursable: 0
+            accommodationsRemboursable: 0,
+            totalPrice: 0
         };
     }
 
     if (typeof details === 'string') {
-        details = JSON.parse(details);
+        try {
+            details = JSON.parse(details);
+        } catch (error) {
+            console.error('Erreur lors du parsing des détails:', error);
+            return {
+                totalRemboursable: 0,
+                totalGeneral: 0,
+                totalPrice: 0
+            };
+        }
     }
 
-    const transportTotal = calculateTransportTotal(details.transport);
+    const transportTotal = details.transport ? calculateTransportTotal(details.transport) : 0;
 
-    const accommodationsTotal = details.accommodations.reduce((total, acc) => 
-        total + (acc.price ?? 0), 0);
+    const accommodationsTotal = (details.accommodations && Array.isArray(details.accommodations)) 
+        ? details.accommodations.reduce((total, acc) => total + (acc.price ?? 0), 0)
+        : 0;
 
-    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => 
-        total + Math.min(acc.price ?? 0, config.NUITEE_MAX_REMBOURSABLE), 0);
+    const accommodationsRemboursable = (details.accommodations && Array.isArray(details.accommodations))
+        ? details.accommodations.reduce((total, acc) => 
+            total + Math.min(acc.price ?? 0, config.NUITEE_MAX_REMBOURSABLE), 0)
+        : 0;
 
-    const othersTotal = details.others.reduce((total, other) => 
-        total + (other.price ?? 0), 0);
+    const othersTotal = (details.others && Array.isArray(details.others))
+        ? details.others.reduce((total, other) => total + (other.price ?? 0), 0)
+        : 0;
 
     const totalRemboursable = transportTotal + accommodationsRemboursable + othersTotal;
+    const totalPrice = transportTotal + accommodationsTotal + othersTotal;
 
     return {
         transportTotal,
         accommodationsTotal,
         othersTotal,
         totalRemboursable,
-        accommodationsRemboursable
+        accommodationsRemboursable,
+        totalPrice
     };
 }
 
