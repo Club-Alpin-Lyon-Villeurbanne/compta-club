@@ -59,7 +59,17 @@ export function calculateTotals(details: Details) {
     }
 
     if (typeof details === 'string') {
-        details = JSON.parse(details);
+        try {
+            details = JSON.parse(details);
+        } catch {
+            return {
+                transportTotal: 0,
+                accommodationsTotal: 0,
+                othersTotal: 0,
+                totalRemboursable: 0,
+                accommodationsRemboursable: 0
+            };
+        }
     }
 
     const transportTotal = calculateTransportTotal(details.transport);

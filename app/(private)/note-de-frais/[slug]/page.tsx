@@ -61,13 +61,17 @@ export default function ExpenseReportPage() {
         return;
       }
 
-      const parsedReports = reports.map((report: ExpenseReport) => ({
-        ...report,
-        details:
-          typeof report.details === "string"
-            ? JSON.parse(report.details)
-            : report.details,
-      }));
+      const parsedReports = reports.map((report: ExpenseReport) => {
+        let parsedDetails = report.details;
+        if (typeof report.details === "string") {
+          try {
+            parsedDetails = JSON.parse(report.details);
+          } catch {
+            parsedDetails = null;
+          }
+        }
+        return { ...report, details: parsedDetails };
+      });
 
       setEvent(parsedReports[0].sortie);
       setExpenseReports(parsedReports);

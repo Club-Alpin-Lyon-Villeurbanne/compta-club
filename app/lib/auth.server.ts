@@ -41,6 +41,16 @@ export async function isAuthenticated(): Promise<boolean> {
       if (!newAccess || !newRefresh) {
         return false;
       }
+      // Sauvegarder les nouveaux tokens dans les cookies
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+        path: '/',
+      };
+      cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, newAccess, cookieOptions);
+      cookieStore.set(COOKIE_NAMES.REFRESH_TOKEN, newRefresh, cookieOptions);
+
       response = await fetch(apiUrl, {
         method: 'HEAD',
         headers: { Authorization: `Bearer ${newAccess}` },

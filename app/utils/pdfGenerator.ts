@@ -10,9 +10,15 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   const pageWidth = doc.internal.pageSize.width;
   
   // Parser les details si c'est une chaîne JSON
-  const details = typeof report.details === 'string' 
-    ? JSON.parse(report.details) 
-    : report.details;
+  let details;
+  try {
+    details = typeof report.details === 'string'
+      ? JSON.parse(report.details)
+      : report.details;
+  } catch {
+    console.error('Erreur lors du parsing des détails de la note de frais');
+    return;
+  }
   
   const totals = calculateTotals(details);
   
