@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Vérifier la validité du token en faisant une requête HEAD vers /notes-de-frais
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`;
+    // Vérifier la validité du token en faisant une requête HEAD vers /admin/notes-de-frais
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/admin/notes-de-frais`;
     
     const response = await fetch(apiUrl, {
       method: 'HEAD',

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Ajouter le paramètre pour désactiver la pagination
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`);
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/admin/notes-de-frais`);
     url.searchParams.append('pagination', 'false');
     
     const response = await fetch(url.toString(), {

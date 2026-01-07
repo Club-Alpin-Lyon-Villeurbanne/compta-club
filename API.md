@@ -64,18 +64,18 @@ curl -X POST https://www.clubalpinlyon.top/api/token/refresh \
 Pour les requêtes authentifiées, incluez le token JWT dans le header `Authorization` :
 
 ```bash
-curl -X GET https://www.clubalpinlyon.top/api/notes-de-frais \
+curl -X GET https://www.clubalpinlyon.top/api/admin/notes-de-frais \
   -H "Authorization: Bearer votre_token_jwt"
 ```
 
-## Notes de frais
+## Notes de frais (Admin)
 
 ### Liste des notes de frais
 
-Récupère la liste des notes de frais de l'utilisateur connecté.
+Récupère la liste de toutes les notes de frais (réservé aux admins/gestionnaires).
 
 ```bash
-curl -X GET https://www.clubalpinlyon.top/api/notes-de-frais \
+curl -X GET https://www.clubalpinlyon.top/api/admin/notes-de-frais \
   -H "Authorization: Bearer votre_token_jwt"
 ```
 
@@ -128,7 +128,7 @@ curl -X GET https://www.clubalpinlyon.top/api/notes-de-frais \
 Ajoutez le paramètre `pagination=false` pour désactiver la pagination (format de réponse = tableau brut) :
 
 ```bash
-curl -X GET "https://www.clubalpinlyon.top/api/notes-de-frais?pagination=false" \
+curl -X GET "https://www.clubalpinlyon.top/api/admin/notes-de-frais?pagination=false" \
   -H "Authorization: Bearer votre_token_jwt"
 ```
 
@@ -162,7 +162,7 @@ PATCH https://www.clubalpinlyon.top/api/notes-de-frais/{id}
 
 - Remplacez `{id}` par l'identifiant de la note de frais à mettre à jour.
 - Le champ `status` peut prendre différentes valeurs selon la logique métier (ex : `approved`, `rejected`, `accounted`).
-- Pour le rejet (`rejected`), le champ `statusComment` est requis.
+- Pour le rejet (`rejected`), le champ `commentaireStatut` est requis.
 
 #### Exemple : Approuver une note de frais
 
@@ -202,7 +202,7 @@ curl -X PATCH https://www.clubalpinlyon.top/api/notes-de-frais/1 \
 ```json
 {
   "status": "rejected",
-  "statusComment": "Motif du rejet obligatoire"
+  "commentaireStatut": "Motif du rejet obligatoire"
 }
 ```
 

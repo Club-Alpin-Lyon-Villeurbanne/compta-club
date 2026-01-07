@@ -12,7 +12,7 @@ export async function isAuthenticated(): Promise<boolean> {
     if (!accessToken) {
       return false;
     }
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/admin/notes-de-frais`;
     let response = await fetch(apiUrl, {
       method: 'HEAD',
       headers: { Authorization: `Bearer ${accessToken}` },

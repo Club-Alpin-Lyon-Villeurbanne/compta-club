@@ -11,7 +11,7 @@ export async function GET(
     
     // Récupérer les notes de frais depuis l'API Symfony, sans pagination
     const apiResponse = await get(
-      `${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`,
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/notes-de-frais`,
       { params: { event: slug, pagination: 'false' } }
     );
     const expenseReport = apiResponse.data || apiResponse;
