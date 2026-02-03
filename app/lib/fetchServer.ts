@@ -52,7 +52,6 @@ export async function fetchServer<T = any>(
     // Retourner les données
     return response.json();
   } catch (error) {
-    console.error('Erreur lors de la requête fetch:', error);
     throw error;
   }
 }

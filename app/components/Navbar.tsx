@@ -1,8 +1,6 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaUser, FaSignOutAlt, FaQuestionCircle, FaInfoCircle } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import AuthenticatedNavbar from './AuthenticatedNavbar';
 import UnauthenticatedNavbar from './UnauthenticatedNavbar';
@@ -21,8 +19,7 @@ export default function Navbar() {
           // Utiliser la fonction isAuthenticated
         const authenticated = await isAuthenticated();
           setAuthStatus(authenticated);
-        } catch (error) {
-          console.error('Erreur lors de la vérification de l\'authentification:', error);
+        } catch {
           setAuthStatus(false);
         } finally {
           setIsLoading(false);

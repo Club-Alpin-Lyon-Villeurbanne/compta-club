@@ -67,7 +67,7 @@ export const mockExpenseReports = [
       accommodations: [],
       others: [],
     },
-    piecesJointes: [{ expenseId: '3', fileUrl: 'https://example.com/receipt.pdf' }],
+    piecesJointes: [{ id: 1, expenseId: '3', fileUrl: 'https://example.com/receipt.pdf' }],
   },
   {
     id: 3,
