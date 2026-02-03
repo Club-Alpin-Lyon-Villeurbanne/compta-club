@@ -16,15 +16,17 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetc
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
     const { handleAction } = useExpenseActions(fetchData);
 
-    const toggleRow = (reportId: number) => {
-        const newExpandedRows = new Set(expandedRows);
-        if (newExpandedRows.has(reportId)) {
-            newExpandedRows.delete(reportId);
-        } else {
-            newExpandedRows.add(reportId);
-        }
-        setExpandedRows(newExpandedRows);
-    };
+    const toggleRow = useCallback((reportId: number) => {
+        setExpandedRows(prev => {
+            const next = new Set(prev);
+            if (next.has(reportId)) {
+                next.delete(reportId);
+            } else {
+                next.add(reportId);
+            }
+            return next;
+        });
+    }, []);
 
     if (!expenseReports || expenseReports.length === 0) {
         return <ErrorMessage message="Aucune note de frais trouvée" variant="alert" />;

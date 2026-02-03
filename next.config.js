@@ -17,6 +17,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    optimizePackageImports: ['react-icons'],
+  },
   images: {
     remotePatterns: [
       {
