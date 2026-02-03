@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Erreur lors de la déconnexion:', error);
     return NextResponse.json(
       { error: 'Erreur lors de la déconnexion' },
       { status: 500 }

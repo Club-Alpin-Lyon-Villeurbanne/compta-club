@@ -14,6 +14,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+      return NextResponse.json(
+        { error: 'Email et mot de passe requis' },
+        { status: 400 }
+      );
+    }
 
     // Appel à l'API Symfony pour l'authentification
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth`, {
@@ -57,7 +63,6 @@ export async function POST(request: NextRequest) {
     // Retourner la réponse avec les cookies
     return res;
   } catch (error) {
-    console.error('Erreur lors de la connexion:', error);
     return NextResponse.json(
       { error: 'Erreur lors de la connexion' },
       { status: 500 }

@@ -31,13 +31,10 @@ const ExpenseReportsClient = () => {
         if (Array.isArray(data)) {
           setExpenseReports(data);
         } else {
-          console.error('Données reçues non valides:', data);
           setError('Format de données invalide reçu du serveur');
           setExpenseReports([]);
         }
       } catch (error: any) {
-        console.error('Error:', error);
-        
         // Si l'erreur est liée à l'authentification après le refresh token
         if (error.message?.includes('Non authentifié')) {
           if (!isRedirecting) {

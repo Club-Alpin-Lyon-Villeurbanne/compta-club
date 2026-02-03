@@ -71,7 +71,6 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
       await fetchData();
       return true;
     } catch (error) {
-      console.error('Erreur lors de l\'action sur la note de frais:', error);
       Swal.fire({
         title: 'Erreur',
         text: 'Une erreur est survenue lors de l\'action sur la note de frais.',

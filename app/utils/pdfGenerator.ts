@@ -16,7 +16,6 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
       ? JSON.parse(report.details)
       : report.details;
   } catch {
-    console.error('Erreur lors du parsing des détails de la note de frais');
     return;
   }
   

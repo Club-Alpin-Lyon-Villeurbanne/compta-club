@@ -1,6 +1,12 @@
 import {Details} from "@/app/interfaces/DetailsInterface";
 import ExpenseStatus from "../enums/ExpenseStatus";
 
+export interface PieceJointe {
+    id: number
+    expenseId: string
+    fileUrl: string
+}
+
 export interface ExpenseReport {
     id: number
     status: ExpenseStatus
@@ -8,9 +14,9 @@ export interface ExpenseReport {
     utilisateur: User
     sortie: Event
     dateCreation: string
-    commentaireStatut: any
+    commentaireStatut: string | null
     details: Details
-    piecesJointes: any[]
+    piecesJointes: PieceJointe[]
 }
 
 export interface User {

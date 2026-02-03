@@ -6,8 +6,7 @@ export async function isAuthenticated(): Promise<boolean> {
   try {
     const response = await fetch('/api/auth/check', { credentials: 'include' });
     return response.ok;
-  } catch (error) {
-    console.error('Client auth check failed:', error);
+  } catch {
     return false;
   }
 }

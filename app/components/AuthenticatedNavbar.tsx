@@ -16,15 +16,14 @@ export default function AuthenticatedNavbar() {
       });
       
       if (!response.ok) {
-        console.error('Erreur lors de la déconnexion:', await response.text());
         return;
       }
       
       await new Promise(resolve => setTimeout(resolve, 100));
       router.push('/');
       router.refresh();
-    } catch (err) {
-      console.error('Erreur lors de la déconnexion:', err);
+    } catch {
+      // Silently fail - user will see they're still logged in
     }
   };
 

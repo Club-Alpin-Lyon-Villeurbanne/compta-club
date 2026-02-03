@@ -22,7 +22,6 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
 
     // Vérifier que reports est bien un tableau
     if (!Array.isArray(reports)) {
-        console.error('Reports is not an array:', reports);
         return (
             <div className="inline-block min-w-full overflow-hidden rounded-lg shadow">
                 <div className="p-4 text-center text-red-600">

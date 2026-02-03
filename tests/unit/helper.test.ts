@@ -38,8 +38,8 @@ describe('truncateText', () => {
 describe('getFileUrlByExpenseId', () => {
   it('should return file URL for matching expense ID', () => {
     const piecesJointes = [
-      { expenseId: '1', fileUrl: 'http://example.com/file1.pdf' },
-      { expenseId: '2', fileUrl: 'http://example.com/file2.pdf' },
+      { id: 1, expenseId: '1', fileUrl: 'http://example.com/file1.pdf' },
+      { id: 2, expenseId: '2', fileUrl: 'http://example.com/file2.pdf' },
     ];
     expect(getFileUrlByExpenseId(piecesJointes, '1')).toBe('http://example.com/file1.pdf');
     expect(getFileUrlByExpenseId(piecesJointes, '2')).toBe('http://example.com/file2.pdf');
@@ -47,7 +47,7 @@ describe('getFileUrlByExpenseId', () => {
 
   it('should return undefined for non-matching expense ID', () => {
     const piecesJointes = [
-      { expenseId: '1', fileUrl: 'http://example.com/file1.pdf' },
+      { id: 1, expenseId: '1', fileUrl: 'http://example.com/file1.pdf' },
     ];
     expect(getFileUrlByExpenseId(piecesJointes, '999')).toBeUndefined();
   });

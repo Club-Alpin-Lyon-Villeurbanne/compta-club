@@ -48,7 +48,6 @@ export default function LoginForm() {
       } else {
         setError('Une erreur inattendue est survenue. Veuillez réessayer.');
       }
-      console.error('Erreur de connexion:', err);
     } finally {
       setIsLoading(false);
     }
