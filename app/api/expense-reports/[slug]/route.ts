@@ -11,13 +11,12 @@ export async function GET(
     
     // Récupérer les notes de frais depuis l'API Symfony, sans pagination
     const apiResponse = await get(
-      `${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais`,
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/notes-de-frais`,
       { params: { event: slug, pagination: 'false' } }
     );
     const expenseReport = apiResponse.data || apiResponse;
     return NextResponse.json(expenseReport);
   } catch (error) {
-    console.error('Erreur lors de la récupération de la note de frais:', error);
     return NextResponse.json(
       { error: 'Erreur lors de la récupération de la note de frais' },
       { status: 500 }
@@ -44,7 +43,6 @@ export async function PATCH(
 
     return NextResponse.json(expenseReport);
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de la note de frais:', error);
     return NextResponse.json(
       { error: 'Erreur lors de la mise à jour de la note de frais' },
       { status: 500 }
