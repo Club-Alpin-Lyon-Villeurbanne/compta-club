@@ -1,6 +1,6 @@
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ReportRow from './ReportRow';
-import React from "react";
+import React, { useMemo } from "react";
 import useStore from "@/app/store/useStore";
 import { useSortableTable } from '@/app/hooks/useSortableTable';
 import SortableHeader from './SortableHeader';
@@ -13,12 +13,46 @@ interface ReportTableProps {
 
 const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
     const status = useStore((state) => state.status);
-    const searchTerm = useStore((state) => state.searchTerm).toLowerCase();
+    const searchTerm = useStore((state) => state.searchTerm);
     const itemsPerPage = useStore((state) => state.itemsPerPage);
     const currentPage = useStore((state) => state.currentPage);
     const dateFilter = useStore((state) => state.dateFilter);
-    const requesterFilter = useStore((state) => state.requesterFilter).toLowerCase();
+    const requesterFilter = useStore((state) => state.requesterFilter);
     const typeFilter = useStore((state) => state.typeFilter);
+
+    // Ajouter le montant calculé à chaque rapport pour le tri
+    const reportsWithAmount = useMemo(() => {
+        if (!Array.isArray(reports)) return [];
+        return reports.map(report => ({
+            ...report,
+            calculatedAmount: calculateTotals(report.details).totalRemboursable
+        }));
+    }, [reports]);
+
+    const reportFiltered = useMemo(() => {
+        const search = searchTerm.toLowerCase();
+        const requester = requesterFilter.toLowerCase();
+        return reportsWithAmount.filter((report) => {
+            const matchesStatus = status === 'Toutes' || report.status === status;
+            const matchesSearchTerm = report.sortie.titre.toLowerCase().includes(search);
+            const matchesDate = !dateFilter || new Date(report.sortie.heureRendezVous).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
+            const matchesRequester = !requester ||
+                (report.utilisateur.prenom.toLowerCase() + " " + report.utilisateur.nom.toLowerCase()).includes(requester);
+            const matchesType = !typeFilter ||
+                (typeFilter === 'don' && !report.refundRequired) ||
+                (typeFilter === 'remboursement' && report.refundRequired);
+
+            return matchesStatus && matchesSearchTerm && matchesDate && matchesRequester && matchesType;
+        });
+    }, [reportsWithAmount, status, searchTerm, dateFilter, requesterFilter, typeFilter]);
+
+    // Utiliser le hook de tri
+    const { sortedData, sortConfig, handleSort } = useSortableTable(reportFiltered);
+
+    const paginatedReports = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return sortedData.slice(startIndex, startIndex + itemsPerPage);
+    }, [sortedData, currentPage, itemsPerPage]);
 
     // Vérifier que reports est bien un tableau
     if (!Array.isArray(reports)) {
@@ -30,32 +64,6 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
             </div>
         );
     }
-
-    // Ajouter le montant calculé à chaque rapport pour le tri
-    const reportsWithAmount = reports.map(report => ({
-        ...report,
-        calculatedAmount: calculateTotals(report.details).totalRemboursable
-    }));
-
-    const reportFiltered = reportsWithAmount.filter((report) => {
-        const matchesStatus = status === 'Toutes' || report.status === status;
-        const matchesSearchTerm = report.sortie.titre.toLowerCase().includes(searchTerm);
-        const matchesDate = !dateFilter || new Date(report.sortie.heureRendezVous).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
-        const matchesRequester = !requesterFilter || 
-            (report.utilisateur.prenom.toLowerCase() + " " + report.utilisateur.nom.toLowerCase()).includes(requesterFilter);
-        const matchesType = !typeFilter || 
-            (typeFilter === 'don' && !report.refundRequired) || 
-            (typeFilter === 'remboursement' && report.refundRequired);
-
-        return matchesStatus && matchesSearchTerm && matchesDate && matchesRequester && matchesType;
-    });
-
-    // Utiliser le hook de tri
-    const { sortedData, sortConfig, handleSort } = useSortableTable(reportFiltered);
-
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedReports = sortedData.slice(startIndex, endIndex);
 
     return (
         <div className="inline-block min-w-full overflow-hidden rounded-lg shadow">

@@ -1,12 +1,11 @@
 import Link from 'next/link';
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Image from 'next/image';
 import { Badge } from './Badge';
 import { config } from '@/app/config';
 import { FaCalendarAlt, FaClipboardList, FaGift, FaMoneyBillWave, FaCopy, FaFilePdf } from 'react-icons/fa';
 import { calculateTotals, formatEuro, truncateText } from '@/app/utils/helper';
-import { generateExpenseReportPDF } from '@/app/utils/pdfGenerator';
 import { ExpenseStatus } from '@/app/enums/ExpenseStatus';
 
 interface ReportRowProps {
@@ -16,9 +15,9 @@ interface ReportRowProps {
 const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
     const [imgSrc, setImgSrc] = useState(`https://www.clubalpinlyon.fr/ftp/commission/${report.sortie.commission.id}/picto-dark.png`);
     const [copied, setCopied] = useState(false);
-    const totals = calculateTotals(report.details);
+    const totals = useMemo(() => calculateTotals(report.details), [report.details]);
 
-    const handleCopy = () => {
+    const handleCopy = useCallback(() => {
         const textToCopy = [
             report.sortie.titre,
             `${report.utilisateur.prenom} ${report.utilisateur.nom}`,
@@ -29,11 +28,12 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
         navigator.clipboard.writeText(textToCopy);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-    };
+    }, [report]);
 
-    const handleDownloadPDF = () => {
+    const handleDownloadPDF = useCallback(async () => {
+        const { generateExpenseReportPDF } = await import('@/app/utils/pdfGenerator');
         generateExpenseReportPDF(report);
-    };
+    }, [report]);
 
     return (
         <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
@@ -122,4 +122,4 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
     );
 }
 
-export default ReportRow;
+export default React.memo(ReportRow);

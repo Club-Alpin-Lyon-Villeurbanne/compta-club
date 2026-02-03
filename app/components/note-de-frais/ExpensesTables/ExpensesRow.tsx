@@ -7,7 +7,6 @@ import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaMone
 import dayjs from "dayjs";
 import { Badge } from "../Badge";
 import ExpensesTable from "./ExpensesTable";
-import { generateExpenseReportPDF } from '@/app/utils/pdfGenerator';
 
 interface ExpenseRowProps {
     report: ExpenseReport;
@@ -16,12 +15,13 @@ interface ExpenseRowProps {
     onAction: (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => void;
 }
 
-export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onToggle, onAction }) => {
+export const ExpenseRow: React.FC<ExpenseRowProps> = React.memo(({ report, isExpanded, onToggle, onAction }) => {
     const hasDetails = report.details !== null;
 
-    const handleDownloadPDF = () => {
+    const handleDownloadPDF = React.useCallback(async () => {
+        const { generateExpenseReportPDF } = await import('@/app/utils/pdfGenerator');
         generateExpenseReportPDF(report);
-    };
+    }, [report]);
 
     return (
         <>
@@ -122,4 +122,4 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ report, isExpanded, onTo
             )}
         </>
     );
-};
+});
