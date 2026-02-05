@@ -86,6 +86,21 @@ git push origin votre-branche
 
 Puis créez une Pull Request sur GitHub.
 
+## Processus de review
+
+La branche `main` est protégée : les push directs sont interdits. Toutes les modifications passent par une PR.
+
+**Ce qui se passe automatiquement sur chaque PR :**
+
+1. **GitHub Actions CI** - Exécute lint, tests unitaires et build
+2. **CodeRabbit** - Review automatique du code par IA (suggestions, bugs potentiels, style)
+3. **Vercel** - Déploie une preview de la PR pour tester visuellement
+
+**Pour merger une PR :**
+- La CI doit passer (lint + tests + build)
+- Adresser les commentaires CodeRabbit pertinents
+- Au moins une approbation d'un mainteneur (si applicable)
+
 ## Checklist avant PR
 
 - [ ] Le code compile (`pnpm build`)
