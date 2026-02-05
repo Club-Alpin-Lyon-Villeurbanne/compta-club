@@ -98,6 +98,22 @@ Nous accueillons volontiers les contributions ! Voici comment vous pouvez aider 
 
 ## **🧪 Tests**
 
+### **Tests unitaires avec Vitest**
+
+```bash
+# Lancer les tests unitaires
+pnpm test:unit
+
+# Mode watch (relance automatique)
+pnpm test:unit:watch
+```
+
+Les tests unitaires couvrent :
+- Routes API (auth, expense-reports)
+- Utilitaires fetch (client/serveur)
+- Fonctions d'authentification
+- Helpers et store Zustand
+
 ### **Tests E2E avec Playwright**
 
 Les tests end-to-end sont implémentés avec Playwright. Pour exécuter les tests :
@@ -143,10 +159,34 @@ Les tests E2E vérifient le flux d'authentification et d'autres fonctionnalités
   - `/utils`    : Utilitaires (helper, pdfGenerator)
 - `/components/ui` : Composants UI réutilisables (tables, formulaires...)  
 - `/public`       : Assets statiques (images, favicon, etc.)
-- `/tests`        : Tests end-to-end Playwright
+- `/tests`        : Tests (unit avec Vitest, E2E avec Playwright)
+
+## **🔧 Scripts disponibles**
+
+| Commande | Description |
+|----------|-------------|
+| `pnpm dev` | Serveur de développement |
+| `pnpm build` | Build production |
+| `pnpm start` | Serveur production |
+| `pnpm lint` | Linter ESLint |
+| `pnpm test:unit` | Tests unitaires (Vitest) |
+| `pnpm test:e2e` | Tests E2E (Playwright) |
+
+## **🤖 Outils de développement**
+
+- **Claude Code** : Le fichier [CLAUDE.md](./CLAUDE.md) contient les instructions pour utiliser Claude Code sur ce projet.
+- **CI/CD** : GitHub Actions exécute lint, tests et build sur chaque PR.
+- **CodeRabbit** : Review automatique des PRs.
+- **Vercel** : Déploiement automatique + preview sur chaque PR.
 
 ## **📬 Contact**
 
 Pour toute question, suggestion ou problème, vous pouvez :
 - 🐛 Ouvrir une issue sur [GitHub](https://github.com/Club-Alpin-Lyon-Villeurbanne/compta-club/issues).
 - 📧 Contacter l'équipe via [numerique@clubalpinlyon.fr](mailto:numerique@clubalpinlyon.fr).
+
+## **📄 Documentation complémentaire**
+
+- [CLAUDE.md](./CLAUDE.md) - Instructions pour Claude Code
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - Guide de contribution détaillé
+- [API.md](./API.md) - Documentation de l'API backend
