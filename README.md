@@ -189,4 +189,4 @@ Pour toute question, suggestion ou problème, vous pouvez :
 
 - [CLAUDE.md](./CLAUDE.md) - Instructions pour Claude Code
 - [CONTRIBUTING.md](./CONTRIBUTING.md) - Guide de contribution détaillé
-- [API.md](./API.md) - Documentation de l'API backend
+- [API.md](./API.md) - Endpoints API utilisés par cette application

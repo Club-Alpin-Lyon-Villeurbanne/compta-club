@@ -143,16 +143,16 @@ tests/
 ## Flow d'authentification
 
 ```
-Client                    Next.js API              Backend Symfony
-  │                           │                          │
-  │─── POST /api/auth/login ──│                          │
-  │                           │─── POST /auth ───────────│
-  │                           │←── {token, refresh} ─────│
-  │←── Set-Cookie (httpOnly) ─│                          │
-  │                           │                          │
-  │─── GET /api/expense-reports                          │
-  │    (avec cookie)          │─── GET /admin/notes ─────│
-  │                           │    (Bearer token)        │
+Client                    Next.js API                   Backend Symfony
+  │                           │                                │
+  │─── POST /api/auth/login ──│                                │
+  │                           │─── POST /auth ─────────────────│
+  │                           │←── {token, refresh} ───────────│
+  │←── Set-Cookie (httpOnly) ─│                                │
+  │                           │                                │
+  │─── GET /api/expense-reports                                │
+  │    (avec cookie)          │─── GET /admin/notes-de-frais ──│
+  │                           │    (Bearer token)              │
 ```
 
 ## Besoin d'aide ?
