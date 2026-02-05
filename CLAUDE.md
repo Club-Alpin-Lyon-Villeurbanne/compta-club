@@ -14,6 +14,8 @@ pnpm lint               # Run ESLint
 
 ### Testing
 ```bash
+pnpm test:unit          # Run Vitest unit tests
+pnpm test:unit:watch    # Run unit tests in watch mode
 pnpm test:e2e           # Run Playwright E2E tests (requires .env.test)
 pnpm test:e2e:ui        # Run tests with Playwright UI
 pnpm test:e2e:report    # Show test report
@@ -32,7 +34,7 @@ VALID_PASSWORD=your-password
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **State Management**: Zustand (filters, pagination)
 - **Auth**: JWT with refresh tokens stored in httpOnly cookies
-- **Testing**: Playwright for E2E tests
+- **Testing**: Vitest (unit tests) + Playwright (E2E)
 - **Monitoring**: Sentry (production only)
 
 ### Key Architecture Patterns
@@ -75,10 +77,10 @@ External API: `https://www.clubalpinlyon.top/api` (or configured via `NEXT_PUBLI
 Key endpoints:
 - `POST /auth`: Login
 - `POST /token/refresh`: Refresh token
-- `GET /expense-reports`: List expense reports
-- `PATCH /expense-reports/{id}`: Update expense report status
+- `GET /notes-de-frais`: List expense reports
+- `PATCH /notes-de-frais/{id}`: Update expense report status
 
-See `API.md` for complete API documentation.
+See `API.md` for API documentation (note: this doc may move to the backend repo in the future).
 
 ## Development Guidelines
 
