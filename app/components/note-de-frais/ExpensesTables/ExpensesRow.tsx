@@ -123,3 +123,5 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = React.memo(({ report, isExp
         </>
     );
 });
+
+ExpenseRow.displayName = 'ExpenseRow';

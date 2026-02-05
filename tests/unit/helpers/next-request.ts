@@ -26,7 +26,7 @@ export function createMockRequest(
     const cookieStr = Object.entries(cookieMap)
       .map(([k, v]) => `${k}=${v}`)
       .join('; ');
-    init.headers = { ...init.headers, Cookie: cookieStr };
+    init.headers = { ...(init.headers ?? {}), Cookie: cookieStr };
   }
 
   return new NextRequest(new URL(url, 'http://localhost:3000'), init);
@@ -88,7 +88,7 @@ export function createFetchMock() {
       }
     }
     return Response.json({ error: 'No mock matched' }, { status: 500 });
-  }) as unknown as typeof global.fetch & { on: typeof on };
+  }) as unknown as typeof global.fetch;
 
   function on(
     matcher: (url: string, init?: RequestInit) => boolean,
