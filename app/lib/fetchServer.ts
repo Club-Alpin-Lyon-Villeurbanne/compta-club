@@ -9,6 +9,7 @@ import { cookies } from 'next/headers';
  */
 interface FetchOptions extends RequestInit {
   params?: Record<string, string>;
+  timeout?: number; // Timeout in milliseconds
 }
 
 /**
@@ -18,6 +19,11 @@ export async function fetchServer<T = any>(
   url: string,
   options: FetchOptions = {}
 ): Promise<T> {
+  // Default timeout: 8 seconds
+  const timeout = options.timeout ?? 8000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
   try {
     // Récupérer les cookies
     const cookieStore = await cookies();
@@ -33,15 +39,21 @@ export async function fetchServer<T = any>(
       fullUrl = `${url}?${searchParams.toString()}`;
     }
 
+    // Remove timeout from options to avoid passing it to fetch
+    const { timeout: _, ...fetchOptions } = options;
+
     // Effectuer la requête
     const response = await fetch(fullUrl, {
-      ...options,
+      ...fetchOptions,
       headers: {
         ...options.headers,
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
       cache: 'no-store',
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     // Vérifier si la réponse est OK
     if (!response.ok) {
@@ -52,6 +64,13 @@ export async function fetchServer<T = any>(
     // Retourner les données
     return response.json();
   } catch (error) {
+    clearTimeout(timeoutId);
+
+    // Check if it's a timeout error
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Le serveur met trop de temps à répondre. Veuillez réessayer.');
+    }
+
     throw error;
   }
 }

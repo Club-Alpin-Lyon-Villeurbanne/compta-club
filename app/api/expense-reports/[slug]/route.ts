@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { get, patch } from '@/app/lib/fetchServer';
 
+// Configure max execution time for this route
+export const maxDuration = 10; // 10 seconds (max for Hobby plan)
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ slug: string }> }
