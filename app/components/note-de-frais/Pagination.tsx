@@ -22,7 +22,7 @@ const Pagination: React.FC = () => {
     return (
         <div className="flex flex-col items-center px-5 py-5 bg-white border-t xs:flex-row xs:justify-between ">
       <span className="text-xs text-gray-900 xs:text-sm">
-        {displayedCount} note{displayedCount > 1 ? 's' : ''} de frais affichée{displayedCount > 1 ? 's' : ''} — Page {currentPage} sur {totalPages}
+        {displayedCount} note{displayedCount > 1 ? 's' : ''} de frais affichée{displayedCount > 1 ? 's' : ''}
       </span>
             <div className="inline-flex mt-2 xs:mt-0">
                 <button
