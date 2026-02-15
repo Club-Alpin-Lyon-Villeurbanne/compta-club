@@ -31,7 +31,7 @@ const Filters: React.FC = () => {
                     onChange={(e) => setItemsPerPage(Number(e.target.value))}
                     className="block w-full pl-10 pr-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 >
-                    {[5, 10, 15, 20].map((item) => <option key={item} value={item}>{item} par page</option>)}
+                    {[10, 15, 20, 30].map((item) => <option key={item} value={item}>{item} par page</option>)}
                 </select>
             </div>
             <div className="relative">

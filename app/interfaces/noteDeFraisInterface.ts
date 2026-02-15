@@ -1,6 +1,18 @@
 import {Details} from "@/app/interfaces/DetailsInterface";
 import ExpenseStatus from "../enums/ExpenseStatus";
 
+export interface PaginationMeta {
+    page: number;
+    perPage: number;
+    total: number;
+    pages: number;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    meta: PaginationMeta;
+}
+
 export interface PieceJointe {
     id: number
     expenseId: string

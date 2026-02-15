@@ -14,8 +14,6 @@ interface ReportTableProps {
 const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
     const status = useStore((state) => state.status);
     const searchTerm = useStore((state) => state.searchTerm);
-    const itemsPerPage = useStore((state) => state.itemsPerPage);
-    const currentPage = useStore((state) => state.currentPage);
     const dateFilter = useStore((state) => state.dateFilter);
     const requesterFilter = useStore((state) => state.requesterFilter);
     const typeFilter = useStore((state) => state.typeFilter);
@@ -29,6 +27,8 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
         }));
     }, [reports]);
 
+    // TODO: Supprimer ce filtrage client-side une fois les ApiFilter déployés sur le backend.
+    // En attendant, on filtre dans la page courante pour que les filtres restent fonctionnels.
     const reportFiltered = useMemo(() => {
         const search = searchTerm.toLowerCase();
         const requester = requesterFilter.toLowerCase();
@@ -48,11 +48,6 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
 
     // Utiliser le hook de tri
     const { sortedData, sortConfig, handleSort } = useSortableTable(reportFiltered);
-
-    const paginatedReports = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return sortedData.slice(startIndex, startIndex + itemsPerPage);
-    }, [sortedData, currentPage, itemsPerPage]);
 
     // Vérifier que reports est bien un tableau
     if (!Array.isArray(reports)) {
@@ -152,7 +147,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                             </td>
                         </tr>
                     ) : (
-                        paginatedReports.map((report) => (
+                        sortedData.map((report) => (
                             <ReportRow key={report.id} report={report} />
                         ))
                     )}

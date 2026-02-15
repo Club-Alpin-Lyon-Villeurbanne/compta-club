@@ -49,15 +49,16 @@ describe('GET /api/expense-reports', () => {
     expect(data).toEqual(mockExpenseReports);
   });
 
-  it('unwraps data property when response has wrapper', async () => {
+  it('forwards paginated response as-is', async () => {
     setupCookies({ access_token: 'tok' });
+    const paginatedResponse = { data: mockExpenseReports, meta: { page: 1, perPage: 10, total: 5, pages: 1 } };
     createFetchMock().on(
       (url) => url.includes('/admin/notes-de-frais'),
-      () => Response.json({ data: mockExpenseReports, total: 5 })
+      () => Response.json(paginatedResponse)
     );
 
     const { data } = await parseJsonResponse(await GET(makeRequest()));
-    expect(data).toEqual(mockExpenseReports);
+    expect(data).toEqual(paginatedResponse);
   });
 
   it('sends Authorization header with token', async () => {
@@ -76,7 +77,7 @@ describe('GET /api/expense-reports', () => {
     expect(capturedHeaders?.Authorization).toBe('Bearer my-secret-tok');
   });
 
-  it('includes pagination=false in query', async () => {
+  it('forwards client query params to backend', async () => {
     setupCookies({ access_token: 'tok' });
     let capturedUrl = '';
 
@@ -84,12 +85,15 @@ describe('GET /api/expense-reports', () => {
       (url) => url.includes('/admin/notes-de-frais'),
       (url) => {
         capturedUrl = url;
-        return Response.json([]);
+        return Response.json({ data: [], meta: { page: 1, perPage: 10, total: 0, pages: 0 } });
       }
     );
 
-    await GET(makeRequest());
-    expect(capturedUrl).toContain('pagination=false');
+    const reqWithParams = new NextRequest(new URL(`${ROUTE_URL}?status=submitted&page=2`));
+    await GET(reqWithParams);
+    expect(capturedUrl).toContain('status=submitted');
+    expect(capturedUrl).toContain('page=2');
+    expect(capturedUrl).not.toContain('pagination=false');
   });
 
   it('forwards error status from external API', async () => {

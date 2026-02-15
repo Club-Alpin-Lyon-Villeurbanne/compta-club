@@ -17,9 +17,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Ajouter le paramètre pour désactiver la pagination
+    // Transmettre les query params du client vers le backend
     const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/admin/notes-de-frais`);
-    url.searchParams.append('pagination', 'false');
+    request.nextUrl.searchParams.forEach((value, key) => {
+      url.searchParams.append(key, value);
+    });
 
     // Create abort controller with 8s timeout (leaving 2s margin for processing)
     const controller = new AbortController();
@@ -45,9 +47,7 @@ export async function GET(request: NextRequest) {
       }
 
       const apiResponse = await response.json();
-      // Extraire les données du nouveau format
-      const expenseReports = apiResponse.data || apiResponse;
-      return NextResponse.json(expenseReports);
+      return NextResponse.json(apiResponse);
     } catch (fetchError) {
       clearTimeout(timeoutId);
 

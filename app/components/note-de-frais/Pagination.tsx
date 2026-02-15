@@ -5,8 +5,10 @@ const Pagination: React.FC = () => {
     const currentPage = useStore((state) => state.currentPage);
     const setCurrentPage = useStore((state) => state.setCurrentPage);
     const itemsPerPage = useStore((state) => state.itemsPerPage);
-    const totalItems = useStore((state) => state.expenseReports.length);
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const paginationMeta = useStore((state) => state.paginationMeta);
+
+    const totalItems = paginationMeta?.total ?? 0;
+    const totalPages = paginationMeta?.pages ?? 1;
 
     const handlePrev = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -15,6 +17,8 @@ const Pagination: React.FC = () => {
     const handleNext = () => {
         if (currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
+
+    if (totalItems === 0) return null;
 
     return (
         <div className="flex flex-col items-center px-5 py-5 bg-white border-t xs:flex-row xs:justify-between ">

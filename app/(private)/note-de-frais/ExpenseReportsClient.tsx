@@ -1,58 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
 import Filters from "@/app/components/note-de-frais/Filters";
 import ReportTable from "@/app/components/note-de-frais/ReportTable";
 import Pagination from "@/app/components/note-de-frais/Pagination";
 import useStore from "@/app/store/useStore";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import { FaSpinner } from "react-icons/fa";
-import { get } from "@/app/lib/fetchClient";
+import { useExpenseReports } from "@/app/hooks/useExpenseReports";
 
 const ExpenseReportsClient = () => {
-  const router = useRouter();
-  const setExpenseReports = useStore((state) => state.setExpenseReports);
+  const { error } = useExpenseReports();
   const expenseReports = useStore((state) => state.expenseReports);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const isLoading = useStore((state) => state.isLoading);
+  const paginationMeta = useStore((state) => state.paginationMeta);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setError(null);
-        setLoading(true);
-        
-        // Récupérer les notes de frais avec gestion automatique du refresh token
-        const data = await get('/api/expense-reports');
-        
-        // Vérifier que les données sont bien un tableau
-        if (Array.isArray(data)) {
-          setExpenseReports(data);
-        } else {
-          setError('Format de données invalide reçu du serveur');
-          setExpenseReports([]);
-        }
-      } catch (error: any) {
-        // Si l'erreur est liée à l'authentification après le refresh token
-        if (error.message?.includes('Non authentifié')) {
-          if (!isRedirecting) {
-            setIsRedirecting(true);
-            router.push('/');
-          }
-          return;
-        }
-        
-        setError(error.message || 'Une erreur est survenue lors de la récupération des données.');
-        setExpenseReports([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [setExpenseReports, router, isRedirecting]);
+  const isInitialLoad = isLoading && !paginationMeta;
 
   if (error) {
     return <ErrorMessage message={error} />;
@@ -69,15 +32,15 @@ const ExpenseReportsClient = () => {
           </div>
           <Filters />
           <div className="relative">
-            {loading ? (
+            {isInitialLoad ? (
               <div className="flex items-center justify-center p-8">
                 <FaSpinner className="w-8 h-8 text-indigo-600 animate-spin" />
               </div>
             ) : (
-              <>
-                <ReportTable reports={expenseReports} isLoading={loading} />
+              <div className={isLoading ? 'opacity-50 pointer-events-none' : ''}>
+                <ReportTable reports={expenseReports} isLoading={isLoading} />
                 <Pagination />
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -86,4 +49,4 @@ const ExpenseReportsClient = () => {
   );
 };
 
-export default ExpenseReportsClient; 
+export default ExpenseReportsClient;
