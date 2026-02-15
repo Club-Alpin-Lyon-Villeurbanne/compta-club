@@ -42,7 +42,10 @@ export function useExpenseReports() {
         try {
             const params = new URLSearchParams();
             params.set('page', String(currentPage));
-            params.set('itemsPerPage', String(itemsPerPage));
+            // TODO: Envoyer itemsPerPage une fois les ApiFilter déployés sur le backend.
+            // En attendant, on demande le max (30) pour que le filtrage client-side ait
+            // assez de données pour afficher tous les résultats matchants sur une page.
+            params.set('itemsPerPage', '30');
 
             if (status !== 'Toutes') {
                 params.set('status', status);
