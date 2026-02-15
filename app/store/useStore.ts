@@ -30,7 +30,7 @@ const useStore = create<StoreState>((set) => ({
     expenseReports: [],
     paginationMeta: null,
     isLoading: false,
-    status: 'Toutes',
+    status: 'submitted',
     itemsPerPage: 10,
     currentPage: 1,
     searchTerm: '',
@@ -50,7 +50,7 @@ const useStore = create<StoreState>((set) => ({
     setRequesterFilter: (requester) => set({ requesterFilter: requester, currentPage: 1 }),
     setTypeFilter: (type) => set({ typeFilter: type, currentPage: 1 }),
     resetFilters: () => set({
-        status: 'Toutes',
+        status: 'submitted',
         searchTerm: '',
         dateFilter: '',
         requesterFilter: '',
