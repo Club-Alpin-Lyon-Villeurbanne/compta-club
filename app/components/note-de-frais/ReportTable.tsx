@@ -1,6 +1,6 @@
 import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ReportRow from './ReportRow';
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import useStore from "@/app/store/useStore";
 import { useSortableTable } from '@/app/hooks/useSortableTable';
 import SortableHeader from './SortableHeader';
@@ -17,6 +17,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
     const dateFilter = useStore((state) => state.dateFilter);
     const requesterFilter = useStore((state) => state.requesterFilter);
     const typeFilter = useStore((state) => state.typeFilter);
+    const setDisplayedCount = useStore((state) => state.setDisplayedCount);
 
     // Ajouter le montant calculé à chaque rapport pour le tri
     const reportsWithAmount = useMemo(() => {
@@ -45,6 +46,11 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
             return matchesStatus && matchesSearchTerm && matchesDate && matchesRequester && matchesType;
         });
     }, [reportsWithAmount, status, searchTerm, dateFilter, requesterFilter, typeFilter]);
+
+    // TODO: Supprimer ce useEffect une fois les ApiFilter déployés sur le backend.
+    useEffect(() => {
+        setDisplayedCount(reportFiltered.length);
+    }, [reportFiltered.length, setDisplayedCount]);
 
     // Utiliser le hook de tri
     const { sortedData, sortConfig, handleSort } = useSortableTable(reportFiltered);

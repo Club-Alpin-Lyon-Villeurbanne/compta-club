@@ -8,7 +8,7 @@ describe('useStore', () => {
     act(() => {
       useStore.setState({
         expenseReports: [],
-        status: 'Toutes',
+        status: 'submitted',
         itemsPerPage: 10,
         currentPage: 1,
         searchTerm: '',
@@ -20,9 +20,9 @@ describe('useStore', () => {
   });
 
   describe('default filter values', () => {
-    it('should default status filter to "Toutes" so all reports are visible', () => {
+    it('should default status filter to "submitted"', () => {
       const { status } = useStore.getState();
-      expect(status).toBe('Toutes');
+      expect(status).toBe('submitted');
     });
 
     it('should default all other filters to empty/neutral values', () => {
@@ -37,7 +37,7 @@ describe('useStore', () => {
   });
 
   describe('resetFilters', () => {
-    it('should reset status to "Toutes", not a specific status', () => {
+    it('should reset status to "submitted" and clear other filters', () => {
       act(() => {
         useStore.getState().setStatus('approved');
         useStore.getState().setSearchTerm('test');
@@ -50,7 +50,7 @@ describe('useStore', () => {
       });
 
       const state = useStore.getState();
-      expect(state.status).toBe('Toutes');
+      expect(state.status).toBe('submitted');
       expect(state.searchTerm).toBe('');
       expect(state.requesterFilter).toBe('');
       expect(state.currentPage).toBe(1);
@@ -80,8 +80,8 @@ describe('useStore', () => {
     });
   });
 
-  describe('filter integration - no reports should be hidden by default', () => {
-    it('should not filter out reports when status is "Toutes"', () => {
+  describe('filter integration', () => {
+    it('should show all reports when status is "Toutes"', () => {
       const reports = [
         { id: 1, status: 'accounted' },
         { id: 2, status: 'rejected' },
@@ -91,11 +91,11 @@ describe('useStore', () => {
 
       act(() => {
         useStore.getState().setExpenseReports(reports);
+        useStore.getState().setStatus('Toutes');
       });
 
       const { status, expenseReports } = useStore.getState();
 
-      // The default filter should match ALL reports
       const filtered = expenseReports.filter(
         (r: any) => status === 'Toutes' || r.status === status
       );
@@ -103,12 +103,12 @@ describe('useStore', () => {
       expect(filtered).toHaveLength(4);
     });
 
-    it('should not filter out reports when no reports have "submitted" status', () => {
-      // This is the exact bug scenario: all reports are processed, none are "submitted"
+    it('should filter only submitted reports by default', () => {
       const reports = [
         { id: 1, status: 'accounted' },
         { id: 2, status: 'accounted' },
         { id: 3, status: 'rejected' },
+        { id: 4, status: 'submitted' },
       ] as any;
 
       act(() => {
@@ -121,7 +121,7 @@ describe('useStore', () => {
         (r: any) => status === 'Toutes' || r.status === status
       );
 
-      expect(filtered).toHaveLength(3);
+      expect(filtered).toHaveLength(1);
     });
   });
 });

@@ -4,10 +4,9 @@ import React from "react";
 const Pagination: React.FC = () => {
     const currentPage = useStore((state) => state.currentPage);
     const setCurrentPage = useStore((state) => state.setCurrentPage);
-    const itemsPerPage = useStore((state) => state.itemsPerPage);
     const paginationMeta = useStore((state) => state.paginationMeta);
+    const displayedCount = useStore((state) => state.displayedCount);
 
-    const totalItems = paginationMeta?.total ?? 0;
     const totalPages = paginationMeta?.pages ?? 1;
 
     const handlePrev = () => {
@@ -18,12 +17,12 @@ const Pagination: React.FC = () => {
         if (currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
 
-    if (totalItems === 0) return null;
+    if (!paginationMeta || paginationMeta.total === 0) return null;
 
     return (
         <div className="flex flex-col items-center px-5 py-5 bg-white border-t xs:flex-row xs:justify-between ">
       <span className="text-xs text-gray-900 xs:text-sm">
-        Affichage de {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} à{" "} {Math.min(currentPage * itemsPerPage, totalItems)} sur {totalItems} notes de frais
+        {displayedCount} note{displayedCount > 1 ? 's' : ''} de frais affichée{displayedCount > 1 ? 's' : ''} — Page {currentPage} sur {totalPages}
       </span>
             <div className="inline-flex mt-2 xs:mt-0">
                 <button

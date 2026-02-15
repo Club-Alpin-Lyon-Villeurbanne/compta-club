@@ -5,6 +5,7 @@ import { ExpenseReport, PaginationMeta } from "../interfaces/noteDeFraisInterfac
 interface StoreState {
     expenseReports: ExpenseReport[];
     paginationMeta: PaginationMeta | null;
+    displayedCount: number;
     isLoading: boolean;
     status: string;
     itemsPerPage: number;
@@ -15,6 +16,7 @@ interface StoreState {
     typeFilter: string;
     setExpenseReports: (reports: ExpenseReport[]) => void;
     setPaginationMeta: (meta: PaginationMeta | null) => void;
+    setDisplayedCount: (count: number) => void;
     setIsLoading: (loading: boolean) => void;
     setStatus: (status: string) => void;
     setItemsPerPage: (items: number) => void;
@@ -29,6 +31,7 @@ interface StoreState {
 const useStore = create<StoreState>((set) => ({
     expenseReports: [],
     paginationMeta: null,
+    displayedCount: 0,
     isLoading: false,
     status: 'submitted',
     itemsPerPage: 10,
@@ -41,6 +44,7 @@ const useStore = create<StoreState>((set) => ({
         expenseReports: Array.isArray(reports) ? reports : []
     }),
     setPaginationMeta: (meta) => set({ paginationMeta: meta }),
+    setDisplayedCount: (count) => set({ displayedCount: count }),
     setIsLoading: (loading) => set({ isLoading: loading }),
     setStatus: (status) => set({ status, currentPage: 1 }),
     setItemsPerPage: (items) => set({ itemsPerPage: items, currentPage: 1 }),
