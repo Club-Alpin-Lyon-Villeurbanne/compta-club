@@ -1,5 +1,8 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
+
 export default function PrivateError({
   error,
   reset,
@@ -7,6 +10,10 @@ export default function PrivateError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <main className="flex items-center justify-center min-h-[50vh]">
       <div className="text-center">

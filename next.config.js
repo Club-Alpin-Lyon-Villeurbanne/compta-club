@@ -62,7 +62,7 @@ if (process.env.NODE_ENV === 'production') {
     nextConfig,
     {
       org: 'club-alpin-lyon',
-      project: 'compta-staging',
+      project: 'compta-club-lyon-prod',
       // Only print logs for uploading source maps in CI
       silent: !process.env.CI,
       // Upload a larger set of source maps for prettier stack traces
