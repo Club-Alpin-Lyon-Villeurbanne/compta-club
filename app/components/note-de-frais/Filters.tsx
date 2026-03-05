@@ -15,12 +15,22 @@ const Filters: React.FC = () => {
         setRequesterFilter,
         typeFilter,
         setTypeFilter,
+        itemsPerPage,
+        setItemsPerPage,
         resetFilters
     } = useStore();
 
     return (
         <div className="flex flex-wrap items-center gap-2 my-2">
-            {/* TODO: Rétablir le sélecteur "par page" une fois les ApiFilter déployés sur le backend. */}
+            <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="block w-20 py-2 px-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+                {[10, 25, 50].map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                ))}
+            </select>
             <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <FaFilter className="text-gray-400" />
@@ -57,7 +67,7 @@ const Filters: React.FC = () => {
                     type="text"
                     value={requesterFilter}
                     onChange={(e) => setRequesterFilter(e.target.value)}
-                    placeholder="Nom du demandeur"
+                    placeholder="Nom de famille"
                     className="block w-full pl-10 pr-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
@@ -82,7 +92,7 @@ const Filters: React.FC = () => {
                 <input
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Rechercher une note de frais"
+                    placeholder="Titre de la sortie"
                     className="block w-full pl-10 pr-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
