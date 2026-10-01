@@ -7,7 +7,16 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
   const router = useRouter();
 
   const handleAction = async (reportId: number, action: 'approved' | 'rejected' | 'accounted') => {
-    const Swal = await getSwal();
+    let Swal: Awaited<ReturnType<typeof getSwal>>;
+    try {
+      Swal = await getSwal();
+    } catch (error) {
+      // Par exemple un onglet resté ouvert pendant un déploiement : l'ancien fichier n'existe plus.
+      console.error(error);
+      window.alert('Une erreur est survenue. Rechargez la page puis réessayez.');
+      return false;
+    }
+
     try {
       if (action === 'approved') {
         const result = await Swal.fire({
