@@ -90,12 +90,14 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = React.memo(({ report, isExp
                                     <button 
                                         className="p-1 font-bold text-white transition duration-300 ease-in-out bg-green-500 rounded-full hover:bg-green-600"
                                         onClick={() => onAction(report.id, ExpenseStatus.APPROVED)}
+                                        title="Approuver"
                                     >
                                         <FaCheck className="w-4 h-4" />
                                     </button>
                                     <button 
                                         className="p-1 font-bold text-white transition duration-300 ease-in-out bg-red-500 rounded-full hover:bg-red-600"
                                         onClick={() => onAction(report.id, ExpenseStatus.REJECTED)}
+                                        title="Rejeter"
                                     >
                                         <FaTimes className="w-4 h-4" />
                                     </button>
@@ -105,6 +107,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = React.memo(({ report, isExp
                                 <button 
                                     className="p-1 font-bold text-white transition duration-300 ease-in-out bg-purple-500 rounded-full hover:bg-purple-600"
                                     onClick={() => onAction(report.id, ExpenseStatus.ACCOUNTED)}
+                                    title="Comptabiliser"
                                 >
                                     <FaFileInvoiceDollar className="w-4 h-4" />
                                 </button>

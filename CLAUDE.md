@@ -16,16 +16,12 @@ pnpm lint               # Run ESLint
 ```bash
 pnpm test:unit          # Run Vitest unit tests
 pnpm test:unit:watch    # Run unit tests in watch mode
-pnpm test:e2e           # Run Playwright E2E tests (requires .env.test)
+pnpm test:e2e           # Run Playwright E2E tests
 pnpm test:e2e:ui        # Run tests with Playwright UI
 pnpm test:e2e:report    # Show test report
 ```
 
-**Note**: E2E tests require `.env.test` with valid credentials:
-```env
-VALID_EMAIL=your-email@example.com
-VALID_PASSWORD=your-password
-```
+**Note**: E2E tests need no backend nor credentials. Playwright starts a fake Symfony API (`tests/mocks/fake-backend.ts`, data from `tests/mocks/fixtures.ts`) and a dev server on port 3100 pointing to it. Next.js calls the API server-side, so `page.route()` cannot replace this fake backend; use it only to inject failures in a single test.
 
 ## Architecture Overview
 

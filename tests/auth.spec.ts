@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillLoginForm } from './test-utils';
 
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,7 +8,6 @@ test.describe('Authentication', () => {
   });
 
   test('should show login form on home page', async ({ page }) => {
-    // Vérifier que le formulaire de connexion est affiché
     await expect(page.locator('h2')).toContainText('Connexion');
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
@@ -15,47 +15,39 @@ test.describe('Authentication', () => {
   });
 
   test('should show error with invalid credentials', async ({ page }) => {
-    // Remplir le formulaire avec des identifiants invalides
-    await page.fill('input[type="email"]', 'invalid@example.com');
-    await page.fill('input[type="password"]', 'wrongpassword');
-    await page.click('button[type="submit"]');
+    await fillLoginForm(page, { email: 'invalid@example.com', password: 'wrongpassword' });
 
-    // Vérifier que l'erreur s'affiche
-    await expect(page.locator('.text-red-500')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Identifiants invalides')).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
   });
 
-  test('should show error with empty fields', async ({ page }) => {
-    // Soumettre le formulaire sans remplir les champs
+  // Le formulaire HTML5 empêche la soumission : on vérifie que le navigateur bloque bien le champ.
+  test('should not submit with empty fields', async ({ page }) => {
     await page.click('button[type="submit"]');
 
-    // Vérifier que l'erreur s'affiche
-    // Note: Le formulaire HTML5 empêche la soumission avec des champs requis vides
-    // donc nous vérifions que nous restons sur la page de connexion
-    await expect(page).toHaveURL(/.*\/$/);
+    const email = page.locator('input[type="email"]');
+    expect(await email.evaluate((el: HTMLInputElement) => el.validity.valueMissing)).toBe(true);
+    await expect(page).toHaveURL(/\/$/);
   });
 
-  test('should show error with invalid email format', async ({ page }) => {
-    // Remplir le formulaire avec un email invalide
+  test('should not submit with invalid email format', async ({ page }) => {
     await page.fill('input[type="email"]', 'invalid-email');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
 
-    // Vérifier que l'erreur s'affiche
-    // Note: Le formulaire HTML5 empêche la soumission avec un email invalide
-    // donc nous vérifions que nous restons sur la page de connexion
-    await expect(page).toHaveURL(/.*\/$/);
+    const email = page.locator('input[type="email"]');
+    expect(await email.evaluate((el: HTMLInputElement) => el.validity.typeMismatch)).toBe(true);
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test('should handle server error gracefully', async ({ page }) => {
-    // Simuler une erreur serveur en utilisant un email spécial
-    await page.fill('input[type="email"]', 'server-error@example.com');
-    await page.fill('input[type="password"]', 'password123');
-    await page.click('button[type="submit"]');
+    await page.route('**/api/auth/login', (route) =>
+      route.fulfill({ status: 500, json: { error: 'Erreur lors de la connexion' } })
+    );
 
-    // Vérifier que l'erreur s'affiche
-    await expect(page.locator('.text-red-500')).toBeVisible({ timeout: 5000 });
-    // Vérifier que le message d'erreur contient "Identifiants invalides" ou un message d'erreur serveur
-    const errorText = await page.locator('.text-red-500').textContent();
-    expect(errorText).toMatch(/Identifiants invalides|Erreur|indisponible/);
+    await fillLoginForm(page);
+
+    await expect(page.getByText('Le serveur est temporairement indisponible')).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
   });
-}); 
+});

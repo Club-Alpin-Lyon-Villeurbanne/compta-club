@@ -3,21 +3,25 @@ import { login } from './test-utils';
 
 test.describe('Authentication Flow', () => {
   test('complete authentication flow', async ({ page }) => {
-    // Utiliser la fonction d'aide pour se connecter
+    // login() vérifie l'arrivée sur la liste et la présence du bouton de déconnexion
     await login(page);
-    
-    // Vérifier que nous sommes bien sur la page des notes de frais
-    await expect(page).toHaveURL(/.*\/note-de-frais/);
+
+    await expect(page.getByRole('heading', { name: 'Notes de frais' })).toBeVisible();
   });
 
   test('should maintain authentication after page refresh', async ({ page }) => {
-    // Se connecter
     await login(page);
-    
-    // Rafraîchir la page
+
     await page.reload();
-    
-    // Vérifier que l'utilisateur reste sur la page des notes de frais
-    await expect(page).toHaveURL(/.*\/note-de-frais/);
+
+    await expect(page).toHaveURL(/\/note-de-frais$/);
+    await expect(page.getByRole('heading', { name: 'Notes de frais' })).toBeVisible();
   });
-}); 
+
+  test('should redirect to login when not authenticated', async ({ page }) => {
+    await page.goto('/note-de-frais');
+
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('h2')).toContainText('Connexion');
+  });
+});

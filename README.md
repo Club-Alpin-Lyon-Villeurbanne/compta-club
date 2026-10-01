@@ -116,20 +116,14 @@ Les tests unitaires couvrent :
 
 ### **Tests E2E avec Playwright**
 
-Les tests end-to-end sont implémentés avec Playwright. Pour exécuter les tests :
+Les tests end-to-end sont implémentés avec Playwright. Ils n'ont besoin ni du backend ni d'identifiants : Playwright démarre un faux backend (`tests/mocks/fake-backend.ts`, données dans `tests/mocks/fixtures.ts`) et un serveur de dev sur le port 3100 qui pointe dessus.
 
-1. Assurez-vous d'avoir un fichier `.env.test.local` à la racine du projet avec les identifiants de test :
-   ```env
-   VALID_EMAIL=votre-email@example.com
-   VALID_PASSWORD=votre-mot-de-passe
-   ```
-
-2. Lancez les tests avec la commande :
+1. Lancez les tests avec la commande :
    ```bash
    pnpm test:e2e
    ```
 
-3. Pour lancer les tests avec l'interface utilisateur de Playwright :
+2. Pour lancer les tests avec l'interface utilisateur de Playwright :
    ```bash
    pnpm test:e2e:ui
    ```
