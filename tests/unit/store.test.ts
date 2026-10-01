@@ -8,6 +8,7 @@ describe('useStore', () => {
     act(() => {
       useStore.setState({
         expenseReports: [],
+        paginationMeta: null,
         status: 'submitted',
         itemsPerPage: 10,
         currentPage: 1,
