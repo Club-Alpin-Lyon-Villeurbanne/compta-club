@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createFetchMock, createMockCookieStore } from '../helpers/next-request';
-import { mockRefreshResponse } from '@/tests/mocks/fixtures';
 
 // Mock next/headers
 vi.mock('next/headers', () => ({
@@ -42,89 +41,17 @@ describe('auth.server — isAuthenticated()', () => {
     expect(await isAuthenticated()).toBe(false);
   });
 
-  it('returns false when token expired and no refresh_token', async () => {
-    setupCookies({ access_token: 'expired' });
-    createFetchMock().on(
+  // Le rafraîchissement se fait dans middleware.ts : un composant serveur ne peut pas écrire de cookies.
+  it('returns false on 401 without trying to refresh the token', async () => {
+    const store = setupCookies({ access_token: 'expired', refresh_token: 'valid-refresh' });
+    const fetchMock = createFetchMock().on(
       (url) => url.includes('/admin/notes-de-frais'),
       () => new Response(null, { status: 401 })
     );
 
     expect(await isAuthenticated()).toBe(false);
-  });
-
-  it('refreshes token and returns true on successful refresh cycle', async () => {
-    const store = setupCookies({
-      access_token: 'expired',
-      refresh_token: 'valid-refresh',
-    });
-
-    let headCallCount = 0;
-    createFetchMock()
-      .on(
-        (url, init) =>
-          url.includes('/admin/notes-de-frais') && init?.method === 'HEAD',
-        () => {
-          headCallCount++;
-          if (headCallCount === 1) {
-            return new Response(null, { status: 401 });
-          }
-          return new Response(null, { status: 200 });
-        }
-      )
-      .on(
-        (url) => url.includes('/token/refresh'),
-        () => Response.json(mockRefreshResponse)
-      );
-
-    expect(await isAuthenticated()).toBe(true);
-    expect(store.set).toHaveBeenCalledWith(
-      'access_token',
-      mockRefreshResponse.token,
-      expect.any(Object)
-    );
-    expect(store.set).toHaveBeenCalledWith(
-      'refresh_token',
-      mockRefreshResponse.refresh_token,
-      expect.any(Object)
-    );
-  });
-
-  it('returns false when refresh API call fails', async () => {
-    setupCookies({
-      access_token: 'expired',
-      refresh_token: 'bad-refresh',
-    });
-
-    createFetchMock()
-      .on(
-        (url) => url.includes('/admin/notes-de-frais'),
-        () => new Response(null, { status: 401 })
-      )
-      .on(
-        (url) => url.includes('/token/refresh'),
-        () => Response.json({ error: 'Invalid' }, { status: 401 })
-      );
-
-    expect(await isAuthenticated()).toBe(false);
-  });
-
-  it('returns false when refresh returns empty tokens', async () => {
-    setupCookies({
-      access_token: 'expired',
-      refresh_token: 'valid-refresh',
-    });
-
-    createFetchMock()
-      .on(
-        (url) => url.includes('/admin/notes-de-frais'),
-        () => new Response(null, { status: 401 })
-      )
-      .on(
-        (url) => url.includes('/token/refresh'),
-        () => Response.json({ token: null, refresh_token: null })
-      );
-
-    expect(await isAuthenticated()).toBe(false);
+    expect(fetchMock.fetchFn).toHaveBeenCalledOnce();
+    expect(store.set).not.toHaveBeenCalled();
   });
 
   it('returns false on network error', async () => {
