@@ -286,3 +286,29 @@ describe('calculateTotals', () => {
     });
   });
 });
+
+describe('amounts sent with an unexpected type', () => {
+  it('formatEuro accepts a numeric string', () => {
+    expect(formatEuro('12.5' as unknown as number)).toBe('12.50 €');
+  });
+
+  it('calculateTotals converts string prices to numbers', () => {
+    const details = JSON.stringify({
+      transport: { type: 'PUBLIC_TRANSPORT', ticketPrice: '0' },
+      accommodations: [],
+      others: [{ price: '10' }],
+    });
+
+    expect(calculateTotals(details).totalRemboursable).toBe(10);
+  });
+
+  it('calculateTotals tolerates lists sent as objects', () => {
+    const details = JSON.stringify({
+      transport: { type: 'PUBLIC_TRANSPORT', ticketPrice: 5 },
+      accommodations: {},
+      others: {},
+    });
+
+    expect(calculateTotals(details).totalRemboursable).toBe(5);
+  });
+});

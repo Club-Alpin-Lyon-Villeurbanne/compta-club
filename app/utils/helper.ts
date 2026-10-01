@@ -9,21 +9,29 @@ export function getFileUrlByExpenseId(piecesJointes: any[], expenseId: string): 
 }
 
 
-export const formatEuro = (amount: number) => `${amount?.toFixed(2)} €`;
+// Les montants viennent du JSON saisi par l'adhérent : on ne fait pas confiance à leur type.
+const toAmount = (value: unknown): number => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : 0;
+};
+
+const asList = <T,>(value: T[] | unknown): T[] => (Array.isArray(value) ? value : []);
+
+export const formatEuro = (amount: number) => `${toAmount(amount).toFixed(2)} €`;
 
 function calculateTransportTotal(transport: Transport): number {
     switch (transport.type) {
         case "PERSONAL_VEHICLE":
-            const distance = transport.distance ?? 0;
-            const tollFee = transport.tollFee ?? 0;
+            const distance = toAmount(transport.distance);
+            const tollFee = toAmount(transport.tollFee);
             return (distance * config.TAUX_KILOMETRIQUE_VOITURE) + 
                    (tollFee / config.DIVISION_PEAGE);
 
         case "CLUB_MINIBUS":
-            const clubDistance = transport.distance ?? 0;
-            const clubFuel = transport.fuelExpense ?? 0;
-            const clubToll = transport.tollFee ?? 0;
-            const clubPassengers = transport.passengerCount ?? 0;
+            const clubDistance = toAmount(transport.distance);
+            const clubFuel = toAmount(transport.fuelExpense);
+            const clubToll = toAmount(transport.tollFee);
+            const clubPassengers = toAmount(transport.passengerCount);
             if (clubPassengers <= 0) return 0;
             
             const clubTotal = (clubDistance * config.TAUX_KILOMETRIQUE_MINIBUS) + 
@@ -31,16 +39,16 @@ function calculateTransportTotal(transport: Transport): number {
             return clubTotal / clubPassengers;
 
         case "RENTAL_MINIBUS":
-            const rental = transport.rentalPrice ?? 0;
-            const rentalFuel = transport.fuelExpense ?? 0;
-            const rentalToll = transport.tollFee ?? 0;
-            const passengers = transport.passengerCount ?? 0;
+            const rental = toAmount(transport.rentalPrice);
+            const rentalFuel = toAmount(transport.fuelExpense);
+            const rentalToll = toAmount(transport.tollFee);
+            const passengers = toAmount(transport.passengerCount);
             if (passengers <= 0) return 0;
             
             return (rental + rentalFuel + rentalToll) / passengers;
 
         case "PUBLIC_TRANSPORT":
-            return transport.ticketPrice ?? 0;
+            return toAmount(transport.ticketPrice);
 
         default:
             return 0;
@@ -72,16 +80,18 @@ export function calculateTotals(details: Details) {
         }
     }
 
-    const transportTotal = calculateTransportTotal(details.transport);
+    const transportTotal = details.transport ? calculateTransportTotal(details.transport) : 0;
+    const accommodations = asList<{ price?: number }>(details.accommodations);
+    const others = asList<{ price?: number }>(details.others);
 
-    const accommodationsTotal = details.accommodations.reduce((total, acc) => 
-        total + (acc.price ?? 0), 0);
+    const accommodationsTotal = accommodations.reduce((total, acc) => 
+        total + toAmount(acc.price), 0);
 
-    const accommodationsRemboursable = details.accommodations.reduce((total, acc) => 
-        total + Math.min(acc.price ?? 0, config.NUITEE_MAX_REMBOURSABLE), 0);
+    const accommodationsRemboursable = accommodations.reduce((total, acc) => 
+        total + Math.min(toAmount(acc.price), config.NUITEE_MAX_REMBOURSABLE), 0);
 
-    const othersTotal = details.others.reduce((total, other) => 
-        total + (other.price ?? 0), 0);
+    const othersTotal = others.reduce((total, other) => 
+        total + toAmount(other.price), 0);
 
     const totalRemboursable = transportTotal + accommodationsRemboursable + othersTotal;
 
