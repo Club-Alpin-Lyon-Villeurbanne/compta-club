@@ -9,7 +9,9 @@ process.env.NODE_ENV = 'test';
 const originalFetch = global.fetch;
 
 // Restore all mocks after each test to avoid leaking state
+// (since Vitest 3, restoreAllMocks no longer resets vi.fn() calls and implementations)
 afterEach(() => {
+  vi.resetAllMocks();
   vi.restoreAllMocks();
   global.fetch = originalFetch;
 });

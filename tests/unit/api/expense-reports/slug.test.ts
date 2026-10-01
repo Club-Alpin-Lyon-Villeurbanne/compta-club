@@ -74,6 +74,15 @@ describe('GET /api/expense-reports/[slug]', () => {
 
     expect(status).toBe(500);
   });
+
+  it('propagates 401 so the client can refresh the session', async () => {
+    vi.mocked(get).mockRejectedValue(Object.assign(new Error('Erreur 401'), { status: 401 }));
+
+    const req = new NextRequest(new URL('http://localhost:3000/api/expense-reports/1'));
+    const { status } = await parseJsonResponse(await GET(req, makeContext('1')));
+
+    expect(status).toBe(401);
+  });
 });
 
 describe('PATCH /api/expense-reports/[slug]', () => {
@@ -153,14 +162,5 @@ describe('PATCH /api/expense-reports/[slug]', () => {
     );
 
     expect(status).toBe(422);
-  });
-
-  it('propagates 401 so the client can refresh the session', async () => {
-    vi.mocked(get).mockRejectedValue(Object.assign(new Error('Erreur 401'), { status: 401 }));
-
-    const req = new NextRequest(new URL('http://localhost:3000/api/expense-reports/1'));
-    const { status } = await parseJsonResponse(await GET(req, makeContext('1')));
-
-    expect(status).toBe(401);
   });
 });

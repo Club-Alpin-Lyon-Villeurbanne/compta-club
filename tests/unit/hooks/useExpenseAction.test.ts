@@ -29,6 +29,24 @@ describe('useExpenseActions', () => {
     const outcome = await result.current.handleAction(1, 'approved');
 
     expect(outcome).toBe(false);
+    expect(patch).toHaveBeenCalledWith('/api/expense-reports/1', { status: 'approved' });
+    expect(state.fire).toHaveBeenLastCalledWith(expect.objectContaining({ icon: 'error' }));
+    expect(fetchData).not.toHaveBeenCalled();
+  });
+
+  it('shows an error dialog when the rejection is refused', async () => {
+    state.fire.mockResolvedValue({ value: 'Justificatif manquant' });
+    vi.mocked(patch).mockRejectedValue(new Error('Erreur 422'));
+    const fetchData = vi.fn();
+
+    const { result } = renderHook(() => useExpenseActions(fetchData));
+    const outcome = await result.current.handleAction(1, 'rejected');
+
+    expect(outcome).toBe(false);
+    expect(patch).toHaveBeenCalledWith('/api/expense-reports/1', {
+      status: 'rejected',
+      commentaireStatut: 'Justificatif manquant',
+    });
     expect(state.fire).toHaveBeenLastCalledWith(expect.objectContaining({ icon: 'error' }));
     expect(fetchData).not.toHaveBeenCalled();
   });

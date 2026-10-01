@@ -292,12 +292,44 @@ describe('amounts sent with an unexpected type', () => {
     expect(formatEuro('12.5' as unknown as number)).toBe('12.50 €');
   });
 
+  it.each([['abc'], [undefined], [null], [NaN]])('formatEuro(%s) shows 0.00 €', (input) => {
+    expect(formatEuro(input as unknown as number)).toBe('0.00 €');
+  });
+
   it('calculateTotals converts string prices to numbers', () => {
     const details = JSON.stringify({
-      transport: { type: 'PUBLIC_TRANSPORT', ticketPrice: '0' },
+      transport: { type: 'PUBLIC_TRANSPORT', ticketPrice: '2.5' },
       accommodations: [],
       others: [{ price: '10' }],
     });
+
+    expect(calculateTotals(details).totalRemboursable).toBe(12.5);
+  });
+
+  it('calculateTotals adds string amounts instead of concatenating them', () => {
+    const totals = calculateTotals(JSON.stringify({
+      transport: { type: 'RENTAL_MINIBUS', rentalPrice: '100', fuelExpense: '20', tollFee: '10', passengerCount: '2' },
+      accommodations: [{ price: '45' }],
+      others: [{ price: 'abc' }],
+    }));
+
+    expect(totals.transportTotal).toBe(65); // (100 + 20 + 10) / 2
+    expect(totals.accommodationsTotal).toBe(45);
+    expect(totals.othersTotal).toBe(0);
+  });
+
+  it('calculateTotals adds string fuel and toll for the club minibus', () => {
+    const details = JSON.stringify({
+      transport: { type: 'CLUB_MINIBUS', distance: '0', fuelExpense: '30', tollFee: '10', passengerCount: '2' },
+      accommodations: [],
+      others: [],
+    });
+
+    expect(calculateTotals(details).transportTotal).toBe(20); // (30 + 10) / 2
+  });
+
+  it('calculateTotals tolerates a report without transport', () => {
+    const details = JSON.stringify({ accommodations: [], others: [{ price: 10 }] });
 
     expect(calculateTotals(details).totalRemboursable).toBe(10);
   });
