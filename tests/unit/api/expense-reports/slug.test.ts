@@ -136,4 +136,31 @@ describe('PATCH /api/expense-reports/[slug]', () => {
 
     expect(status).toBe(500);
   });
+
+  it('propagates the backend status when the update is refused', async () => {
+    vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Erreur 422'), { status: 422 }));
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/1'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved' }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    const { status } = await parseJsonResponse(
+      await PATCH(req, makeContext('1'))
+    );
+
+    expect(status).toBe(422);
+  });
+
+  it('propagates 401 so the client can refresh the session', async () => {
+    vi.mocked(get).mockRejectedValue(Object.assign(new Error('Erreur 401'), { status: 401 }));
+
+    const req = new NextRequest(new URL('http://localhost:3000/api/expense-reports/1'));
+    const { status } = await parseJsonResponse(await GET(req, makeContext('1')));
+
+    expect(status).toBe(401);
+  });
 });

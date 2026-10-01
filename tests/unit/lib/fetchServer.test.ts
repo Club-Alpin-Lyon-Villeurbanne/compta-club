@@ -103,6 +103,16 @@ describe('fetchServer', () => {
     await expect(fetchServer(`${API}/data`)).rejects.toThrow('Forbidden');
   });
 
+  it('attaches the HTTP status to the thrown error', async () => {
+    setupCookies({});
+    createFetchMock().on(
+      () => true,
+      () => Response.json({ detail: 'Invalid status transition' }, { status: 422 })
+    );
+
+    await expect(fetchServer(`${API}/data`)).rejects.toMatchObject({ status: 422 });
+  });
+
   it('throws on network error', async () => {
     setupCookies({});
     createFetchMock().on(

@@ -7,8 +7,8 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
   const router = useRouter();
 
   const handleAction = async (reportId: number, action: 'approved' | 'rejected' | 'accounted') => {
+    const Swal = await getSwal();
     try {
-      const Swal = await getSwal();
       if (action === 'approved') {
         const result = await Swal.fire({
           title: 'Êtes-vous sûr ?',

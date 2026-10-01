@@ -22,7 +22,7 @@ export async function GET(
   } catch (error) {
     return NextResponse.json(
       { error: 'Erreur lors de la récupération de la note de frais' },
-      { status: 500 }
+      { status: (error as { status?: number }).status ?? 500 }
     );
   }
 }
@@ -48,7 +48,7 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: 'Erreur lors de la mise à jour de la note de frais' },
-      { status: 500 }
+      { status: (error as { status?: number }).status ?? 500 }
     );
   }
 } 

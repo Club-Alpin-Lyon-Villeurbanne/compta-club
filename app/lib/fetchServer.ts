@@ -58,7 +58,7 @@ export async function fetchServer<T = any>(
     // Vérifier si la réponse est OK
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Erreur ${response.status}`);
+      throw Object.assign(new Error(errorData.error || `Erreur ${response.status}`), { status: response.status });
     }
 
     // Retourner les données
