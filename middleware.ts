@@ -8,6 +8,9 @@ import { COOKIE_NAMES } from './app/lib/constants';
  * Le layout privé vérifie la session côté serveur, mais un composant serveur n'a pas le droit
  * d'écrire de cookies : sans ce middleware, un jeton d'accès expiré (au bout d'1 h) renvoyait
  * vers la connexion alors que le refresh token était encore valide.
+ *
+ * Next 16 renomme cette convention en proxy.ts (fonction `proxy`, runtime Node.js uniquement) :
+ * à la montée de version, `npx @next/codemod@latest middleware-to-proxy`.
  */
 
 // Marge pour ne pas envoyer un jeton qui expirerait pendant le rendu de la page.

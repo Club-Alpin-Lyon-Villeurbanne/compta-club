@@ -42,6 +42,7 @@ VALID_PASSWORD=your-password
 #### 1. Authentication Flow
 - Login via `/api/auth/login` route → external API (`NEXT_PUBLIC_API_URL/auth`)
 - Tokens stored in httpOnly cookies (`access_token`, `refresh_token`)
+- Session refresh on page loads: `middleware.ts` refreshes an expired access token before rendering (server components cannot set cookies)
 - Server-side auth check: `app/lib/auth.server.ts`
 - Client-side auth check: `app/lib/auth.client.ts`
 - Automatic token refresh on 401 responses
