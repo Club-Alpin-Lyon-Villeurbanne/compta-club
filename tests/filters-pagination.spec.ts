@@ -141,12 +141,37 @@ test.describe('Column Sorting', () => {
     await expect(rows(page)).toHaveText([/Sortie Mont Blanc/, /Via ferrata Chamechaude/, /Canyon Ardeche/]);
   });
 
-  // Bug : les clés de tri de ReportTable (event.titre, user.lastname, event.tsp, createdAt,
-  // event.commission.id) n'existent pas dans les données (sortie, utilisateur, dateCreation).
-  // Seules les colonnes Montant, Type et Statut trient réellement.
-  test.fixme('should sort by title', async ({ page }) => {
+  // Ordre d'arrivée : Mont Blanc, Canyon, Via ferrata. Chaque ordre attendu en diffère.
+  test('should sort by title', async ({ page }) => {
     await page.getByRole('columnheader', { name: 'Note de frais' }).click();
 
     await expect(rows(page)).toHaveText([/Canyon Ardeche/, /Sortie Mont Blanc/, /Via ferrata Chamechaude/]);
+  });
+
+  test('should sort by requester last name', async ({ page }) => {
+    await page.getByRole('columnheader', { name: 'Demandeur' }).click();
+
+    // Dupont, Fontaine, Moreau
+    await expect(rows(page)).toHaveText([/Sortie Mont Blanc/, /Via ferrata Chamechaude/, /Canyon Ardeche/]);
+  });
+
+  test('should sort by event date, latest first', async ({ page }) => {
+    const header = page.getByRole('columnheader', { name: 'Date sortie' });
+
+    await header.click();
+    await header.click();
+
+    // 08/02/2025, puis les deux sorties du 15/01/2025 dans leur ordre d'arrivée
+    await expect(rows(page)).toHaveText([/Via ferrata Chamechaude/, /Sortie Mont Blanc/, /Canyon Ardeche/]);
+  });
+
+  test('should sort by submission date, latest first', async ({ page }) => {
+    const header = page.getByRole('columnheader', { name: 'Soumission' });
+
+    await header.click();
+    await header.click();
+
+    // 09/02/2025, 12/01/2025, 10/01/2025
+    await expect(rows(page)).toHaveText([/Via ferrata Chamechaude/, /Canyon Ardeche/, /Sortie Mont Blanc/]);
   });
 });
