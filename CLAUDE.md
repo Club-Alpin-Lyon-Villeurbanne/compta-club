@@ -83,7 +83,7 @@ See `API.md` for API documentation (note: this doc may move to the backend repo 
 
 1. **Token Management**: Never expose tokens in client-side code. Use the provided fetch utilities.
 
-2. **Error Handling**: All API calls should handle 401 (unauthorized) by attempting token refresh.
+2. **Error Handling**: Client API calls handle 401 (unauthorized) by attempting token refresh (`fetchClient` → `/api/auth/check`). Page loads are refreshed beforehand by `middleware.ts`: server components cannot set cookies, so `isAuthenticated()` only checks the token.
 
 3. **TypeScript**: The project has `ignoreBuildErrors: true` in Next.js config but maintain type safety where possible.
 
