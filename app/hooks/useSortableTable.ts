@@ -37,7 +37,7 @@ export function useSortableTable<T>(
     }
 
     return [...data].sort((a, b) => {
-      // Fonction pour obtenir une valeur imbriquée avec une chaîne comme "event.titre"
+      // Fonction pour obtenir une valeur imbriquée avec une chaîne comme "sortie.titre"
       const getNestedValue = (obj: any, path: string) => {
         return path.split('.').reduce((acc, part) => acc?.[part], obj);
       };
@@ -45,16 +45,16 @@ export function useSortableTable<T>(
       const aValue = getNestedValue(a, sortConfig.key as string);
       const bValue = getNestedValue(b, sortConfig.key as string);
 
-      if (aValue === null || aValue === undefined) return 1;
-      if (bValue === null || bValue === undefined) return -1;
+      // Les valeurs manquantes restent en fin de liste, quel que soit le sens
+      const aMissing = aValue === null || aValue === undefined;
+      const bMissing = bValue === null || bValue === undefined;
+      if (aMissing || bMissing) return Number(aMissing) - Number(bMissing);
 
-      if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
+      // Textes dans l'ordre français, sans tenir compte des majuscules ni des accents
+      const order = typeof aValue === 'string' && typeof bValue === 'string'
+        ? aValue.localeCompare(bValue, 'fr', { sensitivity: 'base' })
+        : aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      return sortConfig.direction === 'asc' ? order : -order;
     });
   }, [data, sortConfig]);
 
