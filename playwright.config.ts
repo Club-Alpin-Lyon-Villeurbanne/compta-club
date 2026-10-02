@@ -16,7 +16,8 @@ export default defineConfig({
   // Un test qui ne passe qu'au 2e essai fait échouer la CI : les relances ne masquent pas l'instabilité.
   failOnFlakyTests: !!process.env.CI,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  // En CI : la liste dans les logs, et le rapport HTML conservé en artefact si un test échoue.
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'html',
   globalSetup: './tests/global-setup.ts',
   // Marge pour une machine chargée (beaucoup de workers en parallèle).
   expect: { timeout: 10_000 },
@@ -41,7 +42,8 @@ export default defineConfig({
     // keepAliveTimeout : sans lui, une connexion réutilisée au moment où le serveur la ferme
     // (5 s d'inactivité par défaut) échoue en ECONNRESET.
     command: `npm run build && npm run start -- --port ${APP_PORT} --keepAliveTimeout 600000`,
-    timeout: 180_000,
+    // Le build de production peut être plus lent sur une machine de CI.
+    timeout: 300_000,
     url: APP_URL,
     reuseExistingServer: false,
     env: {
