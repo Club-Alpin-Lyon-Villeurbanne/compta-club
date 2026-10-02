@@ -116,7 +116,7 @@ Les tests unitaires couvrent :
 
 ### **Tests E2E avec Playwright**
 
-Les tests end-to-end sont implémentés avec Playwright. Ils n'ont besoin ni du backend ni d'identifiants : Playwright démarre un faux backend (`tests/mocks/fake-backend.ts`, données dans `tests/mocks/fixtures.ts`) et un serveur de dev sur le port 3100 qui pointe dessus.
+Les tests end-to-end sont implémentés avec Playwright. Ils n'ont besoin ni du backend ni d'identifiants : Playwright construit l'application en mode production, la sert sur le port 3100 et la branche sur un faux backend (`tests/mocks/fake-backend.ts`, données dans `tests/mocks/fixtures.ts`) qui reproduit les formats de l'API de production. Le build écrase `.next` : ne lancez pas `pnpm dev` en même temps.
 
 1. Lancez les tests avec la commande :
    ```bash

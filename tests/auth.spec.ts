@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { fillLoginForm } from './test-utils';
+import { test, expect, fillLoginForm, waitForLoginForm } from './test-utils';
 
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,6 +22,7 @@ test.describe('Authentication', () => {
 
   // Le formulaire HTML5 empêche la soumission : on vérifie que le navigateur bloque bien le champ.
   test('should not submit with empty fields', async ({ page }) => {
+    await waitForLoginForm(page);
     await page.click('button[type="submit"]');
 
     const email = page.locator('input[type="email"]');
@@ -31,6 +31,7 @@ test.describe('Authentication', () => {
   });
 
   test('should not submit with invalid email format', async ({ page }) => {
+    await waitForLoginForm(page);
     await page.fill('input[type="email"]', 'invalid-email');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');

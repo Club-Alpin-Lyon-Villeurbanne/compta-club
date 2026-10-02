@@ -21,7 +21,7 @@ pnpm test:e2e:ui        # Run tests with Playwright UI
 pnpm test:e2e:report    # Show test report
 ```
 
-**Note**: E2E tests need no backend nor credentials. Playwright starts a fake Symfony API (`tests/mocks/fake-backend.ts`, data from `tests/mocks/fixtures.ts`) and a dev server on port 3100 pointing to it. Next.js calls the API server-side, so `page.route()` cannot replace this fake backend; use it only to inject failures in a single test.
+**Note**: E2E tests need no backend nor credentials. Playwright builds the app for production, serves it on port 3100 and points it to a fake Symfony API (`tests/mocks/fake-backend.ts`, data from `tests/mocks/fixtures.ts`). The fake mirrors the production API formats (JWT expiry, `details` as a JSON string, `problem+json` errors, manager status transitions) and isolates each test in its own session; tests read what it received through `backendReceived()`. Next.js calls the API server-side, so `page.route()` cannot replace this fake. The build overwrites `.next`: do not run `pnpm dev` at the same time.
 
 ## Architecture Overview
 

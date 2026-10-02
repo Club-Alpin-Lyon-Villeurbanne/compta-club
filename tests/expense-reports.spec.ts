@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { login, rows } from './test-utils';
+import { test, expect, failNextListRequest, login, rows } from './test-utils';
 
 test.describe('Expense Reports', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,8 +6,8 @@ test.describe('Expense Reports', () => {
   });
 
   test('should display submitted expense reports by default', async ({ page }) => {
-    await expect(rows(page)).toHaveText([/Sortie Mont Blanc/, /Canyon Ardeche/]);
-    await expect(page.getByText('2 notes de frais affichées')).toBeVisible();
+    await expect(rows(page)).toHaveText([/Sortie Mont Blanc/, /Canyon Ardeche/, /Via ferrata Chamechaude/]);
+    await expect(page.getByText('3 notes de frais affichées')).toBeVisible();
   });
 
   test('should display the refundable amount of each report', async ({ page }) => {
@@ -18,16 +17,15 @@ test.describe('Expense Reports', () => {
     await expect(rows(page).filter({ hasText: 'Canyon Ardeche' })).toContainText('65.83 €');
   });
 
-  test('should handle API error gracefully', async ({ page }) => {
-    await expect(rows(page)).toHaveCount(2);
-    await page.route(
-      (url) => url.pathname === '/api/expense-reports',
-      (route) => route.fulfill({ status: 500, json: { error: 'Erreur lors de la récupération des notes de frais' } })
-    );
+  test('should show an error when the backend fails', async ({ page }) => {
+    await expect(rows(page)).toHaveCount(3);
+    await failNextListRequest(page, 500);
 
     // Changer de filtre relance la requête, qui échoue cette fois
     await page.selectOption('select:has(option[value="Toutes"])', 'approved');
 
-    await expect(page.getByText('Erreur lors de la récupération des notes de frais')).toBeVisible();
+    // Le détail renvoyé par le backend (problem+json) n'est pas affiché : seul le statut l'est.
+    await expect(page.getByText('Erreur 500')).toBeVisible();
+    await expect(page.locator('table')).toHaveCount(0);
   });
 });

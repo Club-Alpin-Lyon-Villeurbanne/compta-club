@@ -1,5 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
-import { login } from './test-utils';
+import { Page } from '@playwright/test';
+import { test, expect, login } from './test-utils';
 
 async function logout(page: Page) {
   await page.getByRole('button', { name: 'Déconnexion' }).click();

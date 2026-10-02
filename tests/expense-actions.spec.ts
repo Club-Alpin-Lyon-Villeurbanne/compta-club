@@ -1,16 +1,23 @@
-import { test, expect, Page } from '@playwright/test';
-import { login, rows } from './test-utils';
+import { Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { test, expect, backendReceived, login, rows } from './test-utils';
 
-// Dans les fixtures : l'événement 101 a une note soumise (id 1), le 102 une note approuvée (id 2).
+// Événements des données de test et statut de leur note :
+// 101 soumise (Jean Dupont), 102 approuvée (Marie Martin), 103 rejetée, 104 comptabilisée,
+// 106 soumise par le gestionnaire connecté lui-même.
 const SUBMITTED_EVENT = '/note-de-frais/101';
 const APPROVED_EVENT = '/note-de-frais/102';
+const REJECTED_EVENT = '/note-de-frais/103';
+const ACCOUNTED_EVENT = '/note-de-frais/104';
+const OWN_REPORT_EVENT = '/note-de-frais/106';
 
 const dialog = (page: Page) => page.locator('.swal2-popup');
+const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 
-function waitForPatch(page: Page, reportId: number) {
-  return page.waitForRequest(
-    (r) => r.method() === 'PATCH' && r.url().endsWith(`/api/expense-reports/${reportId}`)
-  );
+async function expectActions(page: Page, visible: string[]) {
+  for (const name of ['Approuver', 'Rejeter', 'Comptabiliser', 'Télécharger en PDF']) {
+    await expect(button(page, name)).toHaveCount(visible.includes(name) ? 1 : 0);
+  }
 }
 
 test.describe('Expense Report Actions', () => {
@@ -18,30 +25,35 @@ test.describe('Expense Report Actions', () => {
     await login(page);
   });
 
-  test('should only offer the actions allowed by the status', async ({ page }) => {
-    await page.goto(SUBMITTED_EVENT);
-    await expect(page.getByRole('button', { name: 'Approuver', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Rejeter', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Comptabiliser', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Télécharger en PDF' })).toHaveCount(0);
+  const actionsByStatus = [
+    { status: 'Soumis', event: SUBMITTED_EVENT, actions: ['Approuver', 'Rejeter'] },
+    { status: 'Approuvé', event: APPROVED_EVENT, actions: ['Comptabiliser', 'Télécharger en PDF'] },
+    { status: 'Rejeté', event: REJECTED_EVENT, actions: [] },
+    { status: 'Comptabilisé', event: ACCOUNTED_EVENT, actions: ['Télécharger en PDF'] },
+  ];
 
-    await page.goto(APPROVED_EVENT);
-    await expect(page.getByRole('button', { name: 'Comptabiliser', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Télécharger en PDF' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Approuver', exact: true })).toHaveCount(0);
-  });
+  for (const { status, event, actions } of actionsByStatus) {
+    test(`should only offer the actions allowed for a report "${status}"`, async ({ page }) => {
+      await page.goto(event);
+
+      await expect(rows(page)).toContainText(status);
+      await expectActions(page, actions);
+    });
+  }
 
   test('should approve after confirmation', async ({ page }) => {
     await page.goto(SUBMITTED_EVENT);
-    await page.getByRole('button', { name: 'Approuver', exact: true }).click();
+    await button(page, 'Approuver').click();
     await expect(dialog(page)).toContainText('Voulez-vous vraiment approuver cette note de frais ?');
 
-    const patch = waitForPatch(page, 1);
     await page.locator('.swal2-confirm').click();
 
-    expect((await patch).postDataJSON()).toEqual({ status: 'approved' });
-    expect((await (await patch).response())?.status()).toBe(200);
-    await expect(dialog(page)).toBeHidden();
+    // L'écran est rechargé avec le nouveau statut
+    await expect(rows(page)).toContainText('Approuvé');
+    await expectActions(page, ['Comptabiliser', 'Télécharger en PDF']);
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/1', body: { status: 'approved' } },
+    ]);
   });
 
   test('should not send anything when approval is cancelled', async ({ page }) => {
@@ -49,54 +61,59 @@ test.describe('Expense Report Actions', () => {
     const patches: string[] = [];
     page.on('request', (r) => r.method() === 'PATCH' && patches.push(r.url()));
 
-    await page.getByRole('button', { name: 'Approuver', exact: true }).click();
+    await button(page, 'Approuver').click();
     await page.locator('.swal2-cancel').click();
 
     await expect(dialog(page)).toBeHidden();
     expect(patches).toEqual([]);
+    await expect(rows(page)).toContainText('Soumis');
   });
 
-  test('should require a comment to reject, then send it', async ({ page }) => {
+  test('should require a comment to reject, then send it to the backend', async ({ page }) => {
     await page.goto(SUBMITTED_EVENT);
-    await page.getByRole('button', { name: 'Rejeter', exact: true }).click();
+    await button(page, 'Rejeter').click();
     await expect(dialog(page)).toContainText('Motif du rejet');
 
     await page.locator('.swal2-confirm').click();
     await expect(page.locator('.swal2-validation-message')).toContainText('Vous devez entrer un commentaire');
 
     await page.locator('.swal2-textarea').fill('Justificatif manquant');
-    const patch = waitForPatch(page, 1);
     await page.locator('.swal2-confirm').click();
 
-    expect((await patch).postDataJSON()).toEqual({ status: 'rejected', commentaireStatut: 'Justificatif manquant' });
-    await expect(dialog(page)).toBeHidden();
+    await expect(rows(page)).toContainText('Rejeté');
+    expect(await backendReceived(page)).toEqual([
+      {
+        method: 'PATCH',
+        path: '/notes-de-frais/1',
+        body: { status: 'rejected', commentaireStatut: 'Justificatif manquant' },
+      },
+    ]);
   });
 
   test('should mark an approved report as accounted after confirmation', async ({ page }) => {
     await page.goto(APPROVED_EVENT);
-    await page.getByRole('button', { name: 'Comptabiliser', exact: true }).click();
+    await button(page, 'Comptabiliser').click();
     await expect(dialog(page)).toContainText('Voulez-vous vraiment comptabiliser cette note de frais ?');
 
-    const patch = waitForPatch(page, 2);
     await page.locator('.swal2-confirm').click();
 
-    expect((await patch).postDataJSON()).toEqual({ status: 'accounted' });
-    await expect(dialog(page)).toBeHidden();
+    await expect(rows(page)).toContainText('Comptabilisé');
+    await expectActions(page, ['Télécharger en PDF']);
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/2', body: { status: 'accounted' } },
+    ]);
   });
 
   test('should show an error when the backend refuses the action', async ({ page }) => {
-    await page.route('**/api/expense-reports/1', (route) =>
-      route.request().method() === 'PATCH'
-        ? route.fulfill({ status: 422, json: { error: 'Erreur lors de la mise à jour de la note de frais' } })
-        : route.fallback()
-    );
-    await page.goto(SUBMITTED_EVENT);
-
-    await page.getByRole('button', { name: 'Approuver', exact: true }).click();
+    // Le backend refuse (422) qu'un gestionnaire décide de sa propre note
+    await page.goto(OWN_REPORT_EVENT);
+    await button(page, 'Approuver').click();
     await page.locator('.swal2-confirm').click();
 
     await expect(dialog(page)).toContainText('Une erreur est survenue lors de l\'action sur la note de frais.');
     await expect(page.locator('.swal2-icon-error')).toBeVisible();
+    expect(await backendReceived(page)).toHaveLength(1);
+    await expect(rows(page)).toContainText('Soumis');
   });
 });
 
@@ -113,6 +130,10 @@ test.describe('PDF Export', () => {
     await page.getByRole('button', { name: 'Télécharger en PDF' }).click();
 
     expect((await download).suggestedFilename()).toBe('note-de-frais-SORTIE-2025-002-Martin.pdf');
+    const pdf = readFileSync((await (await download).path())!, 'latin1');
+    expect(pdf.startsWith('%PDF')).toBe(true);
+    expect(pdf).toContain('Randonnee Vercors');
+    expect(pdf).toContain('45.00');
   });
 });
 
