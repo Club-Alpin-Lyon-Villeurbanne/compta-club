@@ -247,7 +247,11 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
 
 export function startFakeBackend(port: number): Promise<() => Promise<void>> {
   const server = http.createServer((req, res) => {
-    handle(req, res).catch((error) => problem(res, 500, String(error)));
+    handle(req, res).catch((error) => {
+      // Réponse déjà partie : on coupe la connexion plutôt que de faire planter tout le run.
+      if (res.headersSent) return res.destroy(error);
+      problem(res, 500, String(error));
+    });
   });
   return new Promise((resolve, reject) => {
     server.once('error', reject);

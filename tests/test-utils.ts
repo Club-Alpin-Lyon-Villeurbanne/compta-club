@@ -63,6 +63,13 @@ export function rows(page: Page) {
   return page.locator('tbody tr');
 }
 
+// Une erreur du faux backend arrête le test ici, plutôt que de le faire échouer plus loin sans raison claire.
+async function callBackend(path: string, init: RequestInit) {
+  const response = await fetch(`${FAKE_BACKEND_URL}${path}`, init);
+  if (!response.ok) throw new Error(`Faux backend : ${path} a répondu ${response.status}`);
+  return response;
+}
+
 async function backendSession(page: Page) {
   const cookies = await page.context().cookies();
   const token = cookies.find((c) => c.name === 'access_token')?.value;
@@ -74,7 +81,7 @@ async function backendSession(page: Page) {
  * Requêtes de modification reçues par le faux backend pour la session de ce test
  */
 export async function backendReceived(page: Page): Promise<{ method: string; path: string; body: unknown }[]> {
-  const response = await fetch(`${FAKE_BACKEND_URL}/__e2e/received`, { headers: await backendSession(page) });
+  const response = await callBackend('/__e2e/received', { headers: await backendSession(page) });
   return response.json();
 }
 
@@ -82,7 +89,7 @@ export async function backendReceived(page: Page): Promise<{ method: string; pat
  * Faire échouer la prochaine requête de liste du faux backend avec ce statut
  */
 export async function failNextListRequest(page: Page, status: number) {
-  await fetch(`${FAKE_BACKEND_URL}/__e2e/fail-next-list`, {
+  await callBackend('/__e2e/fail-next-list', {
     method: 'POST',
     headers: { ...(await backendSession(page)), 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),

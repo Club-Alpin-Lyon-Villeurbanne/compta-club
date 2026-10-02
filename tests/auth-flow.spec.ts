@@ -47,6 +47,20 @@ test.describe('Session refresh', () => {
     expect(accessToken).not.toBe(expired.token);
   });
 
+  test('should refresh an expired session on the home page and open the list', async ({ page, context }) => {
+    const expired = createE2eTokens(undefined, -60);
+    await context.addCookies([
+      { name: 'access_token', value: expired.token, url: APP_URL },
+      { name: 'refresh_token', value: expired.refresh_token, url: APP_URL },
+    ]);
+
+    await page.goto('/');
+
+    // La page d'accueil renvoie un utilisateur connecté vers la liste
+    await expect(page).toHaveURL(/\/note-de-frais$/);
+    await expect(rows(page)).toHaveCount(3);
+  });
+
   test('should send back to login when the refresh token is refused', async ({ page, context }) => {
     await context.addCookies([
       { name: 'access_token', value: createE2eTokens(undefined, -60).token, url: APP_URL },

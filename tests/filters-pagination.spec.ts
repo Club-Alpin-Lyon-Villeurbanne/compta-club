@@ -104,7 +104,10 @@ test.describe('Pagination', () => {
     const next = page.getByRole('button', { name: 'Suivant' });
     await expect(previous).toBeDisabled();
 
-    const secondPage = page.waitForRequest((r) => r.url().includes('/api/expense-reports?page=2'));
+    const secondPage = page.waitForRequest((r) => {
+      const url = new URL(r.url());
+      return url.pathname === '/api/expense-reports' && url.searchParams.get('page') === '2';
+    });
     await next.click();
     await secondPage;
 
