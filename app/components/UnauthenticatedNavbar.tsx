@@ -31,9 +31,9 @@ export default function UnauthenticatedNavbar() {
 
           <div className="hidden sm:flex sm:items-center sm:space-x-1">
             <Link
-              href="/help"
+              href="/aide"
               className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                pathname === '/help'
+                pathname === '/aide'
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
@@ -43,9 +43,9 @@ export default function UnauthenticatedNavbar() {
             </Link>
 
             <Link
-              href="/about"
+              href="/a-propos"
               className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                pathname === '/about'
+                pathname === '/a-propos'
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
