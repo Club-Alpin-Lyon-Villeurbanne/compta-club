@@ -15,6 +15,8 @@ import { COOKIE_NAMES } from './app/lib/constants';
 
 // Marge pour ne pas envoyer un jeton qui expirerait pendant le rendu de la page.
 const EXPIRY_MARGIN_SECONDS = 30;
+// Même délai que les appels au backend des routes /api : un backend qui ne répond pas ne bloque pas la page.
+const REFRESH_TIMEOUT_MS = 8000;
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -46,6 +48,7 @@ export async function middleware(request: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken }),
+      signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS),
     });
     if (!response.ok) {
       return NextResponse.next();
@@ -63,12 +66,13 @@ export async function middleware(request: NextRequest) {
     next.cookies.set(COOKIE_NAMES.REFRESH_TOKEN, newRefreshToken, COOKIE_OPTIONS);
     return next;
   } catch {
-    // Backend injoignable : le layout fera sa propre vérification et renverra vers la connexion.
+    // Backend injoignable ou trop lent : le layout fera sa propre vérification et renverra vers la connexion.
     return NextResponse.next();
   }
 }
 
 export const config = {
-  matcher: ['/note-de-frais/:path*'],
+  // '/' aussi : la page d'accueil vérifie la session pour renvoyer un utilisateur connecté vers la liste.
+  matcher: ['/', '/note-de-frais/:path*'],
   runtime: 'nodejs',
 };

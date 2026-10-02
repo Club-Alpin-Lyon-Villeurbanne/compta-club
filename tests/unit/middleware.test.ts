@@ -28,10 +28,12 @@ describe('middleware — rafraîchissement de la session', () => {
   it('refreshes an expired access token and passes the new one to the page', async () => {
     const newToken = jwt(3600);
     let sentBody: unknown;
+    let sentSignal: AbortSignal | null | undefined;
     const fetchMock = createFetchMock().on(
       (url) => url === `${API}/token/refresh`,
       (_url, init) => {
         sentBody = JSON.parse(String(init?.body));
+        sentSignal = init?.signal;
         return Response.json({ token: newToken, refresh_token: 'refresh-2' });
       }
     );
@@ -40,6 +42,8 @@ describe('middleware — rafraîchissement de la session', () => {
 
     expect(fetchMock.fetchFn).toHaveBeenCalledOnce();
     expect(sentBody).toEqual({ refresh_token: 'refresh-1' });
+    // Un délai borne l'appel : un backend qui ne répond pas ne bloque pas la page
+    expect(sentSignal).toBeInstanceOf(AbortSignal);
     // Cookies renvoyés au navigateur
     expect(response.cookies.get('access_token')?.value).toBe(newToken);
     expect(response.cookies.get('refresh_token')?.value).toBe('refresh-2');
@@ -91,6 +95,12 @@ describe('middleware — rafraîchissement de la session', () => {
     // La page voit toujours le jeton expiré et renvoie vers la connexion
     expect(response.cookies.get('access_token')).toBeUndefined();
     expect(response.headers.get('x-middleware-request-cookie')).toBeNull();
+  });
+
+  it('also runs on the home page, which redirects signed-in users to the list', async () => {
+    const { config } = await import('@/middleware');
+
+    expect(config.matcher).toContain('/');
   });
 
   it('leaves the cookies untouched when the backend is unreachable', async () => {
