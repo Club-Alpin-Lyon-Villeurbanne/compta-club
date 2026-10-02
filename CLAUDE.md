@@ -61,20 +61,20 @@ The application uses Zustand store (`app/store/useStore.ts`) for:
 
 ## Critical Files & Their Purpose
 
-- `app/lib/constants.ts`: Cookie names, API endpoints
-- `app/config.ts`: Environment variables and API URLs
+- `app/lib/constants.ts`: Cookie names
+- `app/config.ts`: Club name and expense calculation rates (mileage rates, nightly cap, toll split), mirrored from the backend
 - `app/interfaces/noteDeFraisInterface.ts`: TypeScript types for expense reports
 - `app/enums/ExpenseStatus.ts`: Status enum values
 - `app/(private)/note-de-frais/ExpenseReportsClient.tsx`: Main expense reports component
 
 ## API Integration
 
-External API: `https://www.clubalpinlyon.top/api` (or configured via `NEXT_PUBLIC_API_URL`)
+External API, configured via `NEXT_PUBLIC_API_URL`: `https://www.clubalpinlyon.fr/api` in production, `https://www.clubalpinlyon.top/api` on staging.
 
 Key endpoints:
 - `POST /auth`: Login
 - `POST /token/refresh`: Refresh token
-- `GET /notes-de-frais`: List expense reports
+- `GET /admin/notes-de-frais`: List expense reports (admins and expense report managers only; also used as the auth check)
 - `PATCH /notes-de-frais/{id}`: Update expense report status
 
 See `API.md` for API documentation (note: this doc may move to the backend repo in the future).
@@ -90,22 +90,20 @@ See `API.md` for API documentation (note: this doc may move to the backend repo 
 4. **Component Structure**: 
    - Use Server Components by default
    - Client Components only when needed (interactivity, hooks, browser APIs)
-   - Separate business logic into custom hooks (`app/lib/hooks/`)
+   - Separate business logic into custom hooks (`app/hooks/`, `app/lib/hooks/`)
 
 5. **Styling**: Use Tailwind classes directly. UI components from shadcn/ui are in `components/ui/`.
 
 ## Environment Variables
 
-Required in `.env`:
+In `.env.local` (copied from `.env.exemple`):
 ```env
-NEXT_PUBLIC_BACKEND_BASE_URL=https://www.clubalpinlyon.top/api
-NEXT_PUBLIC_WEBSITE_BASE_URL=https://compta.clubalpinlyon.top
-NEXT_PUBLIC_API_URL=https://www.clubalpinlyon.top/api
+NEXT_PUBLIC_API_URL=http://localhost:8000/api  # staging: https://www.clubalpinlyon.top/api
+NEXT_PUBLIC_CLUB_NAME=                         # optional, defaults to "CLUB ALPIN DE LYON"
 ```
 
 For Sentry (production):
 ```env
-SENTRY_DSN=your-sentry-dsn
 NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
 ```
 

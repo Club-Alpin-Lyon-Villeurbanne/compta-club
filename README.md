@@ -1,6 +1,6 @@
 # Outil de Compta du Club Alpin de Lyon
 
-Cette application est une interface utilisateur (UI) permettant aux membres du Club Alpin de Lyon de soumettre et de gérer leurs notes de frais. Elle facilite également la gestion comptable pour les bénévoles responsables.
+Cette application permet aux gestionnaires des notes de frais du Club Alpin de Lyon de les traiter : validation, rejet et comptabilisation. Elle est réservée aux administrateurs et aux gestionnaires des notes de frais.
 Les notes de frais sont soumises par les encadrants sur le site web du Club Alpin de Lyon.
 
 > ⚠️ **Note importante** :
@@ -11,16 +11,15 @@ Les notes de frais sont soumises par les encadrants sur le site web du Club Alpi
 
 ## **✨ Fonctionnalités principales**
 
-- 👀 Visualisation des notes de frais par les encadrants.
-- ✅ Validation des demandes de remboursement par les administrateurs.
+- 👀 Visualisation des notes de frais déposées par les encadrants, avec filtres et recherche.
+- ✅ Validation, rejet et comptabilisation des notes de frais par les gestionnaires.
 - 📜 Visualisation de l'historique des frais.
-- 🔔 Notifications pour les actions à effectuer.
 - 📄 Export PDF des notes de frais approuvées/comptabilisées.
 
 ## **🚀 Prérequis**
 
 Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votre machine :
-- **Node.js** (version recommandée : 20.x ou supérieure)
+- **Node.js** 24.x (fixée dans `engines` du `package.json`, utilisée par Vercel et la CI)
 - **pnpm**
 - Un accès fonctionnel à l'API backend du site web du Club Alpin de Lyon.
 
@@ -39,20 +38,18 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
    pnpm install
    ```
 
-3. Configurez les variables d'environnement en créant un fichier `.env` à la racine du projet (copiez `.env.exemple`) et ajoutez les variables suivantes :
+3. Configurez les variables d'environnement en créant un fichier `.env.local` à la racine du projet à partir de `.env.exemple` :
    ```bash
    cp .env.exemple .env.local
    ```
    
    Puis modifiez `.env.local` selon vos besoins :
    ```env
-   NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000/api
-   NEXT_PUBLIC_WEBSITE_BASE_URL=http://localhost:3000
-   NEXT_PUBLIC_API_URL=http://localhost:8000/api
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api  # préprod : https://www.clubalpinlyon.top/api
    NEXT_PUBLIC_CLUB_NAME="Nom de votre club"  # Optionnel, par défaut "CLUB ALPIN DE LYON"
    ```
 
-   > 💡 **Astuce :** Assurez-vous que l'API backend est opérationnelle à l'URL spécifiée dans `NEXT_PUBLIC_BACKEND_BASE_URL`.
+   > 💡 **Astuce :** Assurez-vous que l'API backend est opérationnelle à l'URL spécifiée dans `NEXT_PUBLIC_API_URL`.
 
 4. Lancez le serveur de développement :
    ```bash
@@ -62,7 +59,7 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
 5. Accédez à l'application à l'adresse suivante :  
    [http://localhost:3000](http://localhost:3000)
 
-6. Authentifiez-vous avec votre compte sur [l'environnement de test du site web du Club Alpin de Lyon](https://www.clubalpinlyon.top/).
+6. Connectez-vous avec un compte administrateur ou gestionnaire des notes de frais du backend utilisé : en local, le compte admin décrit dans la [documentation d'installation du site](https://github.com/Club-Alpin-Lyon-Villeurbanne/plateforme-club-alpin/blob/main/docs/installation.md) ; sur la préprod, votre compte sur [l'environnement de test du site web du Club Alpin de Lyon](https://www.clubalpinlyon.top/).
 
 ### **🚀 Déploiement sur Vercel**
 
@@ -169,7 +166,7 @@ Les tests E2E vérifient le flux d'authentification et d'autres fonctionnalités
 ## **🤖 Outils de développement**
 
 - **Claude Code** : Le fichier [CLAUDE.md](./CLAUDE.md) contient les instructions pour utiliser Claude Code sur ce projet.
-- **CI/CD** : GitHub Actions exécute lint, tests et build sur chaque PR.
+- **CI/CD** : GitHub Actions exécute lint, tests unitaires et build sur chaque PR.
 - **CodeRabbit** : Review automatique des PRs.
 - **Vercel** : Déploiement automatique + preview sur chaque PR.
 
