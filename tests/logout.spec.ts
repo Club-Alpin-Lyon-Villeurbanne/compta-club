@@ -1,53 +1,38 @@
-import { test, expect } from '@playwright/test';
-import { login } from './test-utils';
+import { Page } from '@playwright/test';
+import { test, expect, login } from './test-utils';
+
+async function logout(page: Page) {
+  await page.getByRole('button', { name: 'Déconnexion' }).click();
+  await expect(page).toHaveURL(/\/$/);
+}
 
 test.describe('Logout', () => {
-  test('should logout successfully', async ({ page }) => {
-    // Se connecter
+  test.beforeEach(async ({ page }) => {
     await login(page);
+  });
 
-    // Vérifier qu'on est connecté
-    await expect(page.locator('button:has-text("Déconnexion")')).toBeVisible();
+  test('should logout successfully', async ({ page }) => {
+    await logout(page);
 
-    // Cliquer sur le bouton de déconnexion
-    await page.click('button:has-text("Déconnexion")');
-
-    // Vérifier qu'on est redirigé vers la page de connexion
-    await expect(page).toHaveURL(/.*\/$/);
     await expect(page.locator('h2')).toContainText('Connexion');
   });
 
   test('should not access protected pages after logout', async ({ page }) => {
-    // Se connecter
-    await login(page);
+    await logout(page);
 
-    // Se déconnecter
-    await page.click('button:has-text("Déconnexion")');
-    await expect(page).toHaveURL(/.*\/$/);
-
-    // Tenter d'accéder à une page protégée
     await page.goto('/note-de-frais');
 
-    // Vérifier qu'on est redirigé vers la page de connexion
-    await expect(page).toHaveURL(/.*\/$/);
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('h2')).toContainText('Connexion');
   });
 
   test('should clear session cookies on logout', async ({ page, context }) => {
-    // Se connecter
-    await login(page);
+    const cookieNames = async () => (await context.cookies()).map((c) => c.name);
+    expect(await cookieNames()).toEqual(expect.arrayContaining(['access_token', 'refresh_token']));
 
-    // Vérifier que les cookies existent
-    let cookies = await context.cookies();
-    const hasAccessToken = cookies.some(c => c.name === 'access_token');
-    expect(hasAccessToken).toBe(true);
+    await logout(page);
 
-    // Se déconnecter
-    await page.click('button:has-text("Déconnexion")');
-    await expect(page).toHaveURL(/.*\/$/);
-
-    // Vérifier que les cookies sont supprimés
-    cookies = await context.cookies();
-    const accessTokenAfter = cookies.find(c => c.name === 'access_token');
-    expect(accessTokenAfter?.value || '').toBe('');
+    expect(await cookieNames()).not.toContain('access_token');
+    expect(await cookieNames()).not.toContain('refresh_token');
   });
 });

@@ -4,7 +4,7 @@ Merci de votre intérêt pour contribuer à Compta Club !
 
 ## Prérequis
 
-- Node.js 20+
+- Node.js 24 (fixée dans `engines` du `package.json`, utilisée par Vercel et la CI)
 - pnpm 9+
 - Un compte GitHub
 
@@ -119,6 +119,7 @@ app/
 │   ├── auth/          # Login, logout, check
 │   └── expense-reports/
 ├── components/        # Composants React
+├── hooks/             # Hooks React
 ├── lib/               # Utilitaires
 │   ├── fetchClient.ts # Fetch côté client (avec retry 401)
 │   ├── fetchServer.ts # Fetch côté serveur
@@ -130,9 +131,11 @@ app/
 tests/
 ├── unit/              # Tests Vitest
 │   ├── api/           # Tests des routes API
+│   ├── hooks/         # Tests des hooks
 │   ├── lib/           # Tests des utilitaires
 │   └── helpers/       # Helpers de test
-└── e2e/               # Tests Playwright
+├── mocks/             # Faux backend et données des tests E2E
+└── *.spec.ts          # Tests Playwright (E2E)
 ```
 
 ## Conventions de code

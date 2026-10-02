@@ -1,137 +1,152 @@
-import { test, expect } from '@playwright/test';
-import { login } from './test-utils';
+import { Page } from '@playwright/test';
+import { test, expect, login, rows } from './test-utils';
+
+const statusSelect = (page: Page) => page.locator('select:has(option[value="Toutes"])');
+const typeSelect = (page: Page) => page.locator('select:has(option[value="don"])');
+const dateInput = (page: Page) => page.locator('input[type="date"]');
+const searchInput = (page: Page) => page.locator('input[placeholder="Rechercher une note de frais"]');
+const requesterInput = (page: Page) => page.locator('input[placeholder="Nom du demandeur"]');
+
+const SUBMITTED_REPORTS = [/Sortie Mont Blanc/, /Canyon Ardeche/, /Via ferrata Chamechaude/];
 
 test.describe('Filters', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
+    await expect(rows(page)).toHaveText(SUBMITTED_REPORTS);
   });
 
   test('should filter by status', async ({ page }) => {
-    // Compter les lignes initiales
-    const initialCount = await page.locator('tbody tr').count();
+    await statusSelect(page).selectOption('approved');
 
-    // Filtrer par statut "En attente"
-    await page.selectOption('select:has(option:has-text("Tous statuts"))', 'pending');
-
-    // Attendre que le filtre soit appliqué
-    await page.waitForTimeout(500);
-
-    // Vérifier que le filtre est appliqué (le nombre de lignes peut changer)
-    const filteredCount = await page.locator('tbody tr').count();
-    // Le nombre filtré doit être <= au nombre initial
-    expect(filteredCount).toBeLessThanOrEqual(initialCount);
+    await expect(rows(page)).toHaveText([/Randonnee Vercors/]);
   });
 
   test('should filter by search term', async ({ page }) => {
-    // Saisir un terme de recherche
-    await page.fill('input[placeholder="Rechercher une note de frais"]', 'test');
+    await searchInput(page).fill('canyon');
 
-    // Attendre que le filtre soit appliqué
-    await page.waitForTimeout(500);
-
-    // Vérifier que la table est toujours visible
-    await expect(page.locator('table')).toBeVisible();
+    await expect(rows(page)).toHaveText([/Canyon Ardeche/]);
   });
 
   test('should filter by requester name', async ({ page }) => {
-    // Saisir un nom de demandeur
-    await page.fill('input[placeholder="Nom du demandeur"]', 'Jean');
+    await requesterInput(page).fill('Dupont');
 
-    // Attendre que le filtre soit appliqué
-    await page.waitForTimeout(500);
-
-    // Vérifier que la table est toujours visible
-    await expect(page.locator('table')).toBeVisible();
+    await expect(rows(page)).toHaveText([/Sortie Mont Blanc/]);
   });
 
   test('should filter by type (don/remboursement)', async ({ page }) => {
-    // Filtrer par type "Don"
-    await page.selectOption('select:has(option:has-text("Tous types"))', 'don');
+    await statusSelect(page).selectOption('Toutes');
+    await typeSelect(page).selectOption('don');
 
-    // Attendre que le filtre soit appliqué
-    await page.waitForTimeout(500);
+    await expect(rows(page)).toHaveText([/Escalade Calanques/, /Sortie archivée 31/]);
+  });
 
-    // Vérifier que la table est toujours visible
-    await expect(page.locator('table')).toBeVisible();
+  test('should filter by event date', async ({ page }) => {
+    await dateInput(page).fill('2025-02-08');
+
+    await expect(rows(page)).toHaveText([/Via ferrata Chamechaude/]);
+  });
+
+  test('should show a message when nothing matches', async ({ page }) => {
+    await searchInput(page).fill('introuvable');
+
+    await expect(rows(page)).toHaveText([/Aucune note de frais ne correspond aux critères de recherche/]);
   });
 
   test('should reset all filters', async ({ page }) => {
-    // Appliquer plusieurs filtres
-    await page.fill('input[placeholder="Rechercher une note de frais"]', 'test');
-    await page.fill('input[placeholder="Nom du demandeur"]', 'Jean');
+    await statusSelect(page).selectOption('approved');
+    await searchInput(page).fill('vercors');
+    await requesterInput(page).fill('Martin');
+    await expect(rows(page)).toHaveText([/Randonnee Vercors/]);
 
-    // Cliquer sur le bouton de réinitialisation
     await page.click('button[title="Réinitialiser les filtres"]');
 
-    // Vérifier que les filtres sont réinitialisés
-    await expect(page.locator('input[placeholder="Rechercher une note de frais"]')).toHaveValue('');
-    await expect(page.locator('input[placeholder="Nom du demandeur"]')).toHaveValue('');
+    await expect(searchInput(page)).toHaveValue('');
+    await expect(requesterInput(page)).toHaveValue('');
+    await expect(statusSelect(page)).toHaveValue('submitted');
+    await expect(rows(page)).toHaveText(SUBMITTED_REPORTS);
   });
+});
+
+// « Sortie archivée 31 » n'est pas sur la première page des notes comptabilisées : elle ne peut
+// apparaître que si le filtre est appliqué par le serveur (le filtrage du navigateur ne voit
+// qu'une page).
+test.describe('Server-side filters', () => {
+  const filters: { name: string; apply: (page: Page) => Promise<unknown> }[] = [
+    { name: 'search term', apply: (page) => searchInput(page).fill('archivée 31') },
+    { name: 'requester name', apply: (page) => requesterInput(page).fill('Girard') },
+    { name: 'type', apply: (page) => typeSelect(page).selectOption('don') },
+    { name: 'event date', apply: (page) => dateInput(page).fill('2025-03-01') },
+  ];
+
+  for (const { name, apply } of filters) {
+    test(`should find a report beyond the first page by ${name}`, async ({ page }) => {
+      await login(page);
+      await statusSelect(page).selectOption('accounted');
+      await expect(rows(page).first()).toContainText('Ski de rando Beaufortain');
+
+      await apply(page);
+
+      await expect(rows(page)).toHaveText([/Sortie archivée 31/]);
+    });
+  }
 });
 
 test.describe('Pagination', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
-  });
-
-  test('should change items per page', async ({ page }) => {
-    // Sélectionner 5 éléments par page
-    await page.selectOption('select:has(option:has-text("par page"))', '5');
-
-    // Attendre que la pagination soit appliquée
-    await page.waitForTimeout(500);
-
-    // Vérifier qu'il y a au maximum 5 lignes de données
-    const rowCount = await page.locator('tbody tr').count();
-    expect(rowCount).toBeLessThanOrEqual(5);
   });
 
   test('should navigate between pages', async ({ page }) => {
-    // Sélectionner 5 éléments par page pour avoir plusieurs pages
-    await page.selectOption('select:has(option:has-text("par page"))', '5');
-    await page.waitForTimeout(500);
+    // Le faux backend contient plus de notes comptabilisées qu'une page n'en affiche
+    await statusSelect(page).selectOption('accounted');
+    await expect(rows(page).first()).toContainText('Ski de rando Beaufortain');
+    const previous = page.getByRole('button', { name: 'Précédent' });
+    const next = page.getByRole('button', { name: 'Suivant' });
+    await expect(previous).toBeDisabled();
 
-    // Vérifier si le bouton "Suivant" existe
-    const nextButton = page.locator('button:has-text("Suivant")');
-    const hasNextButton = await nextButton.isVisible().catch(() => false);
+    const secondPage = page.waitForRequest((r) => {
+      const url = new URL(r.url());
+      return url.pathname === '/api/expense-reports' && url.searchParams.get('page') === '2';
+    });
+    await next.click();
+    await secondPage;
 
-    if (hasNextButton) {
-      // Cliquer sur Suivant
-      await nextButton.click();
-      await page.waitForTimeout(500);
-
-      // Vérifier que la pagination a changé (le bouton Précédent devrait être actif)
-      await expect(page.locator('button:has-text("Précédent")')).toBeEnabled();
-    }
+    await expect(previous).toBeEnabled();
+    await expect(rows(page).first()).toContainText('Sortie archivée');
+    await expect(page.getByText('Ski de rando Beaufortain')).toHaveCount(0);
   });
 
-  test('should display pagination info', async ({ page }) => {
-    // Vérifier que les informations de pagination sont affichées
-    await expect(page.locator('text=/Affichage de \\d+ à \\d+ sur \\d+/')).toBeVisible();
+  test('should disable navigation when everything fits on one page', async ({ page }) => {
+    await expect(rows(page)).toHaveCount(3);
+
+    await expect(page.getByRole('button', { name: 'Précédent' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Suivant' })).toBeDisabled();
   });
 });
 
 test.describe('Column Sorting', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
+    await expect(rows(page)).toHaveText(SUBMITTED_REPORTS);
   });
 
-  test('should sort by clicking column header', async ({ page }) => {
-    // Cliquer sur un en-tête de colonne pour trier
-    const header = page.locator('th').first();
-    await header.click();
+  test('should sort by amount, then reverse the order', async ({ page }) => {
+    const amountHeader = page.getByRole('columnheader', { name: 'Montant' });
 
-    // Vérifier que le tri est appliqué (icône de tri visible)
-    await page.waitForTimeout(300);
+    // 65,83 € < 90 € < 120 € ; aucun des deux ordres n'est l'ordre d'arrivée
+    await amountHeader.click();
+    await expect(rows(page)).toHaveText([/Canyon Ardeche/, /Via ferrata Chamechaude/, /Sortie Mont Blanc/]);
 
-    // Cliquer à nouveau pour inverser le tri
-    await header.click();
-    await page.waitForTimeout(300);
+    await amountHeader.click();
+    await expect(rows(page)).toHaveText([/Sortie Mont Blanc/, /Via ferrata Chamechaude/, /Canyon Ardeche/]);
+  });
 
-    // La table devrait toujours être visible
-    await expect(page.locator('table')).toBeVisible();
+  // Bug : les clés de tri de ReportTable (event.titre, user.lastname, event.tsp, createdAt,
+  // event.commission.id) n'existent pas dans les données (sortie, utilisateur, dateCreation).
+  // Seules les colonnes Montant, Type et Statut trient réellement.
+  test.fixme('should sort by title', async ({ page }) => {
+    await page.getByRole('columnheader', { name: 'Note de frais' }).click();
+
+    await expect(rows(page)).toHaveText([/Canyon Ardeche/, /Sortie Mont Blanc/, /Via ferrata Chamechaude/]);
   });
 });

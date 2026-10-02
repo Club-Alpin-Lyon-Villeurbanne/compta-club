@@ -2,46 +2,96 @@
  * Utilitaires pour les tests Playwright
  */
 
-import { Page } from '@playwright/test';
-import { setupApiMocks } from './mocks/api-handlers';
+import { Page, expect, test as base } from '@playwright/test';
+import { E2E_CREDENTIALS } from './mocks/fake-backend';
+import { FAKE_BACKEND_URL } from '../playwright.config';
 
-// Credentials de test (utilises par les mocks)
-export const TEST_CREDENTIALS = {
-  email: 'admin@clubalpinlyon.top',
-  password: 'admin123',
-};
+export const TEST_CREDENTIALS = E2E_CREDENTIALS;
 
 /**
- * Configure les mocks API pour la page
+ * `test` de Playwright, avec les pictos des commissions bloqués pour tous les tests : ils viennent
+ * de clubalpinlyon.fr et les tests ne doivent pas dépendre d'internet.
  */
-export async function setupMocks(page: Page) {
-  await setupApiMocks(page);
+export const test = base.extend<{ blockExternalImages: void }>({
+  blockExternalImages: [
+    // Sur le contexte plutôt que la page : le blocage reste actif pendant la fermeture de la page.
+    async ({ context }, use) => {
+      await context.route('**/_next/image**', (route) => route.abort());
+      await use();
+    },
+    { auto: true },
+  ],
+});
+
+export { expect };
+
+/**
+ * Attendre que React ait pris en main le formulaire de connexion. Avant, un clic soumet le
+ * formulaire HTML brut et une saisie n'arrive pas dans l'état React.
+ */
+export async function waitForLoginForm(page: Page) {
+  await page.waitForFunction(() => {
+    const form = document.querySelector('form');
+    return !!form && Object.keys(form).some((key) => key.startsWith('__reactFiber'));
+  });
 }
 
 /**
- * Fonction pour remplir le formulaire de connexion
+ * Remplir et soumettre le formulaire de connexion
  */
-export async function fillLoginForm(page: Page) {
-  await page.fill('input[type="email"]', TEST_CREDENTIALS.email);
-  await page.fill('input[type="password"]', TEST_CREDENTIALS.password);
+export async function fillLoginForm(page: Page, credentials = TEST_CREDENTIALS) {
+  await waitForLoginForm(page);
+  await page.fill('input[type="email"]', credentials.email);
+  await page.fill('input[type="password"]', credentials.password);
   await page.click('button[type="submit"]');
 }
 
 /**
- * Fonction pour se connecter avec mocks et attendre la redirection
+ * Se connecter par l'API (le formulaire est testé dans auth*.spec.ts) et ouvrir la liste
  */
 export async function login(page: Page) {
-  await setupMocks(page);
-  await page.goto('/');
-  await fillLoginForm(page);
-  await page.waitForURL(/.*\/note-de-frais/, { timeout: 15000 });
+  const response = await page.request.post('/api/auth/login', { data: TEST_CREDENTIALS });
+  expect(response.ok()).toBe(true);
+  await page.goto('/note-de-frais');
+  await expect(page.getByRole('button', { name: 'Déconnexion' })).toBeVisible();
 }
 
 /**
- * Fonction pour se connecter sans attendre la redirection
+ * Lignes du tableau de la page affichée
  */
-export async function loginWithoutRedirect(page: Page) {
-  await setupMocks(page);
-  await page.goto('/');
-  await fillLoginForm(page);
+export function rows(page: Page) {
+  return page.locator('tbody tr');
+}
+
+// Une erreur du faux backend arrête le test ici, plutôt que de le faire échouer plus loin sans raison claire.
+async function callBackend(path: string, init: RequestInit) {
+  const response = await fetch(`${FAKE_BACKEND_URL}${path}`, init);
+  if (!response.ok) throw new Error(`Faux backend : ${path} a répondu ${response.status}`);
+  return response;
+}
+
+async function backendSession(page: Page) {
+  const cookies = await page.context().cookies();
+  const token = cookies.find((c) => c.name === 'access_token')?.value;
+  if (!token) throw new Error('Pas de session : appeler login() avant');
+  return { Authorization: `Bearer ${token}` };
+}
+
+/**
+ * Requêtes de modification reçues par le faux backend pour la session de ce test
+ */
+export async function backendReceived(page: Page): Promise<{ method: string; path: string; body: unknown }[]> {
+  const response = await callBackend('/__e2e/received', { headers: await backendSession(page) });
+  return response.json();
+}
+
+/**
+ * Faire échouer la prochaine requête de liste du faux backend avec ce statut
+ */
+export async function failNextListRequest(page: Page, status: number) {
+  await callBackend('/__e2e/fail-next-list', {
+    method: 'POST',
+    headers: { ...(await backendSession(page)), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
 }

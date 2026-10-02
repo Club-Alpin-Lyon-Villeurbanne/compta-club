@@ -1,149 +1,156 @@
-import { test, expect } from '@playwright/test';
-import { login } from './test-utils';
+import { Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { test, expect, backendReceived, login, rows } from './test-utils';
+
+// Événements des données de test et statut de leur note :
+// 101 soumise (Jean Dupont), 102 approuvée (Marie Martin), 103 rejetée, 104 comptabilisée,
+// 106 soumise par le gestionnaire connecté lui-même.
+const SUBMITTED_EVENT = '/note-de-frais/101';
+const APPROVED_EVENT = '/note-de-frais/102';
+const REJECTED_EVENT = '/note-de-frais/103';
+const ACCOUNTED_EVENT = '/note-de-frais/104';
+const OWN_REPORT_EVENT = '/note-de-frais/106';
+
+const dialog = (page: Page) => page.locator('.swal2-popup');
+const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
+
+async function expectActions(page: Page, visible: string[]) {
+  for (const name of ['Approuver', 'Rejeter', 'Comptabiliser', 'Télécharger en PDF']) {
+    await expect(button(page, name)).toHaveCount(visible.includes(name) ? 1 : 0);
+  }
+}
 
 test.describe('Expense Report Actions', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should display action buttons on expense report row', async ({ page }) => {
-    // Cliquer sur une ligne pour voir les détails/actions
-    const firstRow = page.locator('tbody tr').first();
-    await expect(firstRow).toBeVisible();
+  const actionsByStatus = [
+    { status: 'Soumis', event: SUBMITTED_EVENT, actions: ['Approuver', 'Rejeter'] },
+    { status: 'Approuvé', event: APPROVED_EVENT, actions: ['Comptabiliser', 'Télécharger en PDF'] },
+    { status: 'Rejeté', event: REJECTED_EVENT, actions: [] },
+    { status: 'Comptabilisé', event: ACCOUNTED_EVENT, actions: ['Télécharger en PDF'] },
+  ];
 
-    // Vérifier la présence de boutons d'action (approuver, rejeter, etc.)
-    // Note: Les boutons peuvent être dans un menu ou directement visibles
-    const actionButtons = firstRow.locator('button');
-    const buttonCount = await actionButtons.count();
-    expect(buttonCount).toBeGreaterThan(0);
+  for (const { status, event, actions } of actionsByStatus) {
+    test(`should only offer the actions allowed for a report "${status}"`, async ({ page }) => {
+      await page.goto(event);
+
+      await expect(rows(page)).toContainText(status);
+      await expectActions(page, actions);
+    });
+  }
+
+  test('should approve after confirmation', async ({ page }) => {
+    await page.goto(SUBMITTED_EVENT);
+    await button(page, 'Approuver').click();
+    await expect(dialog(page)).toContainText('Voulez-vous vraiment approuver cette note de frais ?');
+
+    await page.locator('.swal2-confirm').click();
+
+    // L'écran est rechargé avec le nouveau statut
+    await expect(rows(page)).toContainText('Approuvé');
+    await expectActions(page, ['Comptabiliser', 'Télécharger en PDF']);
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/1', body: { status: 'approved' } },
+    ]);
   });
 
-  test('should show confirmation dialog when approving', async ({ page }) => {
-    // Filtrer par statut "En attente" pour avoir des notes à approuver
-    await page.selectOption('select:has(option:has-text("Tous statuts"))', 'pending');
-    await page.waitForTimeout(500);
+  test('should not send anything when approval is cancelled', async ({ page }) => {
+    await page.goto(SUBMITTED_EVENT);
+    const patches: string[] = [];
+    page.on('request', (r) => r.method() === 'PATCH' && patches.push(r.url()));
 
-    // Chercher un bouton d'approbation (icône check ou texte "Approuver")
-    const approveButton = page.locator('button[title*="Approuver"], button:has-text("Approuver")').first();
-    const isVisible = await approveButton.isVisible().catch(() => false);
+    await button(page, 'Approuver').click();
+    await page.locator('.swal2-cancel').click();
 
-    if (isVisible) {
-      await approveButton.click();
-
-      // Vérifier que la boîte de dialogue SweetAlert2 apparaît
-      await expect(page.locator('.swal2-popup')).toBeVisible({ timeout: 5000 });
-      await expect(page.locator('.swal2-title')).toContainText('Êtes-vous sûr');
-
-      // Annuler pour ne pas modifier les données
-      await page.click('.swal2-cancel');
-    }
+    await expect(dialog(page)).toBeHidden();
+    expect(patches).toEqual([]);
+    await expect(rows(page)).toContainText('Soumis');
   });
 
-  test('should show comment dialog when rejecting', async ({ page }) => {
-    // Filtrer par statut "En attente" pour avoir des notes à rejeter
-    await page.selectOption('select:has(option:has-text("Tous statuts"))', 'pending');
-    await page.waitForTimeout(500);
+  test('should require a comment to reject, then send it to the backend', async ({ page }) => {
+    await page.goto(SUBMITTED_EVENT);
+    await button(page, 'Rejeter').click();
+    await expect(dialog(page)).toContainText('Motif du rejet');
 
-    // Chercher un bouton de rejet
-    const rejectButton = page.locator('button[title*="Rejeter"], button:has-text("Rejeter")').first();
-    const isVisible = await rejectButton.isVisible().catch(() => false);
+    await page.locator('.swal2-confirm').click();
+    await expect(page.locator('.swal2-validation-message')).toContainText('Vous devez entrer un commentaire');
 
-    if (isVisible) {
-      await rejectButton.click();
+    await page.locator('.swal2-textarea').fill('Justificatif manquant');
+    await page.locator('.swal2-confirm').click();
 
-      // Vérifier que la boîte de dialogue avec textarea apparaît
-      await expect(page.locator('.swal2-popup')).toBeVisible({ timeout: 5000 });
-      await expect(page.locator('.swal2-title')).toContainText('Motif du rejet');
-      await expect(page.locator('.swal2-textarea')).toBeVisible();
-
-      // Annuler pour ne pas modifier les données
-      await page.click('.swal2-cancel');
-    }
+    await expect(rows(page)).toContainText('Rejeté');
+    expect(await backendReceived(page)).toEqual([
+      {
+        method: 'PATCH',
+        path: '/notes-de-frais/1',
+        body: { status: 'rejected', commentaireStatut: 'Justificatif manquant' },
+      },
+    ]);
   });
 
-  test('should require comment when rejecting', async ({ page }) => {
-    // Filtrer par statut "En attente"
-    await page.selectOption('select:has(option:has-text("Tous statuts"))', 'pending');
-    await page.waitForTimeout(500);
+  test('should mark an approved report as accounted after confirmation', async ({ page }) => {
+    await page.goto(APPROVED_EVENT);
+    await button(page, 'Comptabiliser').click();
+    await expect(dialog(page)).toContainText('Voulez-vous vraiment comptabiliser cette note de frais ?');
 
-    // Chercher un bouton de rejet
-    const rejectButton = page.locator('button[title*="Rejeter"], button:has-text("Rejeter")').first();
-    const isVisible = await rejectButton.isVisible().catch(() => false);
+    await page.locator('.swal2-confirm').click();
 
-    if (isVisible) {
-      await rejectButton.click();
-      await expect(page.locator('.swal2-popup')).toBeVisible({ timeout: 5000 });
-
-      // Essayer de confirmer sans commentaire
-      await page.click('.swal2-confirm');
-
-      // Vérifier que le message de validation apparaît
-      await expect(page.locator('.swal2-validation-message')).toBeVisible();
-      await expect(page.locator('.swal2-validation-message')).toContainText('Vous devez entrer un commentaire');
-
-      // Annuler
-      await page.click('.swal2-cancel');
-    }
+    await expect(rows(page)).toContainText('Comptabilisé');
+    await expectActions(page, ['Télécharger en PDF']);
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/2', body: { status: 'accounted' } },
+    ]);
   });
 
-  test('should show confirmation dialog when marking as accounted', async ({ page }) => {
-    // Filtrer par statut "Approuvé" pour avoir des notes à comptabiliser
-    await page.selectOption('select:has(option:has-text("Tous statuts"))', 'approved');
-    await page.waitForTimeout(500);
+  test('should show an error when the backend refuses the action', async ({ page }) => {
+    // Le backend refuse (422) qu'un gestionnaire décide de sa propre note
+    await page.goto(OWN_REPORT_EVENT);
+    await button(page, 'Approuver').click();
+    await page.locator('.swal2-confirm').click();
 
-    // Chercher un bouton de comptabilisation
-    const accountButton = page.locator('button[title*="Comptabiliser"], button:has-text("Comptabiliser")').first();
-    const isVisible = await accountButton.isVisible().catch(() => false);
-
-    if (isVisible) {
-      await accountButton.click();
-
-      // Vérifier que la boîte de dialogue apparaît
-      await expect(page.locator('.swal2-popup')).toBeVisible({ timeout: 5000 });
-      await expect(page.locator('.swal2-title')).toContainText('Êtes-vous sûr');
-
-      // Annuler pour ne pas modifier les données
-      await page.click('.swal2-cancel');
-    }
+    await expect(dialog(page)).toContainText('Une erreur est survenue lors de l\'action sur la note de frais.');
+    await expect(page.locator('.swal2-icon-error')).toBeVisible();
+    expect(await backendReceived(page)).toHaveLength(1);
+    await expect(rows(page)).toContainText('Soumis');
   });
 });
 
 test.describe('PDF Export', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should have PDF download button for approved reports', async ({ page }) => {
-    // Filtrer par statut "Approuvé"
-    await page.selectOption('select:has(option:has-text("Tous statuts"))', 'approved');
-    await page.waitForTimeout(500);
+  test('should download the PDF of an approved report', async ({ page }) => {
+    await page.locator('select:has(option[value="Toutes"])').selectOption('approved');
+    await expect(rows(page)).toHaveText([/Randonnee Vercors/]);
 
-    // Vérifier qu'il y a un bouton de téléchargement PDF
-    const pdfButton = page.locator('button[title*="PDF"], button:has-text("PDF")').first();
-    const isVisible = await pdfButton.isVisible().catch(() => false);
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Télécharger en PDF' }).click();
 
-    // Si des notes approuvées existent, le bouton PDF devrait être visible
-    if (isVisible) {
-      await expect(pdfButton).toBeVisible();
-    }
+    expect((await download).suggestedFilename()).toBe('note-de-frais-SORTIE-2025-002-Martin.pdf');
+    const pdf = readFileSync((await (await download).path())!, 'latin1');
+    expect(pdf.startsWith('%PDF')).toBe(true);
+    expect(pdf).toContain('Randonnee Vercors');
+    expect(pdf).toContain('45.00');
   });
 });
 
 test.describe('Copy to Clipboard', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await login(page);
-    await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should have copy button on rows', async ({ page }) => {
-    // Vérifier qu'il y a un bouton de copie
-    const copyButton = page.locator('button[title*="Copier"], button:has-text("Copier")').first();
-    const isVisible = await copyButton.isVisible().catch(() => false);
+  test('should copy the report reference', async ({ page }) => {
+    const row = rows(page).filter({ hasText: 'Sortie Mont Blanc' });
 
-    if (isVisible) {
-      await expect(copyButton).toBeVisible();
-    }
+    await row.getByRole('button', { name: 'Copier le titre' }).click();
+
+    await expect(row.getByRole('button', { name: 'Copié !' })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      'SORTIE MONT BLANC-JEAN DUPONT-15/01/2025-ALPINISME'
+    );
   });
 });

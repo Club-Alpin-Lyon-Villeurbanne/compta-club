@@ -10,65 +10,32 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  lint:
-    name: Lint
+  ci:
+    name: Lint, tests unitaires et build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 9
 
-      - uses: actions/setup-node@v4
+      # Vercel lit aussi engines.node : la CI et la prod tournent sur la même version.
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: package.json
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm lint
 
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
       - run: pnpm test:unit
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       - run: pnpm build
         env:
           NEXT_PUBLIC_API_URL: https://api.example.com
-          NEXT_PUBLIC_BACKEND_BASE_URL: https://api.example.com
-          NEXT_PUBLIC_WEBSITE_BASE_URL: https://example.com
