@@ -10,17 +10,21 @@
  * - `details` renvoyé en chaîne JSON, dates avec fuseau horaire ;
  * - `pagination=false` renvoie un tableau nu, sinon `{ data, meta }` ;
  * - erreurs au format application/problem+json ;
- * - transitions de statut d'un gestionnaire, refusées (422) sur sa propre note.
+ * - transitions de statut d'un gestionnaire, refusées (422) sur sa propre note ;
+ * - notes hors sortie (achat, formation) : ni brouillon ni note qu'un responsable doit encore
+ *   valider dans la liste, `status` et `type` à une ou plusieurs valeurs, recherche et date de la
+ *   sortie sans effet sur elles.
  *
  * Chaque connexion ouvre une session isolée (identifiant `sid` porté par les jetons) : les
  * changements de statut et les requêtes reçues sont propres à un test, même en parallèle.
- * Les routes /__e2e/* permettent à un test de lire ce que le backend a reçu ou de provoquer
- * une erreur.
+ * Les routes /__e2e/* permettent à un test de lire ce que le backend a reçu, de provoquer
+ * une erreur ou d'ajouter les notes hors sortie à sa session (les tests des notes de sortie
+ * gardent ainsi leurs données).
  */
 
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { mockExpenseReports } from './fixtures';
+import { mockExpenseReports, mockNotesHorsSortie } from './fixtures';
 
 export const E2E_CREDENTIALS = { email: 'tresorier@clubalpinlyon.top', password: 'tresorier123' };
 
@@ -51,10 +55,20 @@ function sessionIdFromAccessToken(header: string | undefined): string | null {
   }
 }
 
-type Report = Omit<(typeof mockExpenseReports)[number], 'utilisateur' | 'commentaireStatut' | 'details'> & {
+type Event = (typeof mockExpenseReports)[number]['sortie'];
+
+type Report = {
+  id: number;
+  status: string;
+  type?: string;
+  refundRequired: boolean;
   utilisateur: { id: number; prenom: string; nom: string };
+  sortie: Event | null;
+  dateCreation: string;
   commentaireStatut: string | null;
   details: Record<string, unknown>;
+  valideurs?: unknown[];
+  [field: string]: unknown;
 };
 
 const ownReport = {
@@ -91,6 +105,7 @@ const archivedReports = Array.from({ length: 31 }, (_, i) => {
 }) as Report[];
 
 const allReports: Report[] = [...(mockExpenseReports as Report[]), ownReport, ...archivedReports];
+const notesHorsSortie = mockNotesHorsSortie as Report[];
 
 const MANAGER_TRANSITIONS: Record<string, string[]> = {
   submitted: ['approved', 'rejected'],
@@ -101,27 +116,47 @@ interface Session {
   changes: Map<number, Partial<Report>>;
   received: { method: string; path: string; body: unknown }[];
   failNextList: number | null;
+  notesHorsSortie: boolean;
 }
 
 const sessions = new Map<string, Session>();
 
 function getSession(sid: string): Session {
-  if (!sessions.has(sid)) sessions.set(sid, { changes: new Map(), received: [], failNextList: null });
+  if (!sessions.has(sid)) {
+    sessions.set(sid, { changes: new Map(), received: [], failNextList: null, notesHorsSortie: false });
+  }
   return sessions.get(sid)!;
 }
 
 function reportsSeenBy(session: Session): Report[] {
-  return allReports.map((r) => ({ ...r, ...session.changes.get(r.id) }));
+  const reports = session.notesHorsSortie ? [...allReports, ...notesHorsSortie] : allReports;
+  return reports.map((r) => ({ ...r, ...session.changes.get(r.id) }));
+}
+
+const typeOf = (report: Report) => report.type ?? 'sortie';
+
+// La trésorerie ne voit d'une note hors sortie ni le brouillon, ni l'envoi qu'un responsable doit encore valider.
+function inTreasuryList(report: Report): boolean {
+  if (typeOf(report) === 'sortie') return true;
+  return report.status !== 'draft' && !(report.status === 'submitted' && (report.valideurs ?? []).length > 0);
 }
 
 const withOffset = (date: string) => (/(Z|[+-]\d\d:\d\d)$/.test(date) ? date : `${date}+01:00`);
 
-// Format de l'API en production : details en chaîne JSON, dates avec fuseau.
+// Format de l'API en production : details en chaîne JSON, dates avec fuseau. Une note de sortie
+// porte aussi les champs des notes hors sortie, vides ; les montants que la plateforme calcule
+// pour elle ne sont pas reproduits, compta-club ne les lit pas.
 function toApi(report: Report) {
+  const api = { ...report, details: JSON.stringify(report.details), dateCreation: withOffset(report.dateCreation) };
+  if (!report.sortie) return api;
   return {
-    ...report,
-    details: JSON.stringify(report.details),
-    dateCreation: withOffset(report.dateCreation),
+    type: 'sortie',
+    commission: null,
+    objet: null,
+    dateDepense: null,
+    lienFormation: null,
+    motPourResponsable: null,
+    ...api,
     sortie: {
       ...report.sortie,
       heureRendezVous: withOffset(report.sortie.heureRendezVous),
@@ -130,15 +165,22 @@ function toApi(report: Report) {
   };
 }
 
+// `status=a` ou `status[]=a&status[]=b`, comme API Platform
+const valuesOf = (params: URLSearchParams, name: string) => [...params.getAll(name), ...params.getAll(`${name}[]`)];
+
 function filterReports(reports: Report[], params: URLSearchParams): Report[] {
   const event = params.get('event');
-  if (event) reports = reports.filter((r) => String(r.sortie.id) === event);
+  if (event) reports = reports.filter((r) => String(r.sortie?.id) === event);
 
-  const status = params.get('status');
-  if (status) reports = reports.filter((r) => r.status === status);
+  // Une valeur inconnue donne une liste vide.
+  const statuses = valuesOf(params, 'status');
+  if (statuses.length) reports = reports.filter((r) => statuses.includes(r.status));
+  const types = valuesOf(params, 'type');
+  if (types.length) reports = reports.filter((r) => types.includes(typeOf(r)));
 
+  // La recherche et la date ne portent que sur les notes de sortie : une note hors sortie reste.
   const title = params.get('event.titre')?.toLowerCase();
-  if (title) reports = reports.filter((r) => r.sortie.titre.toLowerCase().includes(title));
+  if (title) reports = reports.filter((r) => !r.sortie || r.sortie.titre.toLowerCase().includes(title));
 
   const lastname = params.get('user.lastname')?.toLowerCase();
   if (lastname) reports = reports.filter((r) => r.utilisateur.nom.toLowerCase().includes(lastname));
@@ -147,9 +189,9 @@ function filterReports(reports: Report[], params: URLSearchParams): Report[] {
   if (refundRequired) reports = reports.filter((r) => String(r.refundRequired) === refundRequired);
 
   const after = params.get('event.startDate[after]');
-  if (after) reports = reports.filter((r) => r.sortie.heureRendezVous >= after);
+  if (after) reports = reports.filter((r) => !r.sortie || r.sortie.heureRendezVous >= after);
   const before = params.get('event.startDate[before]');
-  if (before) reports = reports.filter((r) => r.sortie.heureRendezVous <= before);
+  if (before) reports = reports.filter((r) => !r.sortie || r.sortie.heureRendezVous <= before);
 
   return reports;
 }
@@ -202,11 +244,15 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     session.failNextList = (await readJson(req)).status;
     return send(res, 204);
   }
+  if (req.method === 'POST' && url.pathname === '/__e2e/notes-hors-sortie') {
+    session.notesHorsSortie = true;
+    return send(res, 204);
+  }
 
   if (url.pathname === '/admin/notes-de-frais') {
     if (req.method === 'HEAD') return send(res, 200);
 
-    const reports = filterReports(reportsSeenBy(session), url.searchParams);
+    const reports = filterReports(reportsSeenBy(session).filter(inTreasuryList), url.searchParams);
     if (url.searchParams.get('pagination') === 'false') return send(res, 200, reports.map(toApi));
 
     if (session.failNextList) {

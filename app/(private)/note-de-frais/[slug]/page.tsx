@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
+import { EventExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
 import Header from "@/app/components/note-de-frais/header";
 import { get } from "@/app/lib/fetchClient";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
@@ -15,7 +15,7 @@ const ExpenseReportContent = ({
   fetchData,
 }: {
   event: Event;
-  expenseReports: ExpenseReport[];
+  expenseReports: EventExpenseReport[];
   fetchData: () => Promise<void>;
 }) => (
   <main className="min-h-screen bg-gray-50">
@@ -42,7 +42,7 @@ export default function ExpenseReportPage() {
   const slug = params?.slug;
 
   const [event, setEvent] = useState<Event | null>(null);
-  const [expenseReports, setExpenseReports] = useState<ExpenseReport[] | null>(null);
+  const [expenseReports, setExpenseReports] = useState<EventExpenseReport[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,14 +54,14 @@ export default function ExpenseReportPage() {
       setError(null);
 
       // Récupération des notes de frais avec gestion automatique du token
-      const reports = await get<ExpenseReport[]>(`/api/expense-reports/${slug}`);
+      const reports = await get<EventExpenseReport[]>(`/api/expense-reports/${slug}`);
 
       if (!reports || reports.length === 0) {
         setError("Aucune note de frais trouvée pour cet événement.");
         return;
       }
 
-      const parsedReports = reports.map((report: ExpenseReport) => {
+      const parsedReports = reports.map((report: EventExpenseReport) => {
         let parsedDetails = report.details;
         if (typeof report.details === "string") {
           try {

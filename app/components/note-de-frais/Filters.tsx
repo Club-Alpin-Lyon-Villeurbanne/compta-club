@@ -1,7 +1,7 @@
 import useStore from '@/app/store/useStore';
 import React from "react";
-import ExpenseStatus, {getExpenseStatusTranslation} from "@/app/enums/ExpenseStatus";
-import { FaSearch, FaCalendarAlt, FaUser, FaGift, FaSyncAlt, FaFilter } from 'react-icons/fa';
+import { REPORT_TYPE_FILTERS, STATUS_FILTERS } from "@/app/utils/expenseReport";
+import { FaSearch, FaCalendarAlt, FaUser, FaGift, FaSyncAlt, FaFilter, FaTags } from 'react-icons/fa';
 
 const Filters: React.FC = () => {
     const {
@@ -15,6 +15,8 @@ const Filters: React.FC = () => {
         setRequesterFilter,
         typeFilter,
         setTypeFilter,
+        reportTypeFilter,
+        setReportTypeFilter,
         resetFilters
     } = useStore();
 
@@ -28,12 +30,29 @@ const Filters: React.FC = () => {
                 <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
+                    aria-label="Statut"
                     className="block w-full pl-10 pr-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 >
-                    <option value="Toutes">Tous statuts</option>
-                    {Object.values(ExpenseStatus).map((status) => (
-                        <option key={status} value={status}>
-                            {getExpenseStatusTranslation(status as ExpenseStatus)}
+                    {STATUS_FILTERS.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <FaTags className="text-gray-400" />
+                </div>
+                <select
+                    value={reportTypeFilter}
+                    onChange={(e) => setReportTypeFilter(e.target.value)}
+                    aria-label="Type de note"
+                    className="block w-full pl-10 pr-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                >
+                    {REPORT_TYPE_FILTERS.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                            {label}
                         </option>
                     ))}
                 </select>
@@ -68,9 +87,10 @@ const Filters: React.FC = () => {
                 <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
+                    aria-label="Don ou remboursement"
                     className="block w-full pl-10 pr-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 >
-                    <option value="">Tous types</option>
+                    <option value="">Dons et remboursements</option>
                     <option value="don">Don</option>
                     <option value="remboursement">Remboursement</option>
                 </select>

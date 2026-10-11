@@ -10,7 +10,7 @@ export function getFileUrlByExpenseId(piecesJointes: any[], expenseId: string): 
 
 
 // Les montants viennent du JSON saisi par l'adhérent : on ne fait pas confiance à leur type.
-const toAmount = (value: unknown): number => {
+export const toAmount = (value: unknown): number => {
     const amount = Number(value);
     return Number.isFinite(amount) ? amount : 0;
 };

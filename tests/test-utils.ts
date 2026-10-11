@@ -47,11 +47,15 @@ export async function fillLoginForm(page: Page, credentials = TEST_CREDENTIALS) 
 }
 
 /**
- * Se connecter par l'API (le formulaire est testé dans auth*.spec.ts) et ouvrir la liste
+ * Se connecter par l'API (le formulaire est testé dans auth*.spec.ts) et ouvrir la liste.
+ * Avec `notesHorsSortie`, le faux backend sert aussi les notes hors sortie à cette session.
  */
-export async function login(page: Page) {
+export async function login(page: Page, { notesHorsSortie = false } = {}) {
   const response = await page.request.post('/api/auth/login', { data: TEST_CREDENTIALS });
   expect(response.ok()).toBe(true);
+  if (notesHorsSortie) {
+    await callBackend('/__e2e/notes-hors-sortie', { method: 'POST', headers: await backendSession(page) });
+  }
   await page.goto('/note-de-frais');
   await expect(page.getByRole('button', { name: 'Déconnexion' })).toBeVisible();
 }

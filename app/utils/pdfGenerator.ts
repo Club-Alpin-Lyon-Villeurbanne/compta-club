@@ -1,11 +1,11 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
+import { EventExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 import { ExpenseStatus, getExpenseStatusTranslation } from '@/app/enums/ExpenseStatus';
 import { config } from '@/app/config';
 
-export const generateExpenseReportPDF = (report: ExpenseReport) => {
+export const generateExpenseReportPDF = (report: EventExpenseReport) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   

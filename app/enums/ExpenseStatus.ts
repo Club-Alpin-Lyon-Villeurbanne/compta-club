@@ -1,5 +1,7 @@
 export enum ExpenseStatus {
   SUBMITTED = "submitted",
+  // Note hors sortie validée par le responsable de sa commission : elle attend la trésorerie.
+  PREAPPROVED = "preapproved",
   REJECTED = "rejected",
   APPROVED = "approved",
   ACCOUNTED = "accounted",
@@ -9,6 +11,8 @@ export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
   switch (status) {
     case ExpenseStatus.SUBMITTED:
       return "Soumis";
+    case ExpenseStatus.PREAPPROVED:
+      return "Validée par le responsable";
     case ExpenseStatus.REJECTED:
       return "Rejeté";
     case ExpenseStatus.APPROVED:
@@ -24,6 +28,8 @@ export const getExpenseStatusColor = (status: ExpenseStatus): string => {
   switch (status) {
     case ExpenseStatus.SUBMITTED:
       return "blue";
+    case ExpenseStatus.PREAPPROVED:
+      return "teal";
     case ExpenseStatus.REJECTED:
       return "red";
     case ExpenseStatus.APPROVED:

@@ -1,6 +1,6 @@
 // ExpenseRow.tsx
 import React from "react";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import { EventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaMoneyBillWave, FaGift, FaFileInvoiceDollar, FaFilePdf } from "react-icons/fa";
@@ -9,7 +9,7 @@ import { Badge } from "../Badge";
 import ExpensesTable from "./ExpensesTable";
 
 interface ExpenseRowProps {
-    report: ExpenseReport;
+    report: EventExpenseReport;
     isExpanded: boolean;
     onToggle: () => void;
     onAction: (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => void;

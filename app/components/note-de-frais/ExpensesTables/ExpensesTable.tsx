@@ -4,10 +4,10 @@ import HebergementTable from "@/app/components/note-de-frais/ExpensesTables/Hebe
 import OtherExpensesTable from "@/app/components/note-de-frais/ExpensesTables/OtherExpensesTable";
 import ExpensesSummary from "@/app/components/note-de-frais/ExpensesTables/ExpensesSummary";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import { EventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import { FaCheck, FaTimes, FaInfoCircle, FaCar, FaBed, FaReceipt, FaFileInvoiceDollar } from 'react-icons/fa';
 
-export default function ExpensesTable({ report }: { report: ExpenseReport }) {
+export default function ExpensesTable({ report }: { report: EventExpenseReport }) {
     const renderStatusAlert = () => {
         if (report.status === ExpenseStatus.APPROVED) {
             return (

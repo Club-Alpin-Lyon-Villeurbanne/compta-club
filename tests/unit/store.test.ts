@@ -55,6 +55,22 @@ describe('useStore', () => {
       expect(state.requesterFilter).toBe('');
       expect(state.currentPage).toBe(1);
     });
+
+    it('should clear the type of note filter, which starts empty', () => {
+      expect(useStore.getState().reportTypeFilter).toBe('');
+
+      act(() => {
+        useStore.getState().setCurrentPage(2);
+        useStore.getState().setReportTypeFilter('formation');
+      });
+      expect(useStore.getState().currentPage).toBe(1);
+
+      act(() => {
+        useStore.getState().resetFilters();
+      });
+
+      expect(useStore.getState().reportTypeFilter).toBe('');
+    });
   });
 
   describe('setExpenseReports', () => {

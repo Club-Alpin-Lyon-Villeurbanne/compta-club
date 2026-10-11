@@ -126,3 +126,214 @@ export const mockRefreshResponse = {
   token: 'mock-refreshed-jwt-token',
   refresh_token: 'mock-new-refresh-token',
 };
+
+const commissionEscalade = { id: 7, code: 'escalade', title: 'Escalade' };
+const commissionRandonnee = { id: 4, code: 'randonnee', title: 'Randonnée' };
+
+// Responsable de la commission Escalade ; la commission Randonnée n'en a pas, ses notes vont droit à la trésorerie.
+const responsableEscalade = { id: 9, prenom: 'Hugo', nom: 'Blanc' };
+const lucie = { id: 8, prenom: 'Lucie', nom: 'Roux' };
+const thomas = { id: 10, prenom: 'Thomas', nom: 'Petit' };
+const camille = { id: 11, prenom: 'Camille', nom: 'Faure' };
+
+const validationParLeResponsable = {
+  auteur: { prenom: 'Hugo', nom: 'BLANC' },
+  date: '2025-01-27T18:30:00+01:00',
+};
+
+const achat = (id: number, objet: string, montant: number) => ({
+  details: { lignes: [{ id: `ligne-${id}`, montant, description: objet }] },
+  lignesAffichees: [{ id: `ligne-${id}`, nature: null, libelle: objet, detail: null, montant }],
+  piecesJointes: [{ id, expenseId: `ligne-${id}`, fileUrl: `https://example.com/facture-${id}.pdf` }],
+  totalDeclare: montant,
+  totalRemboursable: montant,
+});
+
+const champsHorsSortie = {
+  sortie: null,
+  lienFormation: null,
+  motPourResponsable: null,
+  commentaireStatut: null,
+  avertissements: [],
+  valideurs: [],
+  derniereDecision: null,
+  validationResponsable: null,
+};
+
+/**
+ * Notes hors sortie, au format de l'API (montants figés, lignes affichées, libellé comptable).
+ * Les deux dernières n'attendent pas la trésorerie : la liste de l'API ne les renvoie pas.
+ */
+export const mockNotesHorsSortie = [
+  {
+    ...champsHorsSortie,
+    ...achat(201, 'Cordelettes pour la SAE', 55),
+    id: 201,
+    type: 'autre',
+    status: 'submitted',
+    refundRequired: true,
+    utilisateur: lucie,
+    commission: commissionRandonnee,
+    objet: 'Cordelettes pour la SAE',
+    dateDepense: '2025-01-20',
+    dateCreation: '2025-01-21T09:00:00',
+    dateEnvoi: '2025-01-21T09:05:00+01:00',
+    libelleComptable: 'ROUX Lucie NDF 20/01/2025 Cordelettes pour la SAE',
+  },
+  {
+    ...champsHorsSortie,
+    id: 202,
+    type: 'formation',
+    status: 'preapproved',
+    refundRequired: true,
+    utilisateur: thomas,
+    commission: commissionEscalade,
+    objet: 'Formation initiateur escalade',
+    dateDepense: '2025-01-25',
+    lienFormation: 'https://example.com/formation-initiateur-escalade',
+    motPourResponsable: 'Stage validé par la commission en décembre.',
+    dateCreation: '2025-01-26T10:00:00',
+    dateEnvoi: '2025-01-26T10:10:00+01:00',
+    details: {
+      lignes: [
+        { id: 'ligne-202-stage', nature: 'stage', montant: 210, description: '' },
+        { id: 'ligne-202-train', nature: 'train', montant: 35.6, description: '' },
+      ],
+    },
+    lignesAffichees: [
+      { id: 'ligne-202-stage', nature: 'stage', libelle: 'Stage', detail: null, montant: 210 },
+      { id: 'ligne-202-train', nature: 'train', libelle: 'Train ou bus', detail: null, montant: 35.6 },
+    ],
+    piecesJointes: [{ id: 202, expenseId: 'ligne-202-stage', fileUrl: 'https://example.com/facture-stage.pdf' }],
+    // Le remboursable diffère du déclaré : la liste affiche le déclaré.
+    totalDeclare: 245.6,
+    totalRemboursable: 231.4,
+    valideurs: [responsableEscalade],
+    derniereDecision: { statut: 'preapproved', niveau: 'responsable', ...validationParLeResponsable, message: null },
+    validationResponsable: validationParLeResponsable,
+    libelleComptable: 'PETIT Thomas NDF 25/01/2025 Formation initiateur escalade',
+  },
+  {
+    ...champsHorsSortie,
+    ...achat(203, "Sac <b>30 L</b> & cordelette d'attache", 42),
+    id: 203,
+    type: 'autre',
+    status: 'preapproved',
+    refundRequired: false,
+    utilisateur: camille,
+    commission: commissionEscalade,
+    objet: "Sac <b>30 L</b> & cordelette d'attache",
+    dateDepense: '2025-01-18',
+    dateCreation: '2025-01-19T15:00:00',
+    dateEnvoi: '2025-01-19T15:02:00+01:00',
+    valideurs: [responsableEscalade],
+    derniereDecision: { statut: 'preapproved', niveau: 'responsable', ...validationParLeResponsable, message: null },
+    validationResponsable: validationParLeResponsable,
+    libelleComptable: "FAURE Camille NDF 18/01/2025 Sac <b>30 L</b> & cordelette d'attache",
+  },
+  {
+    ...champsHorsSortie,
+    id: 204,
+    type: 'formation',
+    status: 'approved',
+    refundRequired: true,
+    utilisateur: lucie,
+    commission: commissionRandonnee,
+    objet: 'Recyclage initiateur randonnée',
+    dateDepense: '2025-01-11',
+    dateCreation: '2025-01-12T08:00:00',
+    dateEnvoi: '2025-01-12T08:01:00+01:00',
+    details: { lignes: [{ id: 'ligne-204-stage', nature: 'stage', montant: 120, description: '' }] },
+    lignesAffichees: [{ id: 'ligne-204-stage', nature: 'stage', libelle: 'Stage', detail: null, montant: 120 }],
+    piecesJointes: [],
+    totalDeclare: 120,
+    totalRemboursable: 120,
+    derniereDecision: {
+      statut: 'approved',
+      niveau: 'tresorerie',
+      auteur: { prenom: 'Claire', nom: 'FONTAINE' },
+      date: '2025-01-13T11:00:00+01:00',
+      message: null,
+    },
+    libelleComptable: 'ROUX Lucie NDF 11/01/2025 Recyclage initiateur randonnée',
+  },
+  {
+    ...champsHorsSortie,
+    ...achat(205, 'Prises pour le pan', 89.9),
+    id: 205,
+    type: 'autre',
+    status: 'rejected',
+    refundRequired: true,
+    utilisateur: thomas,
+    commission: commissionEscalade,
+    objet: 'Prises pour le pan',
+    dateDepense: '2025-01-14',
+    dateCreation: '2025-01-15T19:00:00',
+    dateEnvoi: '2025-01-15T19:01:00+01:00',
+    commentaireStatut: 'Il manque la facture.',
+    valideurs: [responsableEscalade],
+    derniereDecision: {
+      statut: 'rejected',
+      niveau: 'tresorerie',
+      auteur: { prenom: 'Claire', nom: 'FONTAINE' },
+      date: '2025-01-29T09:00:00+01:00',
+      message: 'Il manque la facture.',
+    },
+    validationResponsable: validationParLeResponsable,
+    libelleComptable: 'PETIT Thomas NDF 14/01/2025 Prises pour le pan',
+  },
+  {
+    ...champsHorsSortie,
+    ...achat(208, 'Trousse de secours', 32.5),
+    id: 208,
+    type: 'autre',
+    status: 'accounted',
+    refundRequired: true,
+    utilisateur: camille,
+    commission: commissionRandonnee,
+    objet: 'Trousse de secours',
+    dateDepense: '2025-01-05',
+    dateCreation: '2025-01-06T12:00:00',
+    dateEnvoi: '2025-01-06T12:01:00+01:00',
+    derniereDecision: {
+      statut: 'approved',
+      niveau: 'tresorerie',
+      auteur: { prenom: 'Claire', nom: 'FONTAINE' },
+      date: '2025-01-07T10:00:00+01:00',
+      message: null,
+    },
+    libelleComptable: 'FAURE Camille NDF 05/01/2025 Trousse de secours',
+  },
+  {
+    ...champsHorsSortie,
+    ...achat(206, 'Piles pour les DVA', 24.9),
+    id: 206,
+    type: 'autre',
+    status: 'submitted',
+    refundRequired: true,
+    utilisateur: camille,
+    commission: commissionEscalade,
+    objet: 'Piles pour les DVA',
+    dateDepense: '2025-01-28',
+    dateCreation: '2025-01-28T20:00:00',
+    dateEnvoi: '2025-01-28T20:01:00+01:00',
+    // Chez le responsable : la trésorerie ne la voit pas encore.
+    valideurs: [responsableEscalade],
+    libelleComptable: 'FAURE Camille NDF 28/01/2025 Piles pour les DVA',
+  },
+  {
+    ...champsHorsSortie,
+    ...achat(207, 'Gants pour la via ferrata', 60),
+    id: 207,
+    type: 'autre',
+    status: 'draft',
+    refundRequired: true,
+    utilisateur: lucie,
+    commission: commissionRandonnee,
+    objet: 'Gants pour la via ferrata',
+    dateDepense: '2025-01-30',
+    dateCreation: '2025-01-30T08:00:00',
+    dateEnvoi: null,
+    libelleComptable: null,
+  },
+];

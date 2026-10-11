@@ -14,6 +14,7 @@ interface StoreState {
     dateFilter: string;
     requesterFilter: string;
     typeFilter: string;
+    reportTypeFilter: string;
     setExpenseReports: (reports: ExpenseReport[]) => void;
     setPaginationMeta: (meta: PaginationMeta | null) => void;
     setDisplayedCount: (count: number) => void;
@@ -25,6 +26,7 @@ interface StoreState {
     setDateFilter: (date: string) => void;
     setRequesterFilter: (requester: string) => void;
     setTypeFilter: (type: string) => void;
+    setReportTypeFilter: (type: string) => void;
     resetFilters: () => void;
 }
 
@@ -40,6 +42,7 @@ const useStore = create<StoreState>((set) => ({
     dateFilter: '',
     requesterFilter: '',
     typeFilter: '',
+    reportTypeFilter: '',
     setExpenseReports: (reports) => set({
         expenseReports: Array.isArray(reports) ? reports : []
     }),
@@ -53,12 +56,14 @@ const useStore = create<StoreState>((set) => ({
     setDateFilter: (date) => set({ dateFilter: date, currentPage: 1 }),
     setRequesterFilter: (requester) => set({ requesterFilter: requester, currentPage: 1 }),
     setTypeFilter: (type) => set({ typeFilter: type, currentPage: 1 }),
+    setReportTypeFilter: (type) => set({ reportTypeFilter: type, currentPage: 1 }),
     resetFilters: () => set({
         status: 'submitted',
         searchTerm: '',
         dateFilter: '',
         requesterFilter: '',
         typeFilter: '',
+        reportTypeFilter: '',
         currentPage: 1
     }),
 }));

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import { EventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ErrorMessage from "../../ErrorMessage";
 import { ExpenseRow } from "./ExpensesRow";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
@@ -7,7 +7,7 @@ import ExpenseStatus from "@/app/enums/ExpenseStatus";
 import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";    
 
 interface ExpensesListProps {
-    expenseReports: ExpenseReport[];
+    expenseReports: EventExpenseReport[];
     fetchData: () => Promise<void>;
     params: { slug: string };
 }
