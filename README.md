@@ -1,7 +1,7 @@
 # Outil de Compta du Club Alpin de Lyon
 
 Cette application permet aux gestionnaires des notes de frais du Club Alpin de Lyon de les traiter : validation, rejet et comptabilisation. Elle est réservée aux administrateurs et aux gestionnaires des notes de frais.
-Les notes de frais sont soumises par les encadrants sur le site web du Club Alpin de Lyon.
+Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes de sortie par les encadrants, et notes hors sortie (formation, achat). Une note hors sortie est d'abord validée sur le site par le responsable de sa commission, s'il y en a un autre que le demandeur, puis arrive dans compta-club.
 
 > ⚠️ **Note importante** :
 > - Cette application s'appuie sur [l'API du site web du Club Alpin de Lyon](https://www.clubalpinlyon.fr/api) pour récupérer les données et gérer l'authentification.
@@ -11,10 +11,10 @@ Les notes de frais sont soumises par les encadrants sur le site web du Club Alpi
 
 ## **✨ Fonctionnalités principales**
 
-- 👀 Visualisation des notes de frais déposées par les encadrants, avec filtres et recherche.
+- 👀 Visualisation des notes de frais, avec filtres et recherche : par défaut « À valider » (soumises, ou validées par le responsable), filtre par type (sorties, formations, achats).
 - ✅ Validation, rejet et comptabilisation des notes de frais par les gestionnaires.
 - 📜 Visualisation de l'historique des frais.
-- 📄 Export PDF des notes de frais approuvées/comptabilisées.
+- 📄 Export PDF des notes de sortie approuvées/comptabilisées.
 
 ## **🚀 Prérequis**
 
@@ -110,10 +110,11 @@ Les tests unitaires couvrent :
 - Utilitaires fetch (client/serveur)
 - Fonctions d'authentification
 - Helpers et store Zustand
+- Liste des notes de frais (notes de sortie et hors sortie, filtres)
 
 ### **Tests E2E avec Playwright**
 
-Les tests end-to-end sont implémentés avec Playwright. Ils n'ont besoin ni du backend ni d'identifiants : Playwright construit l'application en mode production, la sert sur le port 3100 et la branche sur un faux backend (`tests/mocks/fake-backend.ts`, données dans `tests/mocks/fixtures.ts`) qui reproduit les formats de l'API de production. Le build écrase `.next` : ne lancez pas `pnpm dev` en même temps.
+Les tests end-to-end sont implémentés avec Playwright. Ils n'ont besoin ni du backend ni d'identifiants : Playwright construit l'application en mode production, la sert sur le port 3100 et la branche sur un faux backend (`tests/mocks/fake-backend.ts`, données dans `tests/mocks/fixtures.ts`) qui reproduit les formats de l'API de production. Les notes hors sortie ne sont servies qu'aux tests qui les demandent (`login(page, { notesHorsSortie: true })`) : les tests des notes de sortie gardent leurs données. Le build écrase `.next` : ne lancez pas `pnpm dev` en même temps.
 
 1. Lancez les tests avec la commande :
    ```bash
