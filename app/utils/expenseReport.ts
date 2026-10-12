@@ -250,6 +250,24 @@ export function getWaitingForResponsable(report: NonEventExpenseReport): string 
         + `Vous pourrez l'approuver après ${plusieurs ? 'eux' : 'lui'}.`;
 }
 
+/** Ce que la confirmation d'une décision rappelle de la note. */
+export interface DecisionSummary {
+    demandeur: string;
+    // « À rembourser : 287.40 € » ou « Don : 42.00 € »
+    montant: string;
+    // Une note validée par son responsable lui revient après un refus : il en lira aussi le message.
+    luParLeResponsable: boolean;
+}
+
+export function getDecisionSummary(report: ExpenseReport): DecisionSummary {
+    const demandeur = nomComplet(report.utilisateur);
+    if (isEventReport(report)) {
+        const montant = formatEuro(calculateTotals(report.details).totalRemboursable);
+        return { demandeur, montant: `${report.refundRequired ? 'À rembourser' : 'Don'} : ${montant}`, luParLeResponsable: false };
+    }
+    return { demandeur, montant: getAmountSummary(report).titre, luParLeResponsable: Boolean(report.validationResponsable) };
+}
+
 const ACTIONS_FAITES: Record<TreasuryAction, string> = {
     approved: 'Note approuvée.',
     rejected: 'Note refusée.',

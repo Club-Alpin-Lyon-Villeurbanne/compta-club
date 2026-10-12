@@ -127,7 +127,9 @@ test.describe('Page of a note hors sortie', () => {
     await page.goto(note(202));
 
     await button(page, 'Approuver').click();
-    await expect(dialog(page)).toContainText('Voulez-vous vraiment approuver cette note de frais ?');
+    await expect(dialog(page).locator('.swal2-title')).toHaveText('Approuver la note de Thomas Petit ?');
+    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('À rembourser : 287.40 €. Thomas Petit recevra un mail.');
+    await expect(dialog(page).locator('.swal2-confirm')).toHaveText('Approuver');
     await page.locator('.swal2-confirm').click();
 
     await expect(confirmation(page)).toHaveText('Note approuvée. Un mail a été envoyé à Thomas Petit.');
@@ -186,6 +188,15 @@ test.describe('Page of a note hors sortie', () => {
     ]);
   });
 
+  test('should not tell that a responsable will read the refusal of a note that went straight to the treasury', async ({ page }) => {
+    await page.goto(note(201));
+
+    await button(page, 'Refuser').click();
+
+    await expect(dialog(page)).toContainText('Message au demandeur, envoyé par mail');
+    await expect(dialog(page)).not.toContainText('Le responsable de la commission');
+  });
+
   test('should approve a note that had no responsable to validate it', async ({ page }) => {
     await page.goto(note(201));
 
@@ -198,13 +209,19 @@ test.describe('Page of a note hors sortie', () => {
     ]);
   });
 
-  test('should require a comment to reject, then show the refusal signed by the treasury', async ({ page }) => {
+  test('should require a message to refuse, then show the refusal signed by the treasury', async ({ page }) => {
     await page.goto(note(203));
 
     await button(page, 'Refuser').click();
-    await expect(dialog(page)).toContainText('Motif du rejet');
+    await expect(dialog(page).locator('.swal2-title')).toHaveText('Refuser la note');
+    const message = page.getByRole('textbox', { name: 'Message au demandeur, envoyé par mail' });
+    await expect(message).toHaveAttribute('placeholder', 'Ce qu\'il doit corriger ou ajouter…');
+    // Validée par le responsable, la note lui reviendra
+    await expect(message).toHaveAccessibleDescription('Le responsable de la commission le verra aussi quand la note lui reviendra.');
+    await expect(dialog(page).locator('.swal2-confirm')).toHaveText('Refuser');
+    await message.fill('   ');
     await page.locator('.swal2-confirm').click();
-    await expect(page.locator('.swal2-validation-message')).toContainText('Vous devez entrer un commentaire');
+    await expect(page.locator('.swal2-validation-message')).toHaveText('Écrivez le message au demandeur.');
     expect(await backendReceived(page)).toEqual([]);
 
     await page.locator('.swal2-textarea').fill('Merci de joindre le ticket de caisse.');
@@ -232,7 +249,8 @@ test.describe('Page of a note hors sortie', () => {
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
 
     await button(page, 'Comptabiliser').click();
-    await expect(dialog(page)).toContainText('Voulez-vous vraiment comptabiliser cette note de frais ?');
+    await expect(dialog(page).locator('.swal2-title')).toHaveText('Comptabiliser la note de Lucie Roux ?');
+    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('Elle sera close : plus aucune action possible.');
     await page.locator('.swal2-confirm').click();
 
     await expect(confirmation(page)).toHaveText('Note comptabilisée. Un mail a été envoyé à Lucie Roux.');

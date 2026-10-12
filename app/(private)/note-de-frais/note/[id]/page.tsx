@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ExpenseReport, NonEventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import { get } from "@/app/lib/fetchClient";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
-import { getActionConfirmation, isEventReport, TreasuryAction } from "@/app/utils/expenseReport";
+import { getActionConfirmation, getDecisionSummary, isEventReport, TreasuryAction } from "@/app/utils/expenseReport";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import NoteHorsSortieDetail from "@/app/components/note-de-frais/NoteHorsSortieDetail";
@@ -58,7 +58,7 @@ export default function NoteHorsSortiePage() {
     async (noteId: number, action: TreasuryAction) => {
       if (!note) return;
       setConfirmation(null);
-      if (await handleAction(noteId, action, note.status)) setConfirmation(getActionConfirmation(action, note));
+      if (await handleAction(noteId, action, note.status, getDecisionSummary(note))) setConfirmation(getActionConfirmation(action, note));
     },
     [handleAction, note]
   );

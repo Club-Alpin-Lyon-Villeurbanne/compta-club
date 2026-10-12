@@ -44,7 +44,8 @@ test.describe('Expense Report Actions', () => {
   test('should approve after confirmation', async ({ page }) => {
     await page.goto(SUBMITTED_EVENT);
     await button(page, 'Approuver').click();
-    await expect(dialog(page)).toContainText('Voulez-vous vraiment approuver cette note de frais ?');
+    await expect(dialog(page).locator('.swal2-title')).toHaveText('Approuver la note de Jean Dupont ?');
+    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('À rembourser : 120.00 €. Jean Dupont recevra un mail.');
 
     await page.locator('.swal2-confirm').click();
 
@@ -72,10 +73,13 @@ test.describe('Expense Report Actions', () => {
   test('should require a comment to reject, then send it to the backend', async ({ page }) => {
     await page.goto(SUBMITTED_EVENT);
     await button(page, 'Refuser').click();
-    await expect(dialog(page)).toContainText('Motif du rejet');
+    await expect(dialog(page)).toContainText('Refuser la note');
+    await expect(dialog(page)).toContainText('Message au demandeur, envoyé par mail');
+    // Le responsable de commission ne revoit jamais une note de sortie
+    await expect(dialog(page)).not.toContainText('Le responsable de la commission');
 
     await page.locator('.swal2-confirm').click();
-    await expect(page.locator('.swal2-validation-message')).toContainText('Vous devez entrer un commentaire');
+    await expect(page.locator('.swal2-validation-message')).toHaveText('Écrivez le message au demandeur.');
 
     await page.locator('.swal2-textarea').fill('Justificatif manquant');
     await page.locator('.swal2-confirm').click();
@@ -93,7 +97,8 @@ test.describe('Expense Report Actions', () => {
   test('should mark an approved report as accounted after confirmation', async ({ page }) => {
     await page.goto(APPROVED_EVENT);
     await button(page, 'Comptabiliser').click();
-    await expect(dialog(page)).toContainText('Voulez-vous vraiment comptabiliser cette note de frais ?');
+    await expect(dialog(page).locator('.swal2-title')).toHaveText('Comptabiliser la note de Marie Martin ?');
+    await expect(dialog(page)).toContainText('Elle sera close : plus aucune action possible.');
 
     await page.locator('.swal2-confirm').click();
 

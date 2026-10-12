@@ -2,10 +2,23 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { patch } from '../fetchClient';
 import { DEJA_TRAITEE } from '../apiError';
-import { noteStatusPhrase } from '@/app/utils/expenseReport';
+import { DecisionSummary, noteStatusPhrase } from '@/app/utils/expenseReport';
 
 const getSwal = () => import('sweetalert2').then(m => m.default);
 type SwalModule = Awaited<ReturnType<typeof getSwal>>;
+
+export const LU_PAR_LE_RESPONSABLE = 'Le responsable de la commission le verra aussi quand la note lui reviendra.';
+
+function addHelpUnderInput(popup: HTMLElement, text: string) {
+  const input = popup.querySelector('textarea');
+  if (!input) return;
+  const help = document.createElement('p');
+  help.id = 'aide-message-au-demandeur';
+  help.className = 'mx-8 mt-2 text-sm text-gray-600';
+  help.textContent = text;
+  input.after(help);
+  input.setAttribute('aria-describedby', help.id);
+}
 
 // Un refus de la plateforme (4xx) dit pourquoi : « Cette note a déjà été traitée. », message obligatoire…
 function refusalReason(error: unknown): string | null {
@@ -28,13 +41,13 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
   // L'action envoyée, de la confirmation à la relecture de la note
   const [pendingAction, setPendingAction] = useState<ExpenseAction | null>(null);
 
-  // `shownStatus` : le statut que la page affichait au clic.
-  const handleAction = async (reportId: number, action: ExpenseAction, shownStatus?: string) => {
+  // `shownStatus` : le statut que la page affichait au clic ; `summary` : ce que la confirmation rappelle de la note.
+  const handleAction = async (reportId: number, action: ExpenseAction, shownStatus?: string, summary?: DecisionSummary) => {
     // Une action à la fois : un second clic pendant l'envoi ne repart pas, et ne finit pas en « déjà traitée ».
     if (busy.current) return false;
     busy.current = true;
     try {
-      return await runAction(reportId, action, shownStatus);
+      return await runAction(reportId, action, shownStatus, summary);
     } finally {
       busy.current = false;
       setPendingAction(null);
@@ -53,7 +66,7 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
     });
   };
 
-  const runAction = async (reportId: number, action: ExpenseAction, shownStatus?: string) => {
+  const runAction = async (reportId: number, action: ExpenseAction, shownStatus?: string, summary?: DecisionSummary) => {
     let Swal: SwalModule;
     try {
       Swal = await getSwal();
@@ -70,11 +83,13 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
 
       if (action === 'approved') {
         const result = await Swal.fire({
-          title: 'Êtes-vous sûr ?',
-          text: 'Voulez-vous vraiment approuver cette note de frais ?',
-          icon: 'warning',
+          // Le nom vient de l'adhérent : en texte, jamais en HTML.
+          titleText: summary ? `Approuver la note de ${summary.demandeur} ?` : 'Approuver la note ?',
+          text: summary ? `${summary.montant}. ${summary.demandeur} recevra un mail.` : 'Le demandeur recevra un mail.',
+          icon: 'question',
           showCancelButton: true,
-          confirmButtonText: 'Oui, approuver',
+          confirmButtonText: 'Approuver',
+          confirmButtonColor: '#16a34a',
           cancelButtonText: 'Annuler',
         });
 
@@ -85,18 +100,20 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
 
       if (action === 'rejected') {
         const { value: comment } = await Swal.fire({
-          title: 'Motif du rejet',
+          title: 'Refuser la note',
           input: 'textarea',
-          inputLabel: 'Commentaire',
-          inputPlaceholder: 'Entrez votre commentaire...',
+          inputLabel: 'Message au demandeur, envoyé par mail',
+          inputPlaceholder: 'Ce qu\'il doit corriger ou ajouter…',
           showCancelButton: true,
-          confirmButtonText: 'Rejeter',
+          confirmButtonText: 'Refuser',
+          confirmButtonColor: '#dc2626',
           cancelButtonText: 'Annuler',
           inputValidator: (value: string) => {
-            if (!value) {
-              return 'Vous devez entrer un commentaire !';
+            if (!value.trim()) {
+              return 'Écrivez le message au demandeur.';
             }
           },
+          didOpen: summary?.luParLeResponsable ? (popup: HTMLElement) => addHelpUnderInput(popup, LU_PAR_LE_RESPONSABLE) : undefined,
         });
 
         if (!comment) {
@@ -107,11 +124,12 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
 
       if (action === 'accounted') {
         const result = await Swal.fire({
-          title: 'Êtes-vous sûr ?',
-          text: 'Voulez-vous vraiment comptabiliser cette note de frais ?',
-          icon: 'warning',
+          titleText: summary ? `Comptabiliser la note de ${summary.demandeur} ?` : 'Comptabiliser la note ?',
+          text: 'Elle sera close : plus aucune action possible.',
+          icon: 'question',
           showCancelButton: true,
-          confirmButtonText: 'Oui, comptabiliser',
+          confirmButtonText: 'Comptabiliser',
+          confirmButtonColor: '#9333ea',
           cancelButtonText: 'Annuler',
         });
 

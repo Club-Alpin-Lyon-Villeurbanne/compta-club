@@ -3,7 +3,7 @@ import { EventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ErrorMessage from "../../ErrorMessage";
 import { ExpenseRow } from "./ExpensesRow";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
-import ExpenseStatus from "@/app/enums/ExpenseStatus";
+import { getDecisionSummary } from "@/app/utils/expenseReport";
 import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";    
 
 interface ExpensesListProps {
@@ -53,7 +53,7 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetc
                                 report={report}
                                 isExpanded={expandedRows.has(report.id)}
                                 onToggle={() => toggleRow(report.id)}
-                                onAction={handleAction}
+                                onAction={(reportId, action) => handleAction(reportId, action, undefined, getDecisionSummary(report))}
                             />
                         </React.Fragment>
                     ))}

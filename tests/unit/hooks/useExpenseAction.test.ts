@@ -12,7 +12,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/app/lib/fetchClient', () => ({ patch: vi.fn() }));
 
 import { patch } from '@/app/lib/fetchClient';
-import { useExpenseActions } from '@/app/lib/hooks/useExpenseAction';
+import { LU_PAR_LE_RESPONSABLE, useExpenseActions } from '@/app/lib/hooks/useExpenseAction';
 
 describe('useExpenseActions', () => {
   beforeEach(() => {
@@ -207,6 +207,80 @@ describe('useExpenseActions', () => {
 
       expect(reloadStatus).not.toHaveBeenCalled();
       expect(patch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('dialogs of a decision', () => {
+    const summary = { demandeur: 'Thomas Petit', montant: 'À rembourser : 287.40 €', luParLeResponsable: true };
+    // `null` : une page qui n'a ni nom ni montant à rappeler.
+    const dialogOf = async (action: 'approved' | 'rejected' | 'accounted', withSummary: typeof summary | null = summary) => {
+      state.fire.mockResolvedValue({ isConfirmed: false });
+      const { result } = renderHook(() => useExpenseActions(vi.fn()));
+      await act(async () => { await result.current.handleAction(202, action, undefined, withSummary ?? undefined); });
+      return state.fire.mock.calls[0][0];
+    };
+
+    it('recalls who is paid, how much, and that a mail leaves, before approving', async () => {
+      expect(await dialogOf('approved')).toMatchObject({
+        titleText: 'Approuver la note de Thomas Petit ?',
+        text: 'À rembourser : 287.40 €. Thomas Petit recevra un mail.',
+        icon: 'question',
+        confirmButtonText: 'Approuver',
+      });
+    });
+
+    it('puts the name of the requester in text, never in HTML', async () => {
+      expect(await dialogOf('approved')).not.toHaveProperty('title');
+      expect(await dialogOf('accounted')).not.toHaveProperty('title');
+    });
+
+    it('says that an accounted note is closed', async () => {
+      expect(await dialogOf('accounted')).toMatchObject({
+        titleText: 'Comptabiliser la note de Thomas Petit ?',
+        text: 'Elle sera close : plus aucune action possible.',
+        confirmButtonText: 'Comptabiliser',
+      });
+    });
+
+    it('asks without a name nor an amount when the page has none', async () => {
+      expect(await dialogOf('approved', null)).toMatchObject({ titleText: 'Approuver la note ?', text: 'Le demandeur recevra un mail.' });
+      vi.clearAllMocks();
+      expect(await dialogOf('accounted', null)).toMatchObject({ titleText: 'Comptabiliser la note ?' });
+    });
+
+    it('asks for the message to the requester, sent by mail, before refusing', async () => {
+      const dialog = await dialogOf('rejected');
+
+      expect(dialog).toMatchObject({
+        title: 'Refuser la note',
+        input: 'textarea',
+        inputLabel: 'Message au demandeur, envoyé par mail',
+        inputPlaceholder: 'Ce qu\'il doit corriger ou ajouter…',
+        confirmButtonText: 'Refuser',
+        confirmButtonColor: '#dc2626',
+      });
+      expect(dialog.inputValidator('')).toBe('Écrivez le message au demandeur.');
+      expect(dialog.inputValidator('  \n ')).toBe('Écrivez le message au demandeur.');
+      expect(dialog.inputValidator('Il manque la facture.')).toBeUndefined();
+    });
+
+    it('tells, under the message, that the responsable will read it too', async () => {
+      const popup = document.createElement('div');
+      popup.innerHTML = '<label for="message">Message</label><textarea id="message"></textarea><div class="swal2-validation-message"></div>';
+
+      (await dialogOf('rejected')).didOpen(popup);
+
+      const textarea = popup.querySelector('textarea')!;
+      const help = textarea.nextElementSibling as HTMLElement;
+      expect(help.textContent).toBe(LU_PAR_LE_RESPONSABLE);
+      expect(LU_PAR_LE_RESPONSABLE).toBe('Le responsable de la commission le verra aussi quand la note lui reviendra.');
+      expect(textarea.getAttribute('aria-describedby')).toBe(help.id);
+    });
+
+    it('does not tell so for a note no responsable will see again', async () => {
+      expect((await dialogOf('rejected', { ...summary, luParLeResponsable: false })).didOpen).toBeUndefined();
+      vi.clearAllMocks();
+      expect((await dialogOf('rejected', null)).didOpen).toBeUndefined();
     });
   });
 

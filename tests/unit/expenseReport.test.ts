@@ -9,6 +9,7 @@ import {
   getActionConfirmation,
   getAmountSummary,
   getApproval,
+  getDecisionSummary,
   getExpenseDateLabel,
   getLastRefusal,
   getNonEventReportDetails,
@@ -386,6 +387,21 @@ describe('page of a note hors sortie', () => {
     expect(getActionConfirmation('approved', noteHorsSortie(202))).toBe('Note approuvée. Un mail a été envoyé à Thomas Petit.');
     expect(getActionConfirmation('rejected', noteHorsSortie(202))).toBe('Note refusée. Un mail a été envoyé à Thomas Petit.');
     expect(getActionConfirmation('accounted', noteHorsSortie(204))).toBe('Note comptabilisée. Un mail a été envoyé à Lucie Roux.');
+  });
+
+  it('recalls who is paid and how much before a decision, and who else reads a refusal', () => {
+    expect(getDecisionSummary(noteHorsSortie(202)))
+      .toEqual({ demandeur: 'Thomas Petit', montant: 'À rembourser : 287.40 €', luParLeResponsable: true });
+    expect(getDecisionSummary(noteHorsSortie(203)))
+      .toEqual({ demandeur: 'Camille Faure', montant: 'Don : 42.00 €', luParLeResponsable: true });
+    expect(getDecisionSummary(noteHorsSortie(201)))
+      .toEqual({ demandeur: 'Lucie Roux', montant: 'À rembourser : 55.00 €', luParLeResponsable: false });
+  });
+
+  it('recalls who is paid and how much for a note de sortie, which no responsable reads again', () => {
+    expect(getDecisionSummary(noteDeSortie))
+      .toEqual({ demandeur: 'Jean Dupont', montant: 'À rembourser : 120.00 €', luParLeResponsable: false });
+    expect(getDecisionSummary({ ...noteDeSortie, refundRequired: false } as ExpenseReport).montant).toBe('Don : 120.00 €');
   });
 });
 
