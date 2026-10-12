@@ -237,6 +237,7 @@ describe('useExpenseActions', () => {
         text: 'À rembourser : 287.40 €. Thomas Petit recevra un mail.',
         icon: 'question',
         confirmButtonText: 'Approuver',
+        confirmButtonColor: '#15803d',
       });
     });
 
@@ -245,10 +246,10 @@ describe('useExpenseActions', () => {
       expect(await dialogOf('accounted')).not.toHaveProperty('title');
     });
 
-    it('says that an accounted note is closed', async () => {
+    it('recalls the amount, then says that an accounted note is closed', async () => {
       expect(await dialogOf('accounted')).toMatchObject({
         titleText: 'Comptabiliser la note de Thomas Petit ?',
-        text: 'Elle sera close : plus aucune action possible.',
+        text: 'À rembourser : 287.40 €. Elle sera close : plus aucune action possible.',
         confirmButtonText: 'Comptabiliser',
       });
     });
@@ -256,7 +257,10 @@ describe('useExpenseActions', () => {
     it('asks without a name nor an amount when the page has none', async () => {
       expect(await dialogOf('approved', null)).toMatchObject({ titleText: 'Approuver la note ?', text: 'Le demandeur recevra un mail.' });
       vi.clearAllMocks();
-      expect(await dialogOf('accounted', null)).toMatchObject({ titleText: 'Comptabiliser la note ?' });
+      expect(await dialogOf('accounted', null)).toMatchObject({
+        titleText: 'Comptabiliser la note ?',
+        text: 'Elle sera close : plus aucune action possible.',
+      });
     });
 
     it('asks for the message to the requester, sent by mail, before refusing', async () => {
@@ -275,23 +279,18 @@ describe('useExpenseActions', () => {
       expect(dialog.inputValidator('Il manque la facture.')).toBeUndefined();
     });
 
-    it('tells, under the message, that the responsable will read it too', async () => {
-      const popup = document.createElement('div');
-      popup.innerHTML = '<label for="message">Message</label><textarea id="message"></textarea><div class="swal2-validation-message"></div>';
+    it('tells, in the text of the dialog, that the responsable will read the message too', async () => {
+      const dialog = await dialogOf('rejected');
 
-      (await dialogOf('rejected')).didOpen(popup);
-
-      const textarea = popup.querySelector('textarea')!;
-      const help = textarea.nextElementSibling as HTMLElement;
-      expect(help.textContent).toBe(LU_PAR_LE_RESPONSABLE);
+      expect(dialog.text).toBe(LU_PAR_LE_RESPONSABLE);
       expect(LU_PAR_LE_RESPONSABLE).toBe('Le responsable de la commission le verra aussi quand la note lui reviendra.');
-      expect(textarea.getAttribute('aria-describedby')).toBe(help.id);
+      expect(dialog).not.toHaveProperty('didOpen');
     });
 
     it('does not tell so for a note no responsable will see again', async () => {
-      expect((await dialogOf('rejected', { ...summary, luParLeResponsable: false })).didOpen).toBeUndefined();
+      expect((await dialogOf('rejected', { ...summary, luParLeResponsable: false })).text).toBeUndefined();
       vi.clearAllMocks();
-      expect((await dialogOf('rejected', null)).didOpen).toBeUndefined();
+      expect((await dialogOf('rejected', null)).text).toBeUndefined();
     });
   });
 

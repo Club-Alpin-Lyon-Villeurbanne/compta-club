@@ -220,7 +220,7 @@ test.describe('Page of a note hors sortie', () => {
     const message = page.getByRole('textbox', { name: 'Message au demandeur, envoyé par mail' });
     await expect(message).toHaveAttribute('placeholder', 'Ce qu\'il doit corriger ou ajouter…');
     // Validée par le responsable, la note lui reviendra
-    await expect(message).toHaveAccessibleDescription('Le responsable de la commission le verra aussi quand la note lui reviendra.');
+    await expect(dialog(page)).toHaveAccessibleDescription('Le responsable de la commission le verra aussi quand la note lui reviendra.');
     await expect(dialog(page).locator('.swal2-confirm')).toHaveText('Refuser');
     await message.fill('   ');
     await page.locator('.swal2-confirm').click();
@@ -253,7 +253,7 @@ test.describe('Page of a note hors sortie', () => {
 
     await button(page, 'Comptabiliser').click();
     await expect(dialog(page).locator('.swal2-title')).toHaveText('Comptabiliser la note de Lucie Roux ?');
-    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('Elle sera close : plus aucune action possible.');
+    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('À rembourser : 120.00 €. Elle sera close : plus aucune action possible.');
     await page.locator('.swal2-confirm').click();
 
     await expect(confirmation(page)).toHaveText('Note comptabilisée. Un mail a été envoyé à Lucie Roux.');
@@ -344,6 +344,8 @@ test.describe('Page of a note hors sortie', () => {
     await expect(confirmation(page)).toContainText('La note n\'a pas pu être relue : elle peut avoir changé depuis. Rechargez la page pour la voir à jour.');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recyclage initiateur randonnée');
     await expect(page.getByText('Oups ! Une erreur est survenue')).toHaveCount(0);
+    // Le statut affiché est peut-être périmé : plus de bouton d'action
+    await expect(actionButtons(page)).toHaveCount(0);
     expect(await backendReceived(page)).toEqual([
       { method: 'PATCH', path: '/notes-de-frais/204', body: { status: 'accounted' } },
     ]);

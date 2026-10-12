@@ -98,6 +98,7 @@ test.describe('Expense Report Actions', () => {
     await page.goto(APPROVED_EVENT);
     await button(page, 'Comptabiliser').click();
     await expect(dialog(page).locator('.swal2-title')).toHaveText('Comptabiliser la note de Marie Martin ?');
+    await expect(dialog(page)).toContainText('À rembourser : ');
     await expect(dialog(page)).toContainText('Elle sera close : plus aucune action possible.');
 
     await page.locator('.swal2-confirm').click();

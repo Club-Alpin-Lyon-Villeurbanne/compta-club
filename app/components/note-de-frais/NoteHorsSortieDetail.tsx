@@ -30,6 +30,7 @@ import {
     getTotalLines,
     getTreasuryActions,
     getValidationResponsable,
+    nomComplet,
     getWaitingForResponsable,
     safeExternalUrl,
     TreasuryAction,
@@ -51,7 +52,7 @@ interface NoteHorsSortieDetailProps {
 }
 
 const ACTION_BUTTONS: Record<TreasuryAction, { label: string; pending: string; icon: IconType; className: string }> = {
-    approved: { label: 'Approuver', pending: 'Approbation…', icon: FaCheck, className: 'bg-green-600 hover:bg-green-700' },
+    approved: { label: 'Approuver', pending: 'Approbation…', icon: FaCheck, className: 'bg-green-700 hover:bg-green-800' },
     rejected: { label: 'Refuser', pending: 'Refus…', icon: FaTimes, className: 'bg-red-600 hover:bg-red-700' },
     accounted: { label: 'Comptabiliser', pending: 'Comptabilisation…', icon: FaFileInvoiceDollar, className: 'bg-purple-600 hover:bg-purple-700' },
 };
@@ -136,11 +137,12 @@ export default function NoteHorsSortieDetail({
     const waiting = getWaitingForResponsable(note);
     const validation = getValidationResponsable(note);
     const approval = getApproval(note);
-    const actions = getTreasuryActions(note);
+    // Après une relecture échouée, le statut affiché est peut-être périmé : aucune action n'est proposée.
+    const actions = reloadFailed ? [] : getTreasuryActions(note);
     const busy = pendingAction !== null;
     const pdf = canDownloadPdf(note);
     const withDetail = note.lignesAffichees.some((ligne) => ligne.detail);
-    const demandeur = [note.utilisateur.prenom, note.utilisateur.nom].filter(Boolean).join(' ');
+    const demandeur = nomComplet(note.utilisateur);
 
     // Au clavier, le bouton cliqué a disparu : le focus va sur la confirmation plutôt que retomber en haut de la page.
     const confirmationRef = useRef<HTMLParagraphElement>(null);

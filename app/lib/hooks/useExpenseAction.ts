@@ -9,16 +9,7 @@ type SwalModule = Awaited<ReturnType<typeof getSwal>>;
 
 export const LU_PAR_LE_RESPONSABLE = 'Le responsable de la commission le verra aussi quand la note lui reviendra.';
 
-function addHelpUnderInput(popup: HTMLElement, text: string) {
-  const input = popup.querySelector('textarea');
-  if (!input) return;
-  const help = document.createElement('p');
-  help.id = 'aide-message-au-demandeur';
-  help.className = 'mx-8 mt-2 text-sm text-gray-600';
-  help.textContent = text;
-  input.after(help);
-  input.setAttribute('aria-describedby', help.id);
-}
+const CLOSE_APRES_COMPTABILISATION = 'Elle sera close : plus aucune action possible.';
 
 // Un refus de la plateforme (4xx) dit pourquoi : « Cette note a déjà été traitée. », message obligatoire…
 function refusalReason(error: unknown): string | null {
@@ -92,7 +83,7 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
           icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Approuver',
-          confirmButtonColor: '#16a34a',
+          confirmButtonColor: '#15803d',
           cancelButtonText: 'Annuler',
         });
 
@@ -104,6 +95,7 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
       if (action === 'rejected') {
         const { value: comment } = await Swal.fire({
           title: 'Refuser la note',
+          text: summary?.luParLeResponsable ? LU_PAR_LE_RESPONSABLE : undefined,
           input: 'textarea',
           inputLabel: 'Message au demandeur, envoyé par mail',
           inputPlaceholder: 'Ce qu\'il doit corriger ou ajouter…',
@@ -116,7 +108,6 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
               return 'Écrivez le message au demandeur.';
             }
           },
-          didOpen: summary?.luParLeResponsable ? (popup: HTMLElement) => addHelpUnderInput(popup, LU_PAR_LE_RESPONSABLE) : undefined,
         });
 
         if (!comment) {
@@ -128,7 +119,7 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
       if (action === 'accounted') {
         const result = await Swal.fire({
           titleText: summary ? `Comptabiliser la note de ${summary.demandeur} ?` : 'Comptabiliser la note ?',
-          text: 'Elle sera close : plus aucune action possible.',
+          text: summary ? `${summary.montant}. ${CLOSE_APRES_COMPTABILISATION}` : CLOSE_APRES_COMPTABILISATION,
           icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Comptabiliser',

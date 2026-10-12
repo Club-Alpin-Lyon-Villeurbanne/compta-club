@@ -86,7 +86,7 @@ export function getReportHref(report: ExpenseReport): string | null {
 
 const jourMois = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 const jourMoisAnnee = (iso: string) => new Date(iso).toLocaleDateString('fr-FR');
-const nomComplet = (auteur: Auteur) => [auteur.prenom, auteur.nom].filter(Boolean).join(' ');
+export const nomComplet = (auteur: Auteur) => [auteur.prenom, auteur.nom].filter(Boolean).join(' ');
 
 type Decision = Pick<DerniereDecision, 'statut' | 'niveau' | 'auteur' | 'date'>;
 

@@ -321,6 +321,13 @@ describe('NoteHorsSortieDetail', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Recyclage initiateur randonnée');
   });
 
+  it('offers no action on a status that may be out of date', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(204)} onAction={vi.fn()} reloadFailed />);
+
+    expect(screen.queryByRole('button', { name: 'Comptabiliser' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Télécharger en PDF' })).toBeTruthy();
+  });
+
   it('announces the copy of the accounting label, or that it failed', async () => {
     const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('denied'));
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
