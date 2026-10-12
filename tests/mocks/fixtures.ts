@@ -319,10 +319,17 @@ export const mockNotesHorsSortie = [
     commission: commissionEscalade,
     objet: 'Piles pour les DVA',
     dateDepense: '2025-01-28',
-    dateCreation: '2025-01-28T20:00:00',
+    dateCreation: '2025-01-24T20:00:00',
     dateEnvoi: '2025-01-28T20:01:00+01:00',
-    // Chez le responsable : la trésorerie ne la voit pas encore.
+    // Refusée par la trésorerie, corrigée et renvoyée : de nouveau chez le responsable, la trésorerie ne la voit pas encore.
     valideurs: [responsableEscalade],
+    derniereDecision: {
+      statut: 'rejected',
+      niveau: 'tresorerie',
+      auteur: { prenom: 'Claire', nom: 'FONTAINE' },
+      date: '2025-01-26T10:00:00+01:00',
+      message: 'Il manque le ticket de caisse.',
+    },
     libelleComptable: 'FAURE Camille NDF 28/01/2025 Piles pour les DVA',
   },
   {

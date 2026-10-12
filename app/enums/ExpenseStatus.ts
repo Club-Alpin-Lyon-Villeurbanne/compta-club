@@ -1,4 +1,6 @@
 export enum ExpenseStatus {
+  // Seulement par l'adresse d'une note : la liste de l'API n'envoie pas les brouillons des notes hors sortie.
+  DRAFT = "draft",
   SUBMITTED = "submitted",
   // Note hors sortie validée par le responsable de sa commission : elle attend la trésorerie.
   PREAPPROVED = "preapproved",
@@ -9,6 +11,8 @@ export enum ExpenseStatus {
 
 export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
   switch (status) {
+    case ExpenseStatus.DRAFT:
+      return "Brouillon";
     case ExpenseStatus.SUBMITTED:
       return "Soumis";
     case ExpenseStatus.PREAPPROVED:

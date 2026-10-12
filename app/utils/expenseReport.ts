@@ -1,6 +1,7 @@
 import {
     Auteur,
     Commission,
+    DerniereDecision,
     EventExpenseReport,
     ExpenseReport,
     ExpenseReportType,
@@ -84,8 +85,33 @@ export function getReportHref(report: ExpenseReport): string | null {
 const jourMois = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 const jourMoisAnnee = (iso: string) => new Date(iso).toLocaleDateString('fr-FR');
 const nomComplet = (auteur: Auteur) => [auteur.prenom, auteur.nom].filter(Boolean).join(' ');
-const validePar = (validation: ValidationResponsable, date: string) =>
-    `Validée par ${nomComplet(validation.auteur)} le ${date}`;
+
+type Decision = Pick<DerniereDecision, 'statut' | 'niveau' | 'auteur' | 'date'>;
+
+const DECISION_VERBES: Record<Decision['statut'], string> = {
+    preapproved: 'Validée',
+    approved: 'Approuvée',
+    rejected: 'Refusée',
+};
+
+// La trésorerie signe « la trésorerie », jamais du nom de son compte ; sans niveau connu, personne.
+function signataire({ statut, niveau, auteur }: Decision): string {
+    if (niveau === 'tresorerie') return ' par la trésorerie';
+    const nom = niveau === 'responsable' ? nomComplet(auteur) : '';
+    if (!nom) return '';
+    return statut === 'preapproved' ? ` par ${nom}` : ` par ${nom} (responsable de commission)`;
+}
+
+/**
+ * « Validée par Hugo BLANC le 27/01/2025 », « Approuvée par la trésorerie le … », « Refusée par la
+ * trésorerie le … » ou « Refusée par Hugo BLANC (responsable de commission) le … ».
+ */
+export function decisionPhrase(decision: Decision, formatDate: (iso: string) => string = jourMoisAnnee): string {
+    return `${DECISION_VERBES[decision.statut]}${signataire(decision)} le ${formatDate(decision.date)}`;
+}
+
+const validationDecision = (validation: ValidationResponsable): Decision =>
+    ({ statut: 'preapproved', niveau: 'responsable', ...validation });
 
 /**
  * Sous l'objet d'une note hors sortie : « Escalade · Validée par Hugo BLANC le 27/01 », ou
@@ -95,28 +121,103 @@ export function getNonEventReportDetails(report: ExpenseReport): string | null {
     if (isEventReport(report)) return null;
     const validation = report.validationResponsable;
     const circuit = validation
-        ? validePar(validation, jourMois(validation.date))
+        ? decisionPhrase(validationDecision(validation), jourMois)
         : report.status === ExpenseStatus.SUBMITTED ? 'Sans responsable de commission' : null;
     return [report.commission?.title, circuit].filter(Boolean).join(' · ') || null;
 }
 
-/** « Validée par Hugo BLANC le 27/01/2025 » ; rien si aucun responsable ne l'a validée depuis son envoi. */
+/**
+ * « Validée par Hugo BLANC le 27/01/2025 », ou, pour une note envoyée sans valideur, qu'elle n'en a pas ;
+ * rien si aucun responsable ne l'a validée depuis son envoi.
+ */
 export function getValidationResponsable(report: NonEventExpenseReport): string | null {
-    const validation = report.validationResponsable;
-    return validation ? validePar(validation, jourMoisAnnee(validation.date)) : null;
+    if (report.validationResponsable) return decisionPhrase(validationDecision(report.validationResponsable));
+    return report.status === ExpenseStatus.SUBMITTED && !(report.valideurs ?? []).length
+        ? 'Aucune, la commission n\'a pas de responsable.'
+        : null;
 }
 
-/** Le refus en cours d'une note : qui, quand, et le message laissé au demandeur. */
-export function getLastRefusal(report: NonEventExpenseReport): { intitule: string; message: string } | null {
+/** « Approuvée par la trésorerie le … », sur une note approuvée ou comptabilisée. */
+export function getApproval(report: NonEventExpenseReport): string | null {
     const decision = report.derniereDecision;
-    if (decision?.statut === 'rejected') {
-        const auteur = nomComplet(decision.auteur);
+    const approuvee = report.status === ExpenseStatus.APPROVED || report.status === ExpenseStatus.ACCOUNTED;
+    return approuvee && decision?.statut === 'approved' ? decisionPhrase(decision) : null;
+}
+
+export interface Refusal {
+    // Vrai tant que la note est refusée ; faux une fois corrigée et renvoyée.
+    enCours: boolean;
+    intitule: string;
+    message: string;
+}
+
+/**
+ * Le refus d'une note : en cours si elle est refusée ; sinon, si elle a été renvoyée depuis, le
+ * rappel de ce qu'il fallait corriger. Un mot laissé avec une validation n'est jamais un refus.
+ */
+export function getLastRefusal(report: NonEventExpenseReport): Refusal | null {
+    const decision = report.derniereDecision?.statut === 'rejected' ? report.derniereDecision : null;
+    if (report.status === ExpenseStatus.REJECTED) {
         return {
-            intitule: `Refusée${auteur ? ` par ${auteur}` : ''} le ${jourMoisAnnee(decision.date)}`,
-            message: decision.message ?? report.commentaireStatut ?? '',
+            enCours: true,
+            intitule: decision ? decisionPhrase(decision) : 'Refusée',
+            message: decision?.message ?? report.commentaireStatut ?? '',
         };
     }
-    return report.commentaireStatut ? { intitule: 'Refusée', message: report.commentaireStatut } : null;
+    if (decision && report.dateEnvoi && new Date(report.dateEnvoi) > new Date(decision.date)) {
+        return {
+            enCours: false,
+            intitule: `${decisionPhrase(decision, jourMois)}, corrigée et renvoyée le ${jourMois(report.dateEnvoi)}`,
+            message: decision.message ?? '',
+        };
+    }
+    return null;
+}
+
+/** « Pas encore envoyée par le demandeur. » pour un brouillon, ouvert par son adresse. */
+export function getStatusNote(report: NonEventExpenseReport): string | null {
+    return report.status === ExpenseStatus.DRAFT ? 'Pas encore envoyée par le demandeur.' : null;
+}
+
+export function getExpenseDateLabel(report: NonEventExpenseReport): string {
+    return report.type === 'formation' ? 'Date de la formation' : 'Date de la dépense';
+}
+
+/**
+ * En tête de la page : « À rembourser : 287.40 € » (« Don : … » pour un don), et
+ * « 312.40 € déclarés, dont 25.00 € au-delà des plafonds du club » quand les plafonds le réduisent.
+ */
+export function getAmountSummary(report: NonEventExpenseReport): { titre: string; detail: string | null } {
+    const remboursable = Math.round(toAmount(report.totalRemboursable) * 100);
+    const declare = Math.round(toAmount(report.totalDeclare) * 100);
+    return {
+        titre: `${report.refundRequired ? 'À rembourser' : 'Don'} : ${formatEuro(remboursable / 100)}`,
+        detail: remboursable < declare
+            ? `${formatEuro(declare / 100)} déclarés, dont ${formatEuro((declare - remboursable) / 100)} au-delà des plafonds du club`
+            : null,
+    };
+}
+
+const deCommission = (title: string) => (/^[aeiouyàâäéèêëîïôöûü]/i.test(title) ? `d'${title}` : `de ${title}`);
+
+/** « En attente de Hugo BLANC (responsable d'Escalade). Vous pourrez la valider après lui. » */
+export function getWaitingForResponsable(report: NonEventExpenseReport): string | null {
+    if (!waitsForResponsable(report)) return null;
+    const noms = report.valideurs.map(nomComplet).join(' ou ');
+    const role = report.valideurs.length > 1 ? 'responsables' : 'responsable';
+    const commission = report.commission?.title ? deCommission(report.commission.title) : 'de commission';
+    return `En attente de ${noms} (${role} ${commission}). Vous pourrez la valider après lui.`;
+}
+
+const ACTIONS_FAITES: Record<TreasuryAction, string> = {
+    approved: 'Note approuvée.',
+    rejected: 'Note refusée.',
+    accounted: 'Note comptabilisée.',
+};
+
+/** Après une action réussie : la plateforme écrit au demandeur à chaque étape. */
+export function getActionConfirmation(action: TreasuryAction, report: NonEventExpenseReport): string {
+    return `${ACTIONS_FAITES[action]} ${nomComplet(report.utilisateur)} a été prévenu par mail.`;
 }
 
 /** Lien saisi par l'adhérent : seulement en http ou https, jamais javascript: ni data:. */

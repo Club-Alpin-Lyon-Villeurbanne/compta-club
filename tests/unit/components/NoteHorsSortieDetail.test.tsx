@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import NoteHorsSortieDetail from '@/app/components/note-de-frais/NoteHorsSortieDetail';
 import { NonEventExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
 import { mockNotesHorsSortie } from '@/tests/mocks/fixtures';
@@ -10,23 +10,21 @@ const noteHorsSortie = (id: number, changes: Partial<NonEventExpenseReport> = {}
 // Valeur affichée sous un intitulé de la fiche
 const field = (label: string) => screen.getByText(label, { selector: 'dt' }).nextElementSibling as HTMLElement;
 const lineOf = (libelle: string) => screen.getByText(libelle, { selector: 'td' }).closest('tr') as HTMLElement;
-const buttons = () => screen.queryAllByRole('button').map((button) => button.textContent?.trim()).filter(Boolean);
+const summary = () => screen.getByRole('region', { name: 'Synthèse' });
+const actionButtons = () =>
+  screen.queryAllByRole('button').filter((button) => !button.getAttribute('aria-label')?.startsWith('Copier'));
 
 describe('NoteHorsSortieDetail', () => {
   it('shows everything the treasury needs about a formation', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Formation initiateur escalade');
+    expect(screen.getByText('Formation · Escalade')).toBeTruthy();
+    expect(screen.getByText('Validée par le responsable')).toBeTruthy();
     expect(field('Demandeur').textContent).toBe('Thomas Petit');
-    expect(field('Type').textContent).toBe('Formation');
-    expect(field('Commission').textContent).toBe('Escalade');
-    expect(field('Objet').textContent).toBe('Formation initiateur escalade');
-    expect(field('Date de la dépense').textContent).toBe(new Date(2025, 0, 25).toLocaleDateString());
+    expect(field('Date de la formation').textContent).toBe(new Date(2025, 0, 25).toLocaleDateString());
     expect(field('Mot pour le responsable').textContent).toBe('Stage validé par la commission en décembre.');
     expect(field('Validation du responsable').textContent).toBe('Validée par Hugo BLANC le 27/01/2025');
-    expect(field('Don ou remboursement').textContent).toBe('Remboursement');
-    expect(field('Libellé comptable').textContent).toBe('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade');
-    expect(screen.getByText('Validée par le responsable')).toBeTruthy();
 
     const lien = within(field('Lien de la formation')).getByRole('link');
     expect(lien.getAttribute('href')).toBe('https://example.com/formation-initiateur-escalade');
@@ -37,46 +35,99 @@ describe('NoteHorsSortieDetail', () => {
     expect(screen.queryByLabelText('Dernier refus')).toBeNull();
   });
 
-  it('shows each line as the API presents it, with its receipt', () => {
+  it('does not repeat the type, the commission and the objet of the header', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
+
+    for (const label of ['Type', 'Commission', 'Objet']) {
+      expect(screen.queryByText(label, { selector: 'dt' })).toBeNull();
+    }
+  });
+
+  it('sums up what to pay at the top, with the accounting label and the actions', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
+
+    expect(within(summary()).getByText('À rembourser : 287.40 €')).toBeTruthy();
+    expect(within(summary()).getByText('312.40 € déclarés, dont 25.00 € au-delà des plafonds du club')).toBeTruthy();
+    expect(within(summary()).getByText('Remboursement demandé')).toBeTruthy();
+    expect(within(summary()).getByText('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade')).toBeTruthy();
+    expect(within(summary()).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent))
+      .toEqual(['Copier le libellé comptable', 'Approuver', 'Rejeter']);
+  });
+
+  it('shows each line as the API presents it, with its named receipt', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
 
     const stage = lineOf('Stage');
     expect(within(stage).getByText('250.00 €')).toBeTruthy();
-    expect(within(stage).getByRole('link').getAttribute('href')).toBe('https://example.com/facture-stage.pdf');
+    const receipt = within(stage).getByRole('link', { name: 'Justificatif : Stage (ouvre un nouvel onglet)' });
+    expect(receipt.getAttribute('href')).toBe('https://example.com/facture-stage.pdf');
+    expect(receipt.getAttribute('title')).toBe('Justificatif : Stage (ouvre un nouvel onglet)');
 
     const voiture = lineOf('Voiture');
     expect(within(voiture).getByText('240 km × 0,26 €')).toBeTruthy();
     expect(within(voiture).getByText('62.40 €')).toBeTruthy();
     expect(within(voiture).queryByRole('link')).toBeNull();
+    expect(within(voiture).getByText('—')).toBeTruthy();
+    expect(within(voiture).getByText('Aucun justificatif')).toBeTruthy();
 
     expect(within(screen.getByText('Total déclaré').closest('tr')!).getByText('312.40 €')).toBeTruthy();
     expect(within(screen.getByText('Total remboursable').closest('tr')!).getByText('287.40 €')).toBeTruthy();
   });
 
-  it('shows an achat given as a don, its text as is, without validation by a responsable', () => {
+  it('shows an achat given as a don, its text as is, and hides an empty Détail column', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(203)} onAction={vi.fn()} />);
 
-    expect(field('Type').textContent).toBe('Achat');
-    expect(field('Objet').textContent).toBe("Sac <b>30 L</b> & cordelette d'attache");
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe("Sac <b>30 L</b> & cordelette d'attache");
     expect(document.querySelector('b')).toBeNull();
-    expect(field('Don ou remboursement').textContent).toBe('Don');
+    expect(field('Date de la dépense')).toBeTruthy();
+    expect(within(summary()).getByText('Don : 42.00 €')).toBeTruthy();
+    expect(within(summary()).getByText('Don au club')).toBeTruthy();
+    expect(screen.queryByRole('columnheader', { name: 'Détail' })).toBeNull();
     expect(screen.queryByText('Lien de la formation')).toBeNull();
     expect(screen.queryByText('Mot pour le responsable')).toBeNull();
   });
 
-  it('says nothing of a validation when no responsable had to validate the note', () => {
+  it('says that a submitted note without valideur has no responsable', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(201)} onAction={vi.fn()} />);
 
-    expect(screen.queryByText('Validation du responsable')).toBeNull();
+    expect(field('Validation du responsable').textContent).toBe('Aucune, la commission n\'a pas de responsable.');
     expect(screen.queryByLabelText('Avertissements')).toBeNull();
   });
 
-  it('shows the last refusal and its message', () => {
+  it('shows the refusal of a refused note, signed by the treasury', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(205)} onAction={vi.fn()} />);
 
     const refusal = screen.getByLabelText('Dernier refus');
-    expect(within(refusal).getByText('Refusée par Claire FONTAINE le 29/01/2025')).toBeTruthy();
+    expect(within(refusal).getByText('Refusée par la trésorerie le 29/01/2025')).toBeTruthy();
     expect(within(refusal).getByText('Il manque la facture.')).toBeTruthy();
+    expect(refusal.className).toContain('bg-red-50');
+  });
+
+  it('recalls, without alarm, the refusal of a note corrected and sent again, and who it waits for', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(206)} onAction={vi.fn()} />);
+
+    expect(screen.queryByLabelText('Dernier refus')).toBeNull();
+    const previous = screen.getByLabelText('Refus précédent');
+    expect(previous.textContent).toBe(
+      'Refusée par la trésorerie le 26/01, corrigée et renvoyée le 28/01 : « Il manque le ticket de caisse. »'
+    );
+    expect(previous.className).not.toContain('red');
+    expect(screen.getByText("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez la valider après lui.")).toBeTruthy();
+    expect(actionButtons()).toEqual([]);
+  });
+
+  it('says what the treasury decided on an approved note', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(204)} onAction={vi.fn()} />);
+
+    expect(field('Décision').textContent).toBe('Approuvée par la trésorerie le 13/01/2025');
+  });
+
+  it('says that a draft is not sent yet', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(207)} onAction={vi.fn()} />);
+
+    expect(screen.getByText('Brouillon')).toBeTruthy();
+    expect(screen.getByText('Pas encore envoyée par le demandeur.')).toBeTruthy();
+    expect(actionButtons()).toEqual([]);
   });
 
   it('does not link a formation link that is not http or https', () => {
@@ -84,6 +135,26 @@ describe('NoteHorsSortieDetail', () => {
 
     expect(field('Lien de la formation').textContent).toBe('javascript:alert(1)');
     expect(within(field('Lien de la formation')).queryByRole('link')).toBeNull();
+  });
+
+  it('keeps lines without id and repeated warnings apart', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <NoteHorsSortieDetail
+        note={noteHorsSortie(202, {
+          lignesAffichees: [
+            { id: null as unknown as string, nature: null, libelle: 'Corde', detail: null, montant: 10 },
+            { id: null as unknown as string, nature: null, libelle: 'Corde', detail: null, montant: 10 },
+          ],
+          avertissements: ['Même avertissement.', 'Même avertissement.'],
+        })}
+        onAction={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByText('Corde')).toHaveLength(2);
+    expect(screen.getAllByText('Même avertissement.')).toHaveLength(2);
+    expect(errors.mock.calls.flat().join(' ')).not.toMatch(/key/i);
   });
 
   it.each([
@@ -96,13 +167,7 @@ describe('NoteHorsSortieDetail', () => {
   ])('offers the actions allowed on note %i', (id, expected) => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(id)} onAction={vi.fn()} />);
 
-    expect(buttons()).toEqual(expected);
-  });
-
-  it('says that a note still waits for its responsable', () => {
-    render(<NoteHorsSortieDetail note={noteHorsSortie(206)} onAction={vi.fn()} />);
-
-    expect(screen.getByText('En attente de la validation du responsable de commission.')).toBeTruthy();
+    expect(actionButtons().map((button) => button.textContent)).toEqual(expected);
   });
 
   it('hands the chosen action over', () => {
@@ -112,5 +177,43 @@ describe('NoteHorsSortieDetail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Rejeter' }));
 
     expect(onAction).toHaveBeenCalledWith(202, 'rejected');
+  });
+
+  it('turns every action off while one is sent, and says which', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} pendingAction="approved" />);
+
+    expect(actionButtons().map((button) => button.textContent)).toEqual(['Approbation…', 'Rejeter']);
+    for (const button of actionButtons()) {
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+      expect(button.getAttribute('aria-busy')).toBe('true');
+    }
+  });
+
+  it('announces the confirmation of an action', () => {
+    render(
+      <NoteHorsSortieDetail
+        note={noteHorsSortie(204)}
+        onAction={vi.fn()}
+        confirmation="Note approuvée. Lucie Roux a été prévenu par mail."
+      />
+    );
+
+    const announcements = screen.getAllByRole('status');
+    expect(announcements[0].getAttribute('aria-live')).toBe('polite');
+    expect(announcements[0].textContent).toBe('Note approuvée. Lucie Roux a été prévenu par mail.');
+  });
+
+  it('announces the copy of the accounting label, or that it failed', async () => {
+    const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
+    const copy = screen.getByRole('button', { name: 'Copier le libellé comptable' });
+
+    await act(async () => fireEvent.click(copy));
+    expect(writeText).toHaveBeenCalledWith('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade');
+    expect(screen.getByText('Copié')).toBeTruthy();
+
+    await act(async () => fireEvent.click(copy));
+    expect(screen.getByText('Copie impossible')).toBeTruthy();
   });
 });

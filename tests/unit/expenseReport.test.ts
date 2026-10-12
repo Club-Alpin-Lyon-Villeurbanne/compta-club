@@ -4,6 +4,11 @@ import { ExpenseStatus, getExpenseStatusColor, getExpenseStatusTranslation } fro
 import {
   buildReportListParams,
   formatReportDate,
+  decisionPhrase,
+  getActionConfirmation,
+  getAmountSummary,
+  getApproval,
+  getExpenseDateLabel,
   getLastRefusal,
   getNonEventReportDetails,
   getRefundableNote,
@@ -15,8 +20,10 @@ import {
   getReportTitle,
   getReportType,
   getReportTypeLabel,
+  getStatusNote,
   getTreasuryActions,
   getValidationResponsable,
+  getWaitingForResponsable,
   isEventReport,
   REPORT_TYPE_FILTERS,
   safeExternalUrl,
@@ -149,34 +156,145 @@ describe('getReportHref', () => {
   });
 });
 
+describe('decisionPhrase', () => {
+  const auteur = { prenom: 'Claire', nom: 'FONTAINE' };
+  const date = '2025-01-29T09:00:00+01:00';
+
+  it('signs a decision of the treasury as the treasury, never with the name of its account', () => {
+    expect(decisionPhrase({ statut: 'rejected', niveau: 'tresorerie', auteur, date })).toBe('Refusée par la trésorerie le 29/01/2025');
+    expect(decisionPhrase({ statut: 'approved', niveau: 'tresorerie', auteur, date })).toBe('Approuvée par la trésorerie le 29/01/2025');
+  });
+
+  it('names the responsable of the commission', () => {
+    const responsable = { prenom: 'Hugo', nom: 'BLANC' };
+    expect(decisionPhrase({ statut: 'rejected', niveau: 'responsable', auteur: responsable, date }))
+      .toBe('Refusée par Hugo BLANC (responsable de commission) le 29/01/2025');
+    expect(decisionPhrase({ statut: 'preapproved', niveau: 'responsable', auteur: responsable, date }))
+      .toBe('Validée par Hugo BLANC le 29/01/2025');
+  });
+
+  it('names nobody when the level of the decision is unknown', () => {
+    expect(decisionPhrase({ statut: 'approved', niveau: null, auteur, date })).toBe('Approuvée le 29/01/2025');
+  });
+
+  it('takes the date format it is given', () => {
+    expect(decisionPhrase({ statut: 'rejected', niveau: 'tresorerie', auteur, date }, () => '29/01')).toBe('Refusée par la trésorerie le 29/01');
+  });
+});
+
 describe('getValidationResponsable', () => {
   it('says who validated the note and when', () => {
     expect(getValidationResponsable(noteHorsSortie(202))).toBe('Validée par Hugo BLANC le 27/01/2025');
   });
 
-  it('says nothing when no responsable validated it', () => {
-    expect(getValidationResponsable(noteHorsSortie(201))).toBeNull();
+  it('says that a submitted note without valideur has no responsable', () => {
+    expect(getValidationResponsable(noteHorsSortie(201))).toBe('Aucune, la commission n\'a pas de responsable.');
+  });
+
+  it('says nothing for a note decided without validation by a responsable, or still waiting for one', () => {
+    expect(getValidationResponsable(noteHorsSortie(204))).toBeNull();
+    expect(getValidationResponsable(noteHorsSortie(206))).toBeNull();
+  });
+});
+
+describe('getApproval', () => {
+  it('says the treasury approved an approved or accounted note', () => {
+    expect(getApproval(noteHorsSortie(204))).toBe('Approuvée par la trésorerie le 13/01/2025');
+    expect(getApproval(noteHorsSortie(208))).toBe('Approuvée par la trésorerie le 07/01/2025');
+  });
+
+  it('says nothing before the approval', () => {
+    expect(getApproval(noteHorsSortie(202))).toBeNull();
+    expect(getApproval(noteHorsSortie(201))).toBeNull();
   });
 });
 
 describe('getLastRefusal', () => {
-  it('gives who refused the note, when, and the message', () => {
+  it('gives the refusal of a refused note, signed by the treasury, and the message', () => {
     expect(getLastRefusal(noteHorsSortie(205))).toEqual({
-      intitule: 'Refusée par Claire FONTAINE le 29/01/2025',
+      enCours: true,
+      intitule: 'Refusée par la trésorerie le 29/01/2025',
       message: 'Il manque la facture.',
     });
   });
 
-  it('falls back on the comment of the status without a decision to read', () => {
+  it('falls back on the comment of the status of a refused note without a decision to read', () => {
     expect(getLastRefusal(noteHorsSortie(205, { derniereDecision: null }))).toEqual({
+      enCours: true,
       intitule: 'Refusée',
       message: 'Il manque la facture.',
     });
   });
 
-  it('gives nothing for a note that is not refused', () => {
+  it('recalls the refusal of a note corrected and sent again since', () => {
+    expect(getLastRefusal(noteHorsSortie(206))).toEqual({
+      enCours: false,
+      intitule: 'Refusée par la trésorerie le 26/01, corrigée et renvoyée le 28/01',
+      message: 'Il manque le ticket de caisse.',
+    });
+
+    const renvoyee = noteHorsSortie(205, {
+      status: ExpenseStatus.SUBMITTED,
+      commentaireStatut: null,
+      dateEnvoi: '2025-01-30T08:00:00+01:00',
+    });
+    expect(getLastRefusal(renvoyee)).toMatchObject({
+      enCours: false,
+      intitule: 'Refusée par la trésorerie le 29/01, corrigée et renvoyée le 30/01',
+    });
+  });
+
+  it('never shows a word left with a validation as a refusal', () => {
+    expect(getLastRefusal(noteHorsSortie(202, { commentaireStatut: 'Vu avec le bureau, ok.' }))).toBeNull();
+  });
+
+  it('gives nothing for a note never refused', () => {
     expect(getLastRefusal(noteHorsSortie(202))).toBeNull();
     expect(getLastRefusal(noteHorsSortie(201))).toBeNull();
+  });
+});
+
+describe('page of a note hors sortie', () => {
+  it('sums up what to pay, and what the caps of the club leave out', () => {
+    expect(getAmountSummary(noteHorsSortie(202))).toEqual({
+      titre: 'À rembourser : 287.40 €',
+      detail: '312.40 € déclarés, dont 25.00 € au-delà des plafonds du club',
+    });
+    expect(getAmountSummary(noteHorsSortie(203))).toEqual({ titre: 'Don : 42.00 €', detail: null });
+  });
+
+  it('names who a note still waits for', () => {
+    expect(getWaitingForResponsable(noteHorsSortie(206)))
+      .toBe("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez la valider après lui.");
+
+    const deux = noteHorsSortie(206, {
+      commission: { id: 4, title: 'Randonnée' },
+      valideurs: [{ id: 9, prenom: 'Hugo', nom: 'Blanc' }, { id: 12, prenom: 'Léa', nom: 'Martin' }],
+    });
+    expect(getWaitingForResponsable(deux))
+      .toBe('En attente de Hugo Blanc ou Léa Martin (responsables de Randonnée). Vous pourrez la valider après lui.');
+  });
+
+  it('says nothing of a responsable for a note that does not wait for one', () => {
+    expect(getWaitingForResponsable(noteHorsSortie(201))).toBeNull();
+    expect(getWaitingForResponsable(noteHorsSortie(202))).toBeNull();
+  });
+
+  it('says that a draft is not sent yet', () => {
+    expect(getStatusNote(noteHorsSortie(207))).toBe('Pas encore envoyée par le demandeur.');
+    expect(getStatusNote(noteHorsSortie(201))).toBeNull();
+    expect(getExpenseStatusTranslation(ExpenseStatus.DRAFT)).toBe('Brouillon');
+  });
+
+  it('names the date of a formation and of an achat', () => {
+    expect(getExpenseDateLabel(noteHorsSortie(202))).toBe('Date de la formation');
+    expect(getExpenseDateLabel(noteHorsSortie(201))).toBe('Date de la dépense');
+  });
+
+  it('confirms an action and that the requester got a mail', () => {
+    expect(getActionConfirmation('approved', noteHorsSortie(202))).toBe('Note approuvée. Thomas Petit a été prévenu par mail.');
+    expect(getActionConfirmation('rejected', noteHorsSortie(202))).toBe('Note refusée. Thomas Petit a été prévenu par mail.');
+    expect(getActionConfirmation('accounted', noteHorsSortie(204))).toBe('Note comptabilisée. Lucie Roux a été prévenu par mail.');
   });
 });
 
