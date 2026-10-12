@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { IconType } from 'react-icons';
@@ -69,14 +69,22 @@ const LienFormation = ({ url }: { url: string }) => {
 
 const LibelleComptable = ({ libelle }: { libelle: string }) => {
     const [copie, setCopie] = useState<'faite' | 'impossible' | null>(null);
+    const effacement = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const annulerEffacement = () => {
+        if (effacement.current) clearTimeout(effacement.current);
+        effacement.current = null;
+    };
+    useEffect(() => annulerEffacement, []);
+
     const copy = useCallback(async () => {
+        annulerEffacement();
         try {
             await navigator.clipboard.writeText(libelle);
             setCopie('faite');
         } catch {
             setCopie('impossible');
         }
-        setTimeout(() => setCopie(null), 2000);
+        effacement.current = setTimeout(() => setCopie(null), 2000);
     }, [libelle]);
 
     return (

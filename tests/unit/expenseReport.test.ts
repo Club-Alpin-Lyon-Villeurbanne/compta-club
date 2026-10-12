@@ -25,6 +25,7 @@ import {
   getValidationResponsable,
   getWaitingForResponsable,
   isEventReport,
+  noteStatusPhrase,
   REPORT_TYPE_FILTERS,
   safeExternalUrl,
   sortieFiltersApply,
@@ -272,7 +273,7 @@ describe('page of a note hors sortie', () => {
       valideurs: [{ id: 9, prenom: 'Hugo', nom: 'Blanc' }, { id: 12, prenom: 'Léa', nom: 'Martin' }],
     });
     expect(getWaitingForResponsable(deux))
-      .toBe('En attente de Hugo Blanc ou Léa Martin (responsables de Randonnée). Vous pourrez la valider après lui.');
+      .toBe('En attente de Hugo Blanc ou Léa Martin (responsables de Randonnée). Vous pourrez la valider après eux.');
   });
 
   it('says nothing of a responsable for a note that does not wait for one', () => {
@@ -291,10 +292,19 @@ describe('page of a note hors sortie', () => {
     expect(getExpenseDateLabel(noteHorsSortie(201))).toBe('Date de la dépense');
   });
 
+  it('puts the status in a sentence about the note', () => {
+    expect(noteStatusPhrase('approved')).toBe('approuvée');
+    expect(noteStatusPhrase('rejected')).toBe('refusée');
+    expect(noteStatusPhrase('accounted')).toBe('comptabilisée');
+    expect(noteStatusPhrase('preapproved')).toBe('validée par le responsable');
+    expect(noteStatusPhrase('submitted')).toBe('soumise');
+    expect(noteStatusPhrase('draft')).toBe('en brouillon');
+  });
+
   it('confirms an action and that the requester got a mail', () => {
-    expect(getActionConfirmation('approved', noteHorsSortie(202))).toBe('Note approuvée. Thomas Petit a été prévenu par mail.');
-    expect(getActionConfirmation('rejected', noteHorsSortie(202))).toBe('Note refusée. Thomas Petit a été prévenu par mail.');
-    expect(getActionConfirmation('accounted', noteHorsSortie(204))).toBe('Note comptabilisée. Lucie Roux a été prévenu par mail.');
+    expect(getActionConfirmation('approved', noteHorsSortie(202))).toBe('Note approuvée. Un mail a été envoyé à Thomas Petit.');
+    expect(getActionConfirmation('rejected', noteHorsSortie(202))).toBe('Note refusée. Un mail a été envoyé à Thomas Petit.');
+    expect(getActionConfirmation('accounted', noteHorsSortie(204))).toBe('Note comptabilisée. Un mail a été envoyé à Lucie Roux.');
   });
 });
 

@@ -129,7 +129,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(dialog(page)).toContainText('Voulez-vous vraiment approuver cette note de frais ?');
     await page.locator('.swal2-confirm').click();
 
-    await expect(confirmation(page)).toHaveText('Note approuvée. Thomas Petit a été prévenu par mail.');
+    await expect(confirmation(page)).toHaveText('Note approuvée. Un mail a été envoyé à Thomas Petit.');
     await expect(status(page, 'Approuvé')).toBeVisible();
     await expect(field(page, 'Décision')).toHaveText(new RegExp(`^Approuvée par la trésorerie le ${today.source}$`));
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
@@ -156,7 +156,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(dialog(page)).toBeHidden();
 
     patch.release();
-    await expect(confirmation(page)).toHaveText('Note approuvée. Thomas Petit a été prévenu par mail.');
+    await expect(confirmation(page)).toHaveText('Note approuvée. Un mail a été envoyé à Thomas Petit.');
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
     await expect(dialog(page)).toBeHidden();
     expect(await backendReceived(page)).toEqual([
@@ -209,7 +209,7 @@ test.describe('Page of a note hors sortie', () => {
     await page.locator('.swal2-textarea').fill('Merci de joindre le ticket de caisse.');
     await page.locator('.swal2-confirm').click();
 
-    await expect(confirmation(page)).toHaveText('Note refusée. Camille Faure a été prévenu par mail.');
+    await expect(confirmation(page)).toHaveText('Note refusée. Un mail a été envoyé à Camille Faure.');
     await expect(status(page, 'Rejeté')).toBeVisible();
     const refusal = page.getByLabel('Dernier refus');
     await expect(refusal).toContainText(new RegExp(`^Refusée par la trésorerie le ${today.source}`));
@@ -234,7 +234,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(dialog(page)).toContainText('Voulez-vous vraiment comptabiliser cette note de frais ?');
     await page.locator('.swal2-confirm').click();
 
-    await expect(confirmation(page)).toHaveText('Note comptabilisée. Lucie Roux a été prévenu par mail.');
+    await expect(confirmation(page)).toHaveText('Note comptabilisée. Un mail a été envoyé à Lucie Roux.');
     await expect(status(page, 'Comptabilisé')).toBeVisible();
     await expect(actionButtons(page)).toHaveCount(0);
     expect(await backendReceived(page)).toEqual([
@@ -242,18 +242,21 @@ test.describe('Page of a note hors sortie', () => {
     ]);
   });
 
-  test('should tell that the note was processed in between, and where it stands', async ({ page }) => {
+  // Décidée entre-temps, dans un autre onglet par exemple : la requête de test ne passe pas par la page.
+  const decideElsewhere = async (page: Page, id: number, status: string) =>
+    expect((await page.request.patch(`/api/expense-reports/${id}`, { data: { status } })).ok()).toBe(true);
+
+  test('should send nothing on a note processed elsewhere, and tell where it stands', async ({ page }) => {
     await page.goto(note(202));
     await expect(button(page, 'Approuver')).toBeVisible();
-    // Décidée entre-temps, dans un autre onglet par exemple
-    expect((await page.request.patch('/api/expense-reports/202', { data: { status: 'approved' } })).ok()).toBe(true);
+    await decideElsewhere(page, 202, 'approved');
 
     await button(page, 'Approuver').click();
     await page.locator('.swal2-confirm').click();
 
     await expect(dialog(page)).toContainText('Note déjà traitée');
     await expect(dialog(page)).toContainText(
-      'Elle a été traitée entre-temps. Elle est maintenant : Approuvé. Votre action n\'a pas été enregistrée.'
+      'Elle a été traitée entre-temps. Elle est maintenant : approuvée. Votre action n\'a pas été enregistrée.'
     );
     await expect(page.locator('.swal2-icon-info')).toBeVisible();
     await expect(page.locator('.swal2-icon-error')).toHaveCount(0);
@@ -261,6 +264,83 @@ test.describe('Page of a note hors sortie', () => {
     await expect(status(page, 'Approuvé')).toBeVisible();
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
     await expect(confirmation(page)).toHaveText('');
+    // Seule la décision de l'autre onglet est arrivée
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'approved' } },
+    ]);
+  });
+
+  test('should not confirm an accounting already done elsewhere', async ({ page }) => {
+    await page.goto(note(204));
+    await expect(button(page, 'Comptabiliser')).toBeVisible();
+    await decideElsewhere(page, 204, 'accounted');
+
+    await button(page, 'Comptabiliser').click();
+    await page.locator('.swal2-confirm').click();
+
+    await expect(dialog(page)).toContainText(
+      'Elle a été traitée entre-temps. Elle est maintenant : comptabilisée. Votre action n\'a pas été enregistrée.'
+    );
+    await page.locator('.swal2-confirm').click();
+    await expect(confirmation(page)).toHaveText('');
+    await expect(status(page, 'Comptabilisé')).toBeVisible();
+    expect(await backendReceived(page)).toHaveLength(1);
+  });
+
+  test('should not confirm an action the platform accepted without effect', async ({ page }) => {
+    await page.goto(note(204));
+    // L'API répond 200 à une comptabilisation sans effet ; la note relue est toujours approuvée.
+    await page.route('**/api/expense-reports/204', (route) =>
+      route.request().method() === 'PATCH' ? route.fulfill({ status: 200, json: {} }) : route.continue()
+    );
+
+    await button(page, 'Comptabiliser').click();
+    await page.locator('.swal2-confirm').click();
+
+    await expect(dialog(page)).toContainText(
+      'Elle a été traitée entre-temps. Elle est maintenant : approuvée. Votre action n\'a pas été enregistrée.'
+    );
+    await page.locator('.swal2-confirm').click();
+    await expect(confirmation(page)).toHaveText('');
+    await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
+  });
+
+  test('should tell that a refusal was not sent when the note was decided during the sending', async ({ page }) => {
+    await page.goto(note(202));
+    const sending = await holdPatch(page, '/api/expense-reports/202');
+
+    await button(page, 'Rejeter').click();
+    await page.locator('.swal2-textarea').fill('Il manque le programme du stage.');
+    await page.locator('.swal2-confirm').click();
+    await expect.poll(sending.isHeld).toBe(true);
+    await decideElsewhere(page, 202, 'approved');
+    sending.release();
+
+    await expect(dialog(page)).toContainText(
+      'Elle a été traitée entre-temps. Elle est maintenant : approuvée. Votre refus n\'a pas été envoyé.'
+    );
+    await expect(page.locator('.swal2-icon-info')).toBeVisible();
+    await page.locator('.swal2-confirm').click();
+    await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
+  });
+
+  test('should read the note again after any other refusal of the platform', async ({ page }) => {
+    await page.goto(note(202));
+    await page.route('**/api/expense-reports/202', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.continue();
+      await decideElsewhere(page, 202, 'approved');
+      await route.fulfill({ status: 403, json: { error: 'Accès refusé.' } });
+    });
+
+    await button(page, 'Approuver').click();
+    await page.locator('.swal2-confirm').click();
+
+    await expect(dialog(page)).toContainText('Accès refusé.');
+    await expect(page.locator('.swal2-icon-error')).toBeVisible();
+    await page.locator('.swal2-confirm').click();
+    // Relue : plus de boutons périmés
+    await expect(status(page, 'Approuvé')).toBeVisible();
+    await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
   });
 
   test('should show the rejected note with its refusal, without action', async ({ page }) => {

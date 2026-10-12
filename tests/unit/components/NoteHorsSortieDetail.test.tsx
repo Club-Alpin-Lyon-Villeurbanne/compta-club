@@ -194,13 +194,13 @@ describe('NoteHorsSortieDetail', () => {
       <NoteHorsSortieDetail
         note={noteHorsSortie(204)}
         onAction={vi.fn()}
-        confirmation="Note approuvée. Lucie Roux a été prévenu par mail."
+        confirmation="Note approuvée. Un mail a été envoyé à Lucie Roux."
       />
     );
 
     const announcements = screen.getAllByRole('status');
     expect(announcements[0].getAttribute('aria-live')).toBe('polite');
-    expect(announcements[0].textContent).toBe('Note approuvée. Lucie Roux a été prévenu par mail.');
+    expect(announcements[0].textContent).toBe('Note approuvée. Un mail a été envoyé à Lucie Roux.');
   });
 
   it('announces the copy of the accounting label, or that it failed', async () => {
@@ -215,5 +215,33 @@ describe('NoteHorsSortieDetail', () => {
 
     await act(async () => fireEvent.click(copy));
     expect(screen.getByText('Copie impossible')).toBeTruthy();
+  });
+
+  it('keeps the latest copy feedback for its full time, and forgets it once the page is left', async () => {
+    vi.useFakeTimers();
+    try {
+      const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('denied'));
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { unmount } = render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
+      const copy = screen.getByRole('button', { name: 'Copier le libellé comptable' });
+
+      await act(async () => fireEvent.click(copy));
+      await act(async () => { vi.advanceTimersByTime(1500); });
+      await act(async () => fireEvent.click(copy));
+      // Le délai du premier clic est passé : le second retour reste.
+      await act(async () => { vi.advanceTimersByTime(600); });
+      expect(screen.getByText('Copie impossible')).toBeTruthy();
+
+      await act(async () => { vi.advanceTimersByTime(1500); });
+      expect(screen.queryByText('Copie impossible')).toBeNull();
+
+      await act(async () => fireEvent.click(copy));
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -59,7 +59,13 @@ Actions, comme l'API les permet à un gestionnaire :
 | `submitted` avec des `valideurs` | aucune : la note attend son responsable de commission |
 | `approved` | Comptabiliser (`accounted`) |
 
-Une seule action à la fois : pendant l'envoi, les boutons sont désactivés (le hook des actions bloque aussi tout second envoi sur la page d'une sortie). Après une action réussie, la page relit la note et annonce « Note approuvée. Prénom NOM a été prévenu par mail. » (refusée, comptabilisée). « Cette demande a déjà été traitée. » (422, note décidée entre-temps) fait relire la note et ouvre la fenêtre d'information « Note déjà traitée », avec son nouveau statut ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
+Une seule action à la fois : pendant l'envoi, les boutons sont désactivés (le hook des actions bloque aussi tout second envoi sur la page d'une sortie). Autour de l'envoi, la page relit la note :
+
+- juste avant : si elle a changé depuis l'affichage (traitée dans un autre onglet), rien ne part. L'API répond 200, sans effet ni mail, à une comptabilisation déjà faite ;
+- juste après : « Note approuvée. Un mail a été envoyé à Prénom NOM. » (refusée, comptabilisée) seulement si la note relue a bien le statut demandé ;
+- après tout refus de l'API (4xx) : la page montre la note telle qu'elle est.
+
+Une note qui a changé, ou « Cette demande a déjà été traitée. » (422), ouvre la fenêtre d'information « Note déjà traitée » avec le statut relu (« Elle est maintenant : approuvée. ») ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
 
 ## Routes internes
 

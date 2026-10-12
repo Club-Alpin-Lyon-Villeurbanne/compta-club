@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ExpenseReport, NonEventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
-import { getExpenseStatusTranslation } from "@/app/enums/ExpenseStatus";
 import { get } from "@/app/lib/fetchClient";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
 import { getActionConfirmation, isEventReport, TreasuryAction } from "@/app/utils/expenseReport";
@@ -51,18 +50,15 @@ export default function NoteHorsSortiePage() {
     }
   }, [id, router]);
 
-  const statusAfterReload = useCallback(async () => {
-    const reloaded = await fetchNote();
-    return reloaded ? getExpenseStatusTranslation(reloaded.status) : null;
-  }, [fetchNote]);
+  const reloadStatus = useCallback(async () => (await fetchNote())?.status ?? null, [fetchNote]);
 
-  const { handleAction, pendingAction } = useExpenseActions(fetchNote, { onAlreadyProcessed: statusAfterReload });
+  const { handleAction, pendingAction } = useExpenseActions(fetchNote, { reloadStatus });
 
   const onAction = useCallback(
     async (noteId: number, action: TreasuryAction) => {
       if (!note) return;
       setConfirmation(null);
-      if (await handleAction(noteId, action)) setConfirmation(getActionConfirmation(action, note));
+      if (await handleAction(noteId, action, note.status)) setConfirmation(getActionConfirmation(action, note));
     },
     [handleAction, note]
   );

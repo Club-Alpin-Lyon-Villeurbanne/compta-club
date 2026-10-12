@@ -115,24 +115,98 @@ describe('useExpenseActions', () => {
     expect(patch).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    ['approved', 'Votre action n\'a pas été enregistrée.'],
-    ['rejected', 'Votre refus n\'a pas été envoyé.'],
-  ] as const)('tells, without an error, that the note was processed in between (%s)', async (action, lost) => {
-    state.fire.mockResolvedValue({ isConfirmed: true, value: 'Il manque la facture.' });
-    vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Cette demande a déjà été traitée.'), { status: 422 }));
-    const onAlreadyProcessed = vi.fn().mockResolvedValue('Approuvé');
-    const { result } = renderHook(() => useExpenseActions(vi.fn(), { onAlreadyProcessed }));
+  describe('on the page of a note, which reads the note again', () => {
+    const alreadyProcessed = (text: string) => ({ title: 'Note déjà traitée', text, icon: 'info' });
 
-    let outcome = true;
-    await act(async () => { outcome = await result.current.handleAction(202, action); });
+    it('confirms an action only once the note shows it', async () => {
+      state.fire.mockResolvedValue({ isConfirmed: true });
+      vi.mocked(patch).mockResolvedValue({});
+      const fetchData = vi.fn();
+      const reloadStatus = vi.fn().mockResolvedValueOnce('preapproved').mockResolvedValueOnce('approved');
+      const { result } = renderHook(() => useExpenseActions(fetchData, { reloadStatus }));
 
-    expect(outcome).toBe(false);
-    expect(onAlreadyProcessed).toHaveBeenCalledOnce();
-    expect(state.fire).toHaveBeenLastCalledWith({
-      title: 'Note déjà traitée',
-      text: `Elle a été traitée entre-temps. Elle est maintenant : Approuvé. ${lost}`,
-      icon: 'info',
+      let outcome = false;
+      await act(async () => { outcome = await result.current.handleAction(202, 'approved', 'preapproved'); });
+
+      expect(outcome).toBe(true);
+      expect(reloadStatus).toHaveBeenCalledTimes(2);
+      expect(fetchData).not.toHaveBeenCalled();
+      expect(state.fire).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends nothing when the note was processed elsewhere during the confirmation', async () => {
+      state.fire.mockResolvedValue({ isConfirmed: true });
+      const reloadStatus = vi.fn().mockResolvedValue('accounted');
+      const { result } = renderHook(() => useExpenseActions(vi.fn(), { reloadStatus }));
+
+      let outcome = true;
+      await act(async () => { outcome = await result.current.handleAction(204, 'accounted', 'approved'); });
+
+      expect(outcome).toBe(false);
+      expect(patch).not.toHaveBeenCalled();
+      expect(state.fire).toHaveBeenLastCalledWith(alreadyProcessed(
+        'Elle a été traitée entre-temps. Elle est maintenant : comptabilisée. Votre action n\'a pas été enregistrée.'
+      ));
+    });
+
+    it('does not confirm an action the API accepted without effect', async () => {
+      state.fire.mockResolvedValue({ isConfirmed: true });
+      vi.mocked(patch).mockResolvedValue({});
+      const reloadStatus = vi.fn().mockResolvedValueOnce('approved').mockResolvedValueOnce('approved');
+      const { result } = renderHook(() => useExpenseActions(vi.fn(), { reloadStatus }));
+
+      let outcome = true;
+      await act(async () => { outcome = await result.current.handleAction(204, 'accounted', 'approved'); });
+
+      expect(outcome).toBe(false);
+      expect(state.fire).toHaveBeenLastCalledWith(alreadyProcessed(
+        'Elle a été traitée entre-temps. Elle est maintenant : approuvée. Votre action n\'a pas été enregistrée.'
+      ));
+    });
+
+    it.each([
+      ['approved', 'Votre action n\'a pas été enregistrée.'],
+      ['rejected', 'Votre refus n\'a pas été envoyé.'],
+    ] as const)('tells, without an error, that the note was processed in between (%s)', async (action, lost) => {
+      state.fire.mockResolvedValue({ isConfirmed: true, value: 'Il manque la facture.' });
+      vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Cette demande a déjà été traitée.'), { status: 422 }));
+      const reloadStatus = vi.fn().mockResolvedValueOnce('preapproved').mockResolvedValueOnce('approved');
+      const { result } = renderHook(() => useExpenseActions(vi.fn(), { reloadStatus }));
+
+      let outcome = true;
+      await act(async () => { outcome = await result.current.handleAction(202, action, 'preapproved'); });
+
+      expect(outcome).toBe(false);
+      expect(reloadStatus).toHaveBeenCalledTimes(2);
+      expect(state.fire).toHaveBeenLastCalledWith(alreadyProcessed(
+        `Elle a été traitée entre-temps. Elle est maintenant : approuvée. ${lost}`
+      ));
+    });
+
+    it('reads the note again after any other refusal of the API, and shows it', async () => {
+      state.fire.mockResolvedValue({ isConfirmed: true });
+      vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Accès refusé.'), { status: 403 }));
+      const reloadStatus = vi.fn().mockResolvedValue('preapproved');
+      const { result } = renderHook(() => useExpenseActions(vi.fn(), { reloadStatus }));
+
+      await act(async () => { await result.current.handleAction(202, 'approved', 'preapproved'); });
+
+      expect(reloadStatus).toHaveBeenCalledTimes(2);
+      expect(state.fire).toHaveBeenLastCalledWith(expect.objectContaining({
+        icon: 'error',
+        text: 'Une erreur est survenue lors de l\'action sur la note de frais.\n\nAccès refusé.',
+      }));
+    });
+
+    it('reads nothing when the confirmation is cancelled', async () => {
+      state.fire.mockResolvedValue({ isConfirmed: false });
+      const reloadStatus = vi.fn();
+      const { result } = renderHook(() => useExpenseActions(vi.fn(), { reloadStatus }));
+
+      await act(async () => { await result.current.handleAction(202, 'approved', 'preapproved'); });
+
+      expect(reloadStatus).not.toHaveBeenCalled();
+      expect(patch).not.toHaveBeenCalled();
     });
   });
 

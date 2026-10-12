@@ -204,9 +204,10 @@ const deCommission = (title: string) => (/^[aeiouyàâäéèêëîïôöûü]/i.
 export function getWaitingForResponsable(report: NonEventExpenseReport): string | null {
     if (!waitsForResponsable(report)) return null;
     const noms = report.valideurs.map(nomComplet).join(' ou ');
-    const role = report.valideurs.length > 1 ? 'responsables' : 'responsable';
+    const plusieurs = report.valideurs.length > 1;
     const commission = report.commission?.title ? deCommission(report.commission.title) : 'de commission';
-    return `En attente de ${noms} (${role} ${commission}). Vous pourrez la valider après lui.`;
+    return `En attente de ${noms} (${plusieurs ? 'responsables' : 'responsable'} ${commission}). `
+        + `Vous pourrez la valider après ${plusieurs ? 'eux' : 'lui'}.`;
 }
 
 const ACTIONS_FAITES: Record<TreasuryAction, string> = {
@@ -217,7 +218,21 @@ const ACTIONS_FAITES: Record<TreasuryAction, string> = {
 
 /** Après une action réussie : la plateforme écrit au demandeur à chaque étape. */
 export function getActionConfirmation(action: TreasuryAction, report: NonEventExpenseReport): string {
-    return `${ACTIONS_FAITES[action]} ${nomComplet(report.utilisateur)} a été prévenu par mail.`;
+    return `${ACTIONS_FAITES[action]} Un mail a été envoyé à ${nomComplet(report.utilisateur)}.`;
+}
+
+const STATUTS_DE_LA_NOTE: Record<string, string> = {
+    [ExpenseStatus.DRAFT]: 'en brouillon',
+    [ExpenseStatus.SUBMITTED]: 'soumise',
+    [ExpenseStatus.PREAPPROVED]: 'validée par le responsable',
+    [ExpenseStatus.APPROVED]: 'approuvée',
+    [ExpenseStatus.REJECTED]: 'refusée',
+    [ExpenseStatus.ACCOUNTED]: 'comptabilisée',
+};
+
+/** Le statut dans une phrase, accordé à « la note » : « Elle est maintenant : comptabilisée. » */
+export function noteStatusPhrase(status: string): string {
+    return STATUTS_DE_LA_NOTE[status] ?? status;
 }
 
 /** Lien saisi par l'adhérent : seulement en http ou https, jamais javascript: ni data:. */
