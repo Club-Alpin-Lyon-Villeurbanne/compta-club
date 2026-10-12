@@ -108,6 +108,10 @@ describe('getRefundableNote', () => {
     expect(getRefundableNote(formation)).toBe('dont 287.40 € remb.');
   });
 
+  it('does not call the part of a don within the caps a refund', () => {
+    expect(getRefundableNote({ ...formation, refundRequired: false } as ExpenseReport)).toBe('dont 287.40 € dans les plafonds');
+  });
+
   it('says nothing when everything is refundable, nor for a note de sortie', () => {
     expect(getRefundableNote(achat)).toBeNull();
     expect(getRefundableNote({ ...formation, totalRemboursable: 312.4 } as ExpenseReport)).toBeNull();
@@ -145,6 +149,36 @@ describe('getNonEventReportDetails', () => {
 
   it('says nothing for a note de sortie', () => {
     expect(getNonEventReportDetails(noteDeSortie)).toBeNull();
+  });
+
+  it('says who refused a refused note, the treasury', () => {
+    expect(getNonEventReportDetails(noteHorsSortie(205))).toBe('Escalade · Refusée par la trésorerie le 29/01');
+  });
+
+  it('says who refused a refused note, its responsable, whom the treasury never saw', () => {
+    const refuseeParLeResponsable = noteHorsSortie(205, {
+      validationResponsable: null,
+      derniereDecision: {
+        statut: 'rejected',
+        niveau: 'responsable',
+        auteur: { prenom: 'Hugo', nom: 'BLANC' },
+        date: '2025-01-27T18:30:00+01:00',
+        message: 'Il manque la facture.',
+      },
+    });
+
+    expect(getNonEventReportDetails(refuseeParLeResponsable))
+      .toBe('Escalade · Refusée par Hugo BLANC (responsable de commission) le 27/01');
+  });
+
+  it('never shows a refused note as validated, even without a decision to read', () => {
+    expect(getNonEventReportDetails(noteHorsSortie(205, { derniereDecision: null }))).toBe('Escalade');
+  });
+
+  it('tells a note sent again after a refusal from a new one', () => {
+    expect(getNonEventReportDetails(noteHorsSortie(206, { valideurs: [] })))
+      .toBe('Escalade · Directement à la trésorerie · renvoyée après un refus');
+    expect(getNonEventReportDetails(noteHorsSortie(206))).toBe('Escalade · renvoyée après un refus');
   });
 });
 

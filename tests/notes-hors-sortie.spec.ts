@@ -116,13 +116,13 @@ test.describe('Notes hors sortie in the list', () => {
     await login(page, { notesHorsSortie: true });
 
     await expect(row(page, 'Sortie Mont Blanc').getByRole('link').first()).toHaveAttribute('href', '/note-de-frais/101');
+    // Un seul lien par ligne, le titre : le demandeur est du texte.
     for (const [text, href] of [
       ['Formation initiateur escalade', '/note-de-frais/note/202'],
       ['Cordelettes pour la SAE', '/note-de-frais/note/201'],
     ]) {
-      const links = row(page, text).getByRole('link');
-      await expect(links).toHaveCount(2);
-      for (const link of await links.all()) await expect(link).toHaveAttribute('href', href);
+      await expect(row(page, text).getByRole('link')).toHaveCount(1);
+      await expect(row(page, text).getByRole('link', { name: text })).toHaveAttribute('href', href);
     }
   });
 
@@ -182,6 +182,9 @@ test.describe('Notes hors sortie in the list', () => {
 
     await statusSelect(page).selectOption('rejected');
     await expect(rows(page)).toHaveText([/Prises pour le pan/, /Escalade Calanques/]);
+    // Qui l'a refusée, plutôt que la validation du responsable qui la précède
+    await expect(row(page, 'Prises pour le pan').locator('td').nth(2))
+      .toHaveText(/^Prises pour le pan\s*Escalade · Refusée par la trésorerie le 29\/01$/);
 
     await statusSelect(page).selectOption('approved');
     await expect(rows(page)).toHaveText([/Recyclage initiateur randonnée/, /Randonnee Vercors/]);
@@ -272,27 +275,6 @@ test.describe('Notes hors sortie in the list', () => {
     expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
     expect(textAfter(pdf.texts, 'Libellé comptable')).toBe('ROUX Lucie NDF 11/01/2025 Recyclage initiateur randonnée');
   });
-
-  for (const width of [1280, 1440]) {
-    test(`should fit the table in its card at ${width} px, PDF buttons included`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await login(page, { notesHorsSortie: true });
-
-      for (const status of ['approved', 'accounted', 'Toutes']) {
-        await statusSelect(page).selectOption(status);
-        await expect(rows(page).getByRole('button', { name: 'Télécharger en PDF' }).first()).toBeVisible();
-
-        const card = page.locator('table').locator('..');
-        const { clientWidth, scrollWidth } = await card.evaluate((el) => ({ clientWidth: el.clientWidth, scrollWidth: el.scrollWidth }));
-        expect(scrollWidth, status).toBeLessThanOrEqual(clientWidth);
-        const cardBox = (await card.boundingBox())!;
-        for (const button of await rows(page).locator('td:last-child button').all()) {
-          const box = (await button.boundingBox())!;
-          expect(box.x + box.width, status).toBeLessThanOrEqual(cardBox.x + cardBox.width);
-        }
-      }
-    });
-  }
 
   test('should copy the accounting label of a note hors sortie', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);

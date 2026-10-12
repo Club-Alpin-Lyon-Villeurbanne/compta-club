@@ -62,13 +62,15 @@ export function getReportAmount(report: ExpenseReport): number {
     return isEventReport(report) ? calculateTotals(report.details).totalRemboursable : toAmount(report.totalDeclare);
 }
 
-/** Sous le total déclaré d'une note hors sortie : « dont 287.40 € remb. » quand les plafonds le réduisent. */
+/**
+ * Sous le total déclaré d'une note hors sortie, quand les plafonds le réduisent : « dont 287.40 € remb. »,
+ * ou « dont 287.40 € dans les plafonds » pour un don.
+ */
 export function getRefundableNote(report: ExpenseReport): string | null {
     if (isEventReport(report)) return null;
     const remboursable = toAmount(report.totalRemboursable);
-    return Math.round(remboursable * 100) < Math.round(toAmount(report.totalDeclare) * 100)
-        ? `dont ${formatEuro(remboursable)} remb.`
-        : null;
+    if (Math.round(remboursable * 100) >= Math.round(toAmount(report.totalDeclare) * 100)) return null;
+    return `dont ${formatEuro(remboursable)} ${report.refundRequired ? 'remb.' : 'dans les plafonds'}`;
 }
 
 /** Date de création d'une note de sortie ; dernier envoi d'une note hors sortie, qu'on a pu corriger et renvoyer. */
@@ -134,16 +136,24 @@ export function venueDirectementALaTresorerie(report: NonEventExpenseReport): bo
 }
 
 /**
- * Sous l'objet d'une note hors sortie : « Escalade · Validée par Hugo BLANC le 27/01 », ou
- * « Randonnée · Directement à la trésorerie ».
+ * Sous l'objet d'une note hors sortie : « Escalade · Validée par Hugo BLANC le 27/01 », « Randonnée ·
+ * Directement à la trésorerie », suivi de « renvoyée après un refus » une fois corrigée ; pour une note
+ * refusée, qui l'a refusée : « Escalade · Refusée par la trésorerie le 29/01 ».
  */
 export function getNonEventReportDetails(report: ExpenseReport): string | null {
     if (isEventReport(report)) return null;
-    const validation = report.validationResponsable;
-    const circuit = validation
-        ? decisionPhrase(validationDecision(validation), jourMois)
-        : venueDirectementALaTresorerie(report) ? 'Directement à la trésorerie' : null;
-    return [report.commission?.title, circuit].filter(Boolean).join(' · ') || null;
+    const details: (string | null | undefined)[] = [report.commission?.title];
+    if (report.status === ExpenseStatus.REJECTED) {
+        const decision = report.derniereDecision;
+        details.push(decision?.statut === 'rejected' ? decisionPhrase(decision, jourMois) : null);
+    } else {
+        const validation = report.validationResponsable;
+        details.push(validation
+            ? decisionPhrase(validationDecision(validation), jourMois)
+            : venueDirectementALaTresorerie(report) ? 'Directement à la trésorerie' : null);
+        if (getLastRefusal(report)?.enCours === false) details.push('renvoyée après un refus');
+    }
+    return details.filter(Boolean).join(' · ') || null;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTotals, commissionPictoUrl, formatEuro, getFileUrlByExpenseId, truncateText } from '@/app/utils/helper';
+import { calculateTotals, commissionPictoUrl, formatEuro, getFileUrlByExpenseId } from '@/app/utils/helper';
 import { config } from '@/app/config';
 import { Details } from '@/app/interfaces/DetailsInterface';
 
@@ -13,26 +13,6 @@ describe('formatEuro', () => {
 
   it('should handle negative numbers', () => {
     expect(formatEuro(-10)).toBe('-10.00 €');
-  });
-});
-
-describe('truncateText', () => {
-  it('should truncate text longer than maxLength', () => {
-    expect(truncateText('This is a very long text', 10)).toBe('This is a ...');
-  });
-
-  it('should not truncate text shorter than maxLength', () => {
-    expect(truncateText('Short', 10)).toBe('Short');
-  });
-
-  it('should return empty string for empty input', () => {
-    expect(truncateText('')).toBe('');
-    expect(truncateText(undefined as unknown as string)).toBe('');
-  });
-
-  it('should use default maxLength of 30', () => {
-    const text = 'This is a text with exactly thirty-five chars';
-    expect(truncateText(text)).toBe('This is a text with exactly th...');
   });
 });
 

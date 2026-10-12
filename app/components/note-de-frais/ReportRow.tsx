@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Badge } from './Badge';
 import { config } from '@/app/config';
 import { FaCalendarAlt, FaClipboardList, FaGift, FaMoneyBillWave, FaCopy, FaFilePdf } from 'react-icons/fa';
-import { commissionPictoUrl, formatEuro, truncateText } from '@/app/utils/helper';
+import { commissionPictoUrl, formatEuro } from '@/app/utils/helper';
 import {
     canDownloadPdf,
     formatReportDate,
@@ -80,15 +80,15 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                 />
             </td>
             <td className="w-1/4 px-2 py-2 text-sm bg-white border-b border-gray-200">
-                {/* Le titre peut passer à la ligne : la table tient dans sa carte dès 1280 px, bouton PDF compris. */}
+                {/* Le titre passe à la ligne, sur deux lignes au plus : la table tient dans sa carte dès 1280 px, bouton PDF compris. */}
                 <p className="flex items-center gap-1 text-gray-900">
                     <FaClipboardList className="flex-shrink-0 text-gray-500" />
                     {href ? (
-                        <Link href={href} className="hover:underline" title={title}>
-                            {truncateText(title, 40)}
+                        <Link href={href} className="min-w-0 break-words line-clamp-2 hover:underline" title={title}>
+                            {title}
                         </Link>
                     ) : (
-                        <span title={title}>{truncateText(title, 40)}</span>
+                        <span className="min-w-0 break-words line-clamp-2" title={title}>{title}</span>
                     )}
                     {textToCopy && (
                         <button
@@ -100,17 +100,12 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                         </button>
                     )}
                 </p>
-                {details && <p className="mt-0.5 text-xs text-gray-500">{details}</p>}
+                {details && <p className="max-w-xs mt-0.5 text-xs text-gray-500 break-words">{details}</p>}
             </td>
             <td className="px-2 py-2 text-sm bg-white border-b border-gray-200">
-                <p className="text-gray-900 truncate whitespace-nowrap">
-                    {href ? (
-                        <Link href={href} className="hover:underline">
-                            {requester}
-                        </Link>
-                    ) : (
-                        requester
-                    )}
+                {/* Coupé : un nom composé repousserait le bouton PDF hors de la carte. */}
+                <p className="max-w-[10rem] truncate text-gray-900" title={requester}>
+                    {requester}
                 </p>
             </td>
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">

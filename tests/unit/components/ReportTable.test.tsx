@@ -42,15 +42,31 @@ describe('ReportTable', () => {
     expect(within(formation).getByText('Escalade · Validée par Hugo BLANC le 27/01')).toBeTruthy();
     expect(within(formation).getByText('Validée par le responsable')).toBeTruthy();
     expect(within(formation).getByText(new Date(2025, 0, 25).toLocaleDateString())).toBeTruthy();
-    expect(within(formation).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
-      '/note-de-frais/note/202',
-      '/note-de-frais/note/202',
-    ]);
+    // Le titre seul mène à la note : le demandeur est du texte
+    expect(within(formation).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/note-de-frais/note/202']);
+    expect(within(formation).getByText('Thomas Petit').closest('a')).toBeNull();
 
     const sortie = rowOf('Sortie Mont Blanc');
     expect(within(sortie).getByText('Sortie')).toBeTruthy();
     expect(within(sortie).getByText('120.00 €')).toBeTruthy();
     expect(within(sortie).getAllByRole('link')[0].getAttribute('href')).toBe('/note-de-frais/101');
+  });
+
+  it('shows a long title whole, on two lines at most, and a long requester cut', () => {
+    const objet = 'Achat de cordes, dégaines et mousquetons pour la salle d\'escalade du club, et leur transport';
+    const longs = [{
+      ...reports.find((report) => report.id === 201),
+      objet,
+      utilisateur: { id: 8, prenom: 'Marie-Christine', nom: 'DUPONT-MONTGOLFIER-LAFON' },
+    }] as unknown as ExpenseReport[];
+    render(<ReportTable reports={longs} isLoading={false} />);
+
+    const title = screen.getByRole('link', { name: objet });
+    expect(title.textContent).toBe(objet);
+    expect(title.className).toContain('line-clamp-2');
+    const requester = screen.getByText('Marie-Christine DUPONT-MONTGOLFIER-LAFON');
+    expect(requester.getAttribute('title')).toBe('Marie-Christine DUPONT-MONTGOLFIER-LAFON');
+    expect(requester.className).toContain('max-w-[10rem] truncate');
   });
 
   it('filters by type of note', () => {
