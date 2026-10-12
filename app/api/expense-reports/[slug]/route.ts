@@ -54,7 +54,7 @@ export async function PATCH(
 
     return NextResponse.json(expenseReport);
   } catch (error) {
-    // Un refus de l'API (« Cette demande a déjà été traitée. ») est montré tel quel à la trésorerie.
+    // Un refus de l'API (« Cette note a déjà été traitée. ») est montré tel quel à la trésorerie.
     const { status, apiMessage } = error as { status?: number; apiMessage?: string | null };
     return NextResponse.json(
       { error: apiMessage ?? 'Erreur lors de la mise à jour de la note de frais' },

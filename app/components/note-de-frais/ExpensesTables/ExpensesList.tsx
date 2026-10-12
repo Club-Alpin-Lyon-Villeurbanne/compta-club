@@ -38,10 +38,10 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetc
                 <TableHeader>
                     <TableRow>
                         <TableHead>Sortie</TableHead>
-                        <TableHead>Utilisateur</TableHead>
+                        <TableHead>Demandeur</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Montant</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Don ou remb.</TableHead>
                         <TableHead>Statut</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>

@@ -14,7 +14,7 @@
  * - notes hors sortie (achat, formation) : ni brouillon ni note qu'un responsable doit encore
  *   valider dans la liste, `status` et `type` à une ou plusieurs valeurs, recherche et date de la
  *   sortie sans effet sur elles ; lecture d'une note par son identifiant ; décisions de la
- *   trésorerie après le responsable, « Cette demande a déjà été traitée. » et message obligatoire
+ *   trésorerie après le responsable, « Cette note a déjà été traitée. » et message obligatoire
  *   au refus.
  *
  * Chaque connexion ouvre une session isolée (identifiant `sid` porté par les jetons) : les
@@ -327,7 +327,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const isOwner = report.utilisateur.id === MANAGER.id;
     const allowed = isOwner ? [] : managerTransitions(report);
     if (!isOwner && dejaTraitee(report, body.status, allowed)) {
-      return violation(res, 'status', 'Cette demande a déjà été traitée.');
+      return violation(res, 'status', 'Cette note a déjà été traitée.');
     }
     if (body.status !== report.status && !allowed.includes(body.status)) {
       return violation(res, 'status', `Invalid status transition from "${report.status}" to "${body.status}".`);

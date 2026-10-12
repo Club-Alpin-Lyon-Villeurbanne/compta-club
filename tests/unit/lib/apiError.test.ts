@@ -5,13 +5,13 @@ import { apiErrorMessage } from '@/app/lib/apiError';
 const dejaTraitee = {
   type: 'https://tools.ietf.org/html/rfc2616#section-10',
   title: 'An error occurred',
-  detail: 'status: Cette demande a déjà été traitée.',
-  violations: [{ propertyPath: 'status', message: 'Cette demande a déjà été traitée.', code: null }],
+  detail: 'status: Cette note a déjà été traitée.',
+  violations: [{ propertyPath: 'status', message: 'Cette note a déjà été traitée.', code: null }],
 };
 
 describe('apiErrorMessage', () => {
   it('takes the messages of the violations, without the field name', () => {
-    expect(apiErrorMessage(422, dejaTraitee)).toBe('Cette demande a déjà été traitée.');
+    expect(apiErrorMessage(422, dejaTraitee)).toBe('Cette note a déjà été traitée.');
     expect(apiErrorMessage(422, {
       violations: [
         { propertyPath: 'status', message: 'Premier.' },

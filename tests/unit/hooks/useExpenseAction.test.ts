@@ -54,7 +54,7 @@ describe('useExpenseActions', () => {
   it('shows the reason the platform refused the decision with', async () => {
     state.fire.mockResolvedValue({ isConfirmed: true });
     vi.mocked(patch).mockRejectedValue(
-      Object.assign(new Error('Cette demande a déjà été traitée.'), { status: 422 })
+      Object.assign(new Error('Cette note a déjà été traitée.'), { status: 422 })
     );
 
     const { result } = renderHook(() => useExpenseActions(vi.fn()));
@@ -62,7 +62,7 @@ describe('useExpenseActions', () => {
 
     expect(state.fire).toHaveBeenLastCalledWith(expect.objectContaining({
       icon: 'error',
-      text: 'Une erreur est survenue lors de l\'action sur la note de frais.\n\nCette demande a déjà été traitée.',
+      text: 'Une erreur est survenue lors de l\'action sur la note de frais.\n\nCette note a déjà été traitée.',
     }));
   });
 
@@ -169,7 +169,7 @@ describe('useExpenseActions', () => {
       ['rejected', 'Votre refus n\'a pas été envoyé.'],
     ] as const)('tells, without an error, that the note was processed in between (%s)', async (action, lost) => {
       state.fire.mockResolvedValue({ isConfirmed: true, value: 'Il manque la facture.' });
-      vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Cette demande a déjà été traitée.'), { status: 422 }));
+      vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Cette note a déjà été traitée.'), { status: 422 }));
       const reloadStatus = vi.fn().mockResolvedValueOnce('preapproved').mockResolvedValueOnce('approved');
       const { result } = renderHook(() => useExpenseActions(vi.fn(), { reloadStatus }));
 

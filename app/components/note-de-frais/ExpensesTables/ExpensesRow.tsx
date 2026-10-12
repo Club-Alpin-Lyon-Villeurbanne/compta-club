@@ -97,7 +97,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = React.memo(({ report, isExp
                                     <button 
                                         className="p-1 font-bold text-white transition duration-300 ease-in-out bg-red-500 rounded-full hover:bg-red-600"
                                         onClick={() => onAction(report.id, ExpenseStatus.REJECTED)}
-                                        title="Rejeter"
+                                        title="Refuser"
                                     >
                                         <FaTimes className="w-4 h-4" />
                                     </button>

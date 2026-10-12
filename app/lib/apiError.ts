@@ -1,11 +1,11 @@
 // Refus de la plateforme quand une note a quitté l'étape de celui qui décide (deux onglets, deux trésoriers…).
-export const DEJA_TRAITEE = 'Cette demande a déjà été traitée.';
+export const DEJA_TRAITEE = 'Cette note a déjà été traitée.';
 
 const asText = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() ? value.trim() : null;
 
 /**
- * Raison d'un refus de l'API (4xx), à montrer telle quelle : « Cette demande a déjà été traitée. ».
+ * Raison d'un refus de l'API (4xx), à montrer telle quelle : « Cette note a déjà été traitée. ».
  * Les messages des violations d'abord, que `detail` préfixe du nom du champ. Rien pour une erreur
  * serveur, dont le détail peut porter la trace ou la requête SQL ; la trace d'un 4xx n'est jamais lue.
  */

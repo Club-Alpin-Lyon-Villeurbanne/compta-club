@@ -334,14 +334,14 @@ describe('page of a note hors sortie', () => {
 
   it('names who a note still waits for', () => {
     expect(getWaitingForResponsable(noteHorsSortie(206)))
-      .toBe("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez la valider après lui.");
+      .toBe("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez l'approuver après lui.");
 
     const deux = noteHorsSortie(206, {
       commission: { id: 4, title: 'Randonnée' },
       valideurs: [{ id: 9, prenom: 'Hugo', nom: 'Blanc' }, { id: 12, prenom: 'Léa', nom: 'Martin' }],
     });
     expect(getWaitingForResponsable(deux))
-      .toBe('En attente de Hugo Blanc ou Léa Martin (responsables de Randonnée). Vous pourrez la valider après eux.');
+      .toBe("En attente de Hugo Blanc ou Léa Martin (responsables de Randonnée). Vous pourrez l'approuver après eux.");
   });
 
   it('says nothing of a responsable for a note that does not wait for one', () => {
@@ -478,9 +478,9 @@ describe('status filter', () => {
       ['Toutes', 'Tous statuts'],
       ['submitted', 'À valider'],
       ['preapproved', 'Validée par le responsable'],
-      ['rejected', 'Rejeté'],
-      ['approved', 'Approuvé'],
-      ['accounted', 'Comptabilisé'],
+      ['rejected', 'Refusée'],
+      ['approved', 'Approuvée'],
+      ['accounted', 'Comptabilisée'],
     ]);
     expect(statusesOfFilter('approved')).toEqual([ExpenseStatus.APPROVED]);
     expect(statusesOfFilter('Toutes')).toEqual([]);

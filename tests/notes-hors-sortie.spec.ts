@@ -80,7 +80,7 @@ test.describe('Notes hors sortie in the list', () => {
       '23/01/2025',
       '55.00 €',
       'Remboursement',
-      'Soumis',
+      'Soumise',
     ]);
     await expect(achat.locator('img')).toHaveAttribute('alt', 'Randonnée');
 

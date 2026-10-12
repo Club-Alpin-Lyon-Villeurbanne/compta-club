@@ -29,7 +29,7 @@ describe('NoteHorsSortieDetail', () => {
     expect(screen.getByText('Validée par le responsable')).toBeTruthy();
     expect(field('Demandeur').textContent).toBe('Thomas Petit');
     expect(field('Date de la formation').textContent).toBe(new Date(2025, 0, 25).toLocaleDateString());
-    expect(field('Mot pour le responsable').textContent).toBe('Stage validé par la commission en décembre.');
+    expect(field('Mot du demandeur').textContent).toBe('Stage validé par la commission en décembre.');
     expect(field('Validation du responsable').textContent).toBe('Validée par Hugo BLANC le 27/01/2025');
 
     const lien = within(field('Lien de la formation')).getByRole('link');
@@ -57,7 +57,7 @@ describe('NoteHorsSortieDetail', () => {
     expect(within(summary()).getByText('Remboursement demandé')).toBeTruthy();
     expect(within(summary()).getByText('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade')).toBeTruthy();
     expect(within(summary()).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent))
-      .toEqual(['Copier le libellé comptable', 'Approuver', 'Rejeter']);
+      .toEqual(['Copier le libellé comptable', 'Approuver', 'Refuser']);
   });
 
   it('shows each line as the API presents it, with its named receipt', () => {
@@ -90,7 +90,7 @@ describe('NoteHorsSortieDetail', () => {
     expect(within(summary()).getByText('Don au club')).toBeTruthy();
     expect(screen.queryByRole('columnheader', { name: 'Détail' })).toBeNull();
     expect(screen.queryByText('Lien de la formation')).toBeNull();
-    expect(screen.queryByText('Mot pour le responsable')).toBeNull();
+    expect(screen.queryByText('Mot du demandeur')).toBeNull();
   });
 
   it('says that a note sent without valideur goes straight to the treasury', () => {
@@ -118,7 +118,7 @@ describe('NoteHorsSortieDetail', () => {
       'Refusée par la trésorerie le 26/01, corrigée et renvoyée le 28/01 : « Il manque le ticket de caisse. »'
     );
     expect(previous.className).not.toContain('red');
-    expect(screen.getByText("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez la valider après lui.")).toBeTruthy();
+    expect(screen.getByText("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez l'approuver après lui.")).toBeTruthy();
     expect(actionButtons()).toEqual([]);
   });
 
@@ -180,8 +180,8 @@ describe('NoteHorsSortieDetail', () => {
   });
 
   it.each([
-    [202, ['Approuver', 'Rejeter']],
-    [201, ['Approuver', 'Rejeter']],
+    [202, ['Approuver', 'Refuser']],
+    [201, ['Approuver', 'Refuser']],
     [204, ['Comptabiliser']],
     [205, []],
     [208, []],
@@ -236,7 +236,7 @@ describe('NoteHorsSortieDetail', () => {
     const onAction = vi.fn();
     render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={onAction} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rejeter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refuser' }));
 
     expect(onAction).toHaveBeenCalledWith(202, 'rejected');
   });
@@ -244,7 +244,7 @@ describe('NoteHorsSortieDetail', () => {
   it('turns every action off while one is sent, and says which', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} pendingAction="approved" />);
 
-    expect(actionButtons().map((button) => button.textContent)).toEqual(['Approbation…', 'Rejeter']);
+    expect(actionButtons().map((button) => button.textContent)).toEqual(['Approbation…', 'Refuser']);
     for (const button of actionButtons()) {
       expect((button as HTMLButtonElement).disabled).toBe(true);
       expect(button.getAttribute('aria-busy')).toBe('true');

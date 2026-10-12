@@ -14,7 +14,7 @@ export default function ExpensesTable({ report }: { report: EventExpenseReport }
                 <div className="flex items-start p-4 mt-6 text-green-700 border border-green-200 rounded-lg bg-green-50">
                     <FaCheck className="flex-shrink-0 mt-1 mr-3 text-green-500" />
                     <div>
-                        <p className="font-semibold">Note de frais validée</p>
+                        <p className="font-semibold">Note de frais approuvée</p>
                         <p className="mt-1 text-sm">{report.commentaireStatut}</p>
                     </div>
                 </div>

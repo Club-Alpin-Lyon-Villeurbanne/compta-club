@@ -48,7 +48,7 @@ interface NoteHorsSortieDetailProps {
 
 const ACTION_BUTTONS: Record<TreasuryAction, { label: string; pending: string; icon: IconType; className: string }> = {
     approved: { label: 'Approuver', pending: 'Approbation…', icon: FaCheck, className: 'bg-green-600 hover:bg-green-700' },
-    rejected: { label: 'Rejeter', pending: 'Refus…', icon: FaTimes, className: 'bg-red-600 hover:bg-red-700' },
+    rejected: { label: 'Refuser', pending: 'Refus…', icon: FaTimes, className: 'bg-red-600 hover:bg-red-700' },
     accounted: { label: 'Comptabiliser', pending: 'Comptabilisation…', icon: FaFileInvoiceDollar, className: 'bg-purple-600 hover:bg-purple-700' },
 };
 
@@ -267,7 +267,7 @@ export default function NoteHorsSortieDetail({ note, onAction, pendingAction = n
                             </Field>
                         )}
                         {note.motPourResponsable && (
-                            <Field label="Mot pour le responsable" wide>
+                            <Field label="Mot du demandeur" wide>
                                 <span className="whitespace-pre-line">{note.motPourResponsable}</span>
                             </Field>
                         )}

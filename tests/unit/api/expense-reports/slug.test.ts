@@ -180,7 +180,7 @@ describe('PATCH /api/expense-reports/[slug]', () => {
 
   it('passes on the reason the API refused the update with', async () => {
     vi.mocked(patch).mockRejectedValue(
-      Object.assign(new Error('Erreur 422'), { status: 422, apiMessage: 'Cette demande a déjà été traitée.' })
+      Object.assign(new Error('Erreur 422'), { status: 422, apiMessage: 'Cette note a déjà été traitée.' })
     );
 
     const req = new NextRequest(
@@ -194,7 +194,7 @@ describe('PATCH /api/expense-reports/[slug]', () => {
     const { status, data } = await parseJsonResponse(await PATCH(req, makeContext('202')));
 
     expect(status).toBe(422);
-    expect(data).toEqual({ error: 'Cette demande a déjà été traitée.' });
+    expect(data).toEqual({ error: 'Cette note a déjà été traitée.' });
   });
 
   it('keeps the generic message when the API gives no reason', async () => {

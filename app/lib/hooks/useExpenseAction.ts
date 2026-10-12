@@ -7,7 +7,7 @@ import { noteStatusPhrase } from '@/app/utils/expenseReport';
 const getSwal = () => import('sweetalert2').then(m => m.default);
 type SwalModule = Awaited<ReturnType<typeof getSwal>>;
 
-// Un refus de la plateforme (4xx) dit pourquoi : « Cette demande a déjà été traitée. », message obligatoire…
+// Un refus de la plateforme (4xx) dit pourquoi : « Cette note a déjà été traitée. », message obligatoire…
 function refusalReason(error: unknown): string | null {
   const status = (error as { status?: number } | null)?.status;
   if (!(error instanceof Error) || !status || status < 400 || status >= 500 || status === 401) return null;

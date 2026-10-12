@@ -38,8 +38,8 @@ describe('PATCH /api/expense-reports/[slug] with the real fetchServer', () => {
       () => Response.json(
         {
           title: 'An error occurred',
-          detail: 'status: Cette demande a déjà été traitée.',
-          violations: [{ propertyPath: 'status', message: 'Cette demande a déjà été traitée.', code: null }],
+          detail: 'status: Cette note a déjà été traitée.',
+          violations: [{ propertyPath: 'status', message: 'Cette note a déjà été traitée.', code: null }],
           trace: [{ file: '/var/www/src/Validator/ExpenseReport/StatusTransitionValidator.php', line: 63 }],
         },
         { status: 422, headers: { 'Content-Type': 'application/problem+json' } }
@@ -54,7 +54,7 @@ describe('PATCH /api/expense-reports/[slug] with the real fetchServer', () => {
     const body = await response.text();
 
     expect(response.status).toBe(422);
-    expect(JSON.parse(body)).toEqual({ error: 'Cette demande a déjà été traitée.' });
+    expect(JSON.parse(body)).toEqual({ error: 'Cette note a déjà été traitée.' });
     expect(body).not.toContain('Validator');
   });
 

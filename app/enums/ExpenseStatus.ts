@@ -14,15 +14,15 @@ export const getExpenseStatusTranslation = (status: ExpenseStatus): string => {
     case ExpenseStatus.DRAFT:
       return "Brouillon";
     case ExpenseStatus.SUBMITTED:
-      return "Soumis";
+      return "Soumise";
     case ExpenseStatus.PREAPPROVED:
       return "Validée par le responsable";
     case ExpenseStatus.REJECTED:
-      return "Rejeté";
+      return "Refusée";
     case ExpenseStatus.APPROVED:
-      return "Approuvé";
+      return "Approuvée";
     case ExpenseStatus.ACCOUNTED:
-      return "Comptabilisé";
+      return "Comptabilisée";
     default:
       return "Inconnu";
   }

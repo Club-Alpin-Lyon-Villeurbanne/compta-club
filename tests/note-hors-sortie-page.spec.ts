@@ -4,14 +4,14 @@ import { textAfter } from './pdf-text';
 
 // Notes des données de test : 201 achat soumis sans responsable, 202 formation validée par le
 // responsable (avec une ligne de voiture), 203 achat validé par le responsable, en don, 204 formation
-// approuvée, 205 achat rejeté par la trésorerie, 206 achat refusé, corrigé et renvoyé, de nouveau chez
+// approuvée, 205 achat refusé par la trésorerie, 206 achat refusé, corrigé et renvoyé, de nouveau chez
 // le responsable, 207 brouillon.
 const note = (id: number | string) => `/note-de-frais/note/${id}`;
 
 const dialog = (page: Page) => page.locator('.swal2-popup');
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const actionButtons = (page: Page) =>
-  page.getByRole('button', { name: /^(Approuver|Rejeter|Comptabiliser|Approbation…|Refus…|Comptabilisation…)$/ });
+  page.getByRole('button', { name: /^(Approuver|Refuser|Comptabiliser|Approbation…|Refus…|Comptabilisation…)$/ });
 const status = (page: Page, label: string) => page.getByText(label, { exact: true });
 const summary = (page: Page) => page.getByRole('region', { name: 'Synthèse' });
 const confirmation = (page: Page) => page.getByRole('status').first();
@@ -63,11 +63,11 @@ test.describe('Page of a note hors sortie', () => {
     await expect(summary(page)).toContainText('312.40 € déclarés, dont 25.00 € au-delà des plafonds du club');
     await expect(summary(page)).toContainText('Remboursement demandé');
     await expect(summary(page)).toContainText('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade');
-    await expect(summary(page).getByRole('button', { name: /^(Approuver|Rejeter)$/ })).toHaveText(['Approuver', 'Rejeter']);
+    await expect(summary(page).getByRole('button', { name: /^(Approuver|Refuser)$/ })).toHaveText(['Approuver', 'Refuser']);
 
     await expect(field(page, 'Demandeur')).toHaveText('Thomas Petit');
     await expect(field(page, 'Date de la formation')).toHaveText('25/01/2025');
-    await expect(field(page, 'Mot pour le responsable')).toHaveText('Stage validé par la commission en décembre.');
+    await expect(field(page, 'Mot du demandeur')).toHaveText('Stage validé par la commission en décembre.');
     await expect(field(page, 'Validation du responsable')).toHaveText('Validée par Hugo BLANC le 27/01/2025');
     for (const label of ['Type', 'Commission', 'Objet']) await expect(field(page, label)).toHaveCount(0);
 
@@ -118,9 +118,9 @@ test.describe('Page of a note hors sortie', () => {
     await page.goto(note(201));
 
     await expect(field(page, 'Demandeur')).toHaveText('Lucie Roux');
-    await expect(status(page, 'Soumis')).toBeVisible();
+    await expect(status(page, 'Soumise')).toBeVisible();
     await expect(field(page, 'Validation du responsable')).toHaveText('Aucune : la note va directement à la trésorerie.');
-    await expect(actionButtons(page)).toHaveText(['Approuver', 'Rejeter']);
+    await expect(actionButtons(page)).toHaveText(['Approuver', 'Refuser']);
   });
 
   test('should approve a note validated by the responsable, say so, then offer to account for it', async ({ page }) => {
@@ -131,7 +131,7 @@ test.describe('Page of a note hors sortie', () => {
     await page.locator('.swal2-confirm').click();
 
     await expect(confirmation(page)).toHaveText('Note approuvée. Un mail a été envoyé à Thomas Petit.');
-    await expect(status(page, 'Approuvé')).toBeVisible();
+    await expect(status(page, 'Approuvée')).toBeVisible();
     await expect(field(page, 'Décision')).toHaveText(new RegExp(`^Approuvée par la trésorerie le ${today.source}$`));
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
     expect(await backendReceived(page)).toEqual([
@@ -147,13 +147,13 @@ test.describe('Page of a note hors sortie', () => {
     await page.locator('.swal2-confirm').click();
     await expect.poll(patch.isHeld).toBe(true);
 
-    await expect(actionButtons(page)).toHaveText(['Approbation…', 'Rejeter']);
+    await expect(actionButtons(page)).toHaveText(['Approbation…', 'Refuser']);
     for (const action of await actionButtons(page).all()) {
       await expect(action).toBeDisabled();
       await expect(action).toHaveAttribute('aria-busy', 'true');
     }
     await button(page, 'Approbation…').click({ force: true });
-    await button(page, 'Rejeter').click({ force: true });
+    await button(page, 'Refuser').click({ force: true });
     await expect(dialog(page)).toBeHidden();
 
     patch.release();
@@ -178,7 +178,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(dialog(page)).toBeHidden();
 
     patch.release();
-    await expect(rows(page)).toContainText('Approuvé');
+    await expect(rows(page)).toContainText('Approuvée');
     // Une confirmation ouverte par le second clic attendrait encore une réponse.
     await expect(dialog(page)).toBeHidden();
     expect(await backendReceived(page)).toEqual([
@@ -192,7 +192,7 @@ test.describe('Page of a note hors sortie', () => {
     await button(page, 'Approuver').click();
     await page.locator('.swal2-confirm').click();
 
-    await expect(status(page, 'Approuvé')).toBeVisible();
+    await expect(status(page, 'Approuvée')).toBeVisible();
     expect(await backendReceived(page)).toEqual([
       { method: 'PATCH', path: '/notes-de-frais/201', body: { status: 'approved' } },
     ]);
@@ -201,7 +201,7 @@ test.describe('Page of a note hors sortie', () => {
   test('should require a comment to reject, then show the refusal signed by the treasury', async ({ page }) => {
     await page.goto(note(203));
 
-    await button(page, 'Rejeter').click();
+    await button(page, 'Refuser').click();
     await expect(dialog(page)).toContainText('Motif du rejet');
     await page.locator('.swal2-confirm').click();
     await expect(page.locator('.swal2-validation-message')).toContainText('Vous devez entrer un commentaire');
@@ -211,7 +211,7 @@ test.describe('Page of a note hors sortie', () => {
     await page.locator('.swal2-confirm').click();
 
     await expect(confirmation(page)).toHaveText('Note refusée. Un mail a été envoyé à Camille Faure.');
-    await expect(status(page, 'Rejeté')).toBeVisible();
+    await expect(status(page, 'Refusée')).toBeVisible();
     const refusal = page.getByLabel('Dernier refus');
     await expect(refusal).toContainText(new RegExp(`^Refusée par la trésorerie le ${today.source}`));
     await expect(refusal).not.toContainText('FONTAINE');
@@ -236,7 +236,7 @@ test.describe('Page of a note hors sortie', () => {
     await page.locator('.swal2-confirm').click();
 
     await expect(confirmation(page)).toHaveText('Note comptabilisée. Un mail a été envoyé à Lucie Roux.');
-    await expect(status(page, 'Comptabilisé')).toBeVisible();
+    await expect(status(page, 'Comptabilisée')).toBeVisible();
     await expect(actionButtons(page)).toHaveCount(0);
     expect(await backendReceived(page)).toEqual([
       { method: 'PATCH', path: '/notes-de-frais/204', body: { status: 'accounted' } },
@@ -262,7 +262,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(page.locator('.swal2-icon-info')).toBeVisible();
     await expect(page.locator('.swal2-icon-error')).toHaveCount(0);
     await page.locator('.swal2-confirm').click();
-    await expect(status(page, 'Approuvé')).toBeVisible();
+    await expect(status(page, 'Approuvée')).toBeVisible();
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
     await expect(confirmation(page)).toHaveText('');
     // Seule la décision de l'autre onglet est arrivée
@@ -284,7 +284,7 @@ test.describe('Page of a note hors sortie', () => {
     );
     await page.locator('.swal2-confirm').click();
     await expect(confirmation(page)).toHaveText('');
-    await expect(status(page, 'Comptabilisé')).toBeVisible();
+    await expect(status(page, 'Comptabilisée')).toBeVisible();
     expect(await backendReceived(page)).toHaveLength(1);
   });
 
@@ -310,7 +310,7 @@ test.describe('Page of a note hors sortie', () => {
     await page.goto(note(202));
     const sending = await holdPatch(page, '/api/expense-reports/202');
 
-    await button(page, 'Rejeter').click();
+    await button(page, 'Refuser').click();
     await page.locator('.swal2-textarea').fill('Il manque le programme du stage.');
     await page.locator('.swal2-confirm').click();
     await expect.poll(sending.isHeld).toBe(true);
@@ -340,14 +340,14 @@ test.describe('Page of a note hors sortie', () => {
     await expect(page.locator('.swal2-icon-error')).toBeVisible();
     await page.locator('.swal2-confirm').click();
     // Relue : plus de boutons périmés
-    await expect(status(page, 'Approuvé')).toBeVisible();
+    await expect(status(page, 'Approuvée')).toBeVisible();
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
   });
 
   test('should show the rejected note with its refusal, without action', async ({ page }) => {
     await page.goto(note(205));
 
-    await expect(status(page, 'Rejeté')).toBeVisible();
+    await expect(status(page, 'Refusée')).toBeVisible();
     await expect(page.getByLabel('Dernier refus')).toHaveText(/^Refusée par la trésorerie le 29\/01\/2025\s*Il manque la facture\.$/);
     await expect(actionButtons(page)).toHaveCount(0);
   });
@@ -355,8 +355,8 @@ test.describe('Page of a note hors sortie', () => {
   test('should recall the refusal of a corrected note, and name the responsable it waits for', async ({ page }) => {
     await page.goto(note(206));
 
-    await expect(status(page, 'Soumis')).toBeVisible();
-    await expect(page.getByText("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez la valider après lui.")).toBeVisible();
+    await expect(status(page, 'Soumise')).toBeVisible();
+    await expect(page.getByText("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez l'approuver après lui.")).toBeVisible();
     await expect(page.getByLabel('Dernier refus')).toHaveCount(0);
     await expect(page.getByLabel('Refus précédent')).toHaveText(
       'Refusée par la trésorerie le 26/01, corrigée et renvoyée le 28/01 : « Il manque le ticket de caisse. »'

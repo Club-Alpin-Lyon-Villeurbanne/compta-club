@@ -240,14 +240,14 @@ export function getAmountSummary(report: NonEventExpenseReport): { titre: string
 
 const deCommission = (title: string) => (/^[aeiouyàâäéèêëîïôöûü]/i.test(title) ? `d'${title}` : `de ${title}`);
 
-/** « En attente de Hugo BLANC (responsable d'Escalade). Vous pourrez la valider après lui. » */
+/** « En attente de Hugo BLANC (responsable d'Escalade). Vous pourrez l'approuver après lui. » */
 export function getWaitingForResponsable(report: NonEventExpenseReport): string | null {
     if (!waitsForResponsable(report)) return null;
     const noms = report.valideurs.map(nomComplet).join(' ou ');
     const plusieurs = report.valideurs.length > 1;
     const commission = report.commission?.title ? deCommission(report.commission.title) : 'de commission';
     return `En attente de ${noms} (${plusieurs ? 'responsables' : 'responsable'} ${commission}). `
-        + `Vous pourrez la valider après ${plusieurs ? 'eux' : 'lui'}.`;
+        + `Vous pourrez l'approuver après ${plusieurs ? 'eux' : 'lui'}.`;
 }
 
 const ACTIONS_FAITES: Record<TreasuryAction, string> = {

@@ -118,12 +118,12 @@ describe('fetchServer', () => {
     createFetchMock().on(
       () => true,
       () => Response.json(
-        { detail: 'status: Cette demande a déjà été traitée.', violations: [{ propertyPath: 'status', message: 'Cette demande a déjà été traitée.' }] },
+        { detail: 'status: Cette note a déjà été traitée.', violations: [{ propertyPath: 'status', message: 'Cette note a déjà été traitée.' }] },
         { status: 422 }
       )
     );
 
-    await expect(fetchServer(`${API}/data`)).rejects.toMatchObject({ status: 422, apiMessage: 'Cette demande a déjà été traitée.' });
+    await expect(fetchServer(`${API}/data`)).rejects.toMatchObject({ status: 422, apiMessage: 'Cette note a déjà été traitée.' });
   });
 
   it('throws on network error', async () => {
