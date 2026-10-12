@@ -70,12 +70,12 @@ Actions, comme l'API les permet à un gestionnaire :
 
 Une note `approved` ou `accounted` se télécharge aussi en PDF, depuis sa page ou depuis la liste. Le bouton de la page est désactivé pendant l'envoi d'une action.
 
-Chaque fenêtre de confirmation nomme le demandeur : « Approuver la note de Prénom NOM ? » avec le montant à payer et le mail qui part ; « Comptabiliser la note de Prénom NOM ? Elle sera close : plus aucune action possible. » ; « Refuser la note », avec le « Message au demandeur, envoyé par mail » (une note validée par son responsable lui reviendra : il le verra aussi). Ces fenêtres sont les mêmes sur la page d'une sortie.
+Les fenêtres Approuver et Comptabiliser nomment le demandeur et rappellent le montant : « Approuver la note de Prénom NOM ? » avec le mail qui part ; « Comptabiliser la note de Prénom NOM ? » puis « Elle sera close : plus aucune action possible. ». « Refuser la note » demande le « Message au demandeur, envoyé par mail » (une note validée par son responsable lui reviendra : la fenêtre dit qu'il le verra aussi). Ce sont les mêmes fenêtres sur la page d'une sortie, qui n'a jamais la phrase du responsable.
 
 Une seule action à la fois : pendant l'envoi, les boutons sont désactivés (le hook des actions bloque aussi tout second envoi sur la page d'une sortie). Autour de l'envoi, la page relit la note :
 
 - juste avant : si elle a changé depuis l'affichage (traitée dans un autre onglet), rien ne part. L'API répond 200, sans effet ni mail, à une comptabilisation déjà faite ;
-- juste après : « Note approuvée. Un mail a été envoyé à Prénom NOM. » (refusée, comptabilisée) seulement si la note relue a bien le statut demandé ; le focus va sur cette confirmation. Si la relecture échoue, la note reste affichée et la page dit qu'elle n'a pas pu être relue ;
+- juste après : « Note approuvée. Un mail a été envoyé à Prénom NOM. » (refusée, comptabilisée) seulement si la note relue a bien le statut demandé ; le focus va sur cette confirmation. Si la relecture échoue, la note reste affichée sans bouton d'action et la page dit qu'elle n'a pas pu être relue ;
 - après tout refus de l'API (4xx) : la page montre la note telle qu'elle est.
 
 Une note qui a changé, ou « Cette note a déjà été traitée. » (422), ouvre la fenêtre d'information « Note déjà traitée » avec le statut relu (« Elle est maintenant : approuvée. »), puis le focus va sur le titre ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
@@ -109,7 +109,7 @@ Le navigateur n'appelle que les routes de compta-club, derrière la session (coo
 - L'identifiant d'une sortie (`GET /api/expense-reports/{idSortie}`) aussi : sinon 400 « Identifiant de sortie invalide », sans appel à l'API, qui ignorerait le filtre `event` et renverrait toutes les notes du club.
 - Une erreur garde le statut de l'API et renvoie `{ "error": "…" }`, jamais la trace ni le détail technique.
   - `PATCH /api/expense-reports/{id}` est la seule route qui transmet le message de l'API : pour un refus (4xx), les messages des `violations`, sinon `detail` ; pour une erreur serveur, un message générique.
-  - `GET /api/expense-reports/note/{id}` a ses propres messages : « Note de frais introuvable » pour un 404, un message générique sinon. La page montre « Cette adresse ne correspond à aucune note de frais. » pour un identifiant invalide ou inconnu ; la page d'une sortie, « Cette adresse ne correspond à aucune sortie. » pour un identifiant invalide (400), inconnu (404) ou sans note.
+  - `GET /api/expense-reports/note/{id}` a ses propres messages : « Note de frais introuvable » pour un 404, un message générique sinon. La page montre « Cette adresse ne correspond à aucune note de frais. » pour un identifiant invalide ou inconnu ; la page d'une sortie, « Aucune note de frais à traiter pour cette sortie. » pour un identifiant invalide (400), inconnu (404) ou sans note.
 
 ## Session
 
