@@ -1,7 +1,7 @@
 # Outil de Compta du Club Alpin de Lyon
 
 Cette application permet aux gestionnaires des notes de frais du Club Alpin de Lyon de les traiter : validation, rejet et comptabilisation. Elle est réservée aux administrateurs et aux gestionnaires des notes de frais.
-Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes de sortie par les encadrants, et notes hors sortie (formation, achat). Une note hors sortie est d'abord validée sur le site par le responsable de sa commission, s'il y en a un autre que le demandeur, puis arrive dans compta-club.
+Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes de sortie par les encadrants, et [notes hors sortie](#-notes-hors-sortie) (formation, achat). Une note hors sortie est d'abord validée sur le site par le responsable de sa commission, puis arrive dans compta-club. La trésorerie fait tout ici : le site n'a aucune fonction de trésorerie.
 
 > ⚠️ **Note importante** :
 > - Cette application s'appuie sur [l'API du site web du Club Alpin de Lyon](https://www.clubalpinlyon.fr/api) pour récupérer les données et gérer l'authentification.
@@ -13,9 +13,24 @@ Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes d
 
 - 👀 Visualisation des notes de frais, avec filtres et recherche : par défaut « À valider » (soumises, ou validées par le responsable), filtre par type (sorties, formations, achats) ; la recherche et la date portent sur les sorties.
 - ✅ Validation, rejet et comptabilisation des notes de frais par les gestionnaires.
-- 🧾 Page d'une note hors sortie : demandeur, commission, objet, lien de la formation, validation du responsable, lignes et justificatifs, totaux déclaré et remboursable, avertissements, don ou remboursement, libellé comptable et dernier refus, avec les actions Approuver, Rejeter et Comptabiliser, et le PDF une fois la note approuvée.
+- 🧾 [Notes hors sortie](#-notes-hors-sortie) (formations, achats), après la validation du responsable de commission : liste, page d'une note avec ses justificatifs et ses actions, PDF.
 - 📜 Visualisation de l'historique des frais.
 - 📄 Export PDF des notes approuvées ou comptabilisées, depuis la liste ou la page de la note : un modèle pour les notes de sortie, un autre pour les notes hors sortie.
+
+## **🧾 Notes hors sortie**
+
+Une note hors sortie rembourse une formation ou un achat fait pour le club, sans sortie. Elle passe par deux validations :
+
+1. le responsable de sa commission la valide ou la refuse, sur le site : elle devient « Validée par le responsable » (`preapproved`) ;
+2. la trésorerie l'approuve ou la refuse ici, puis la comptabilise.
+
+Une note sans valideur sur le site (sa commission n'a pas d'autre responsable que le demandeur, ou aucun avec une adresse mail) arrive directement ici, « Soumis » : la liste l'annonce « Directement à la trésorerie ». Une note encore chez son responsable n'apparaît pas dans la liste. Un refus porte toujours un message ; corrigée, la note repasse par le responsable.
+
+- Liste : « À valider » montre les notes soumises et celles validées par le responsable ; le filtre par type sépare sorties, formations et achats ; la recherche et la date ne portent que sur les sorties. Le montant d'une note hors sortie est le total déclaré, figé par la plateforme, avec « dont X € remb. » quand le remboursable est plus bas.
+- Page d'une note (`/note-de-frais/note/{id}`) : demandeur, commission, objet, date, validation du responsable, dépenses et justificatifs, totaux, don ou remboursement, libellé comptable, et les actions Approuver, Rejeter (commentaire obligatoire) et Comptabiliser.
+- PDF : son propre modèle, depuis la liste ou la page, une fois la note approuvée.
+
+Les décisions de la trésorerie sont signées « la trésorerie », ici comme sur le site et dans les mails au demandeur. Le détail est dans [API.md](./API.md#page-dune-note-hors-sortie).
 
 ## **🚀 Prérequis**
 
@@ -65,6 +80,8 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
 ### **🚀 Déploiement sur Vercel**
 
 Le déploiement se fait sur vercel automatiquement lorsque des modifications sont poussées sur la branche `main`. Vérifiez que le projets build correctement en lancant `pnpm build` et en vérifiant que le build se passe sans erreur.
+
+Notes hors sortie : cette version marche avec l'API qui ne les envoie pas encore. Elle se déploie avant la version de la plateforme qui les envoie, avec le statut `preapproved`, et après avoir été vérifiée contre la préprod.
 
 ## **🤝 Contribution**
 

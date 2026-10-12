@@ -75,6 +75,7 @@ Key endpoints:
 - `POST /auth`: Login
 - `POST /token/refresh`: Refresh token
 - `GET /admin/notes-de-frais`: List expense reports (admins and expense report managers only; also used as the auth check)
+- `GET /notes-de-frais/{id}`: Read one expense report (page of a note hors sortie, `/note-de-frais/note/{id}`)
 - `PATCH /notes-de-frais/{id}`: Update expense report status
 
 See `API.md` for API documentation (note: this doc may move to the backend repo in the future).

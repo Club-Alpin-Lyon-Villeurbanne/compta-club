@@ -37,7 +37,13 @@ Cette application utilise uniquement les endpoints suivants de l'API backend :
 
 #### Statuts
 
-`submitted` (soumise), `preapproved` (note hors sortie validée par le responsable de sa commission : elle attend la trésorerie), `approved`, `rejected`, `accounted`.
+| Statut | Libellé dans compta-club | Sens |
+|--------|--------------------------|------|
+| `submitted` | Soumis | Note de sortie envoyée ; note hors sortie sans valideur, venue directement à la trésorerie (celle qui attend encore son responsable n'est pas dans la liste) |
+| `preapproved` | Validée par le responsable | Note hors sortie validée sur le site par le responsable de sa commission : elle attend la trésorerie. Jamais sur une note de sortie |
+| `approved` | Approuvé | Validée par la trésorerie |
+| `rejected` | Rejeté | Refusée, par la trésorerie ou, pour une note hors sortie, par son responsable. Une fois corrigée, une note hors sortie repasse par son responsable, s'il y en a un |
+| `accounted` | Comptabilisé | Comptabilisée |
 
 Le montant affiché d'une note de sortie est calculé par compta-club ; celui d'une note hors sortie est son `totalDeclare`, figé par la plateforme, avec dessous son `totalRemboursable` quand il est plus bas. La date de soumission d'une note hors sortie est son dernier envoi (`dateEnvoi`).
 
