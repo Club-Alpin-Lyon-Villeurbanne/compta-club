@@ -21,7 +21,7 @@ Cette application utilise uniquement les endpoints suivants de l'API backend :
 
 | Endpoint | Méthode | Description |
 |----------|---------|-------------|
-| `/admin/notes-de-frais` | GET | Liste les notes de frais (admins et gestionnaires des notes de frais) : les notes de sortie, et les notes hors sortie (formation, achat) qui attendent la trésorerie ou qu'elle a traitées. Un `HEAD` sur cet endpoint sert aussi à vérifier la connexion |
+| `/admin/notes-de-frais` | GET | Liste les notes de frais (admins et gestionnaires des notes de frais) : les notes de sortie, et les notes hors sortie (formation, achat) qui attendent la trésorerie ou qu'elle a traitées, et celles qu'un responsable a refusées. Un `HEAD` sur cet endpoint sert aussi à vérifier la connexion |
 | `/notes-de-frais/{id}` | GET | Lit une note par son identifiant : la page d'une note hors sortie |
 | `/notes-de-frais/{id}` | PATCH | Met à jour le statut d'une note (approved, rejected, accounted) |
 
@@ -39,19 +39,21 @@ Cette application utilise uniquement les endpoints suivants de l'API backend :
 
 | Statut | Libellé dans compta-club | Sens |
 |--------|--------------------------|------|
-| `submitted` | Soumis | Note de sortie envoyée ; note hors sortie sans valideur, venue directement à la trésorerie (celle qui attend encore son responsable n'est pas dans la liste) |
+| `submitted` | Soumise | Note de sortie envoyée ; note hors sortie sans valideur, venue directement à la trésorerie (celle qui attend encore son responsable n'est pas dans la liste) |
 | `preapproved` | Validée par le responsable | Note hors sortie validée sur le site par le responsable de sa commission : elle attend la trésorerie. Jamais sur une note de sortie |
-| `approved` | Approuvé | Validée par la trésorerie |
-| `rejected` | Rejeté | Refusée, par la trésorerie ou, pour une note hors sortie, par son responsable. Une fois corrigée, une note hors sortie repasse par son responsable, s'il y en a un |
-| `accounted` | Comptabilisé | Comptabilisée |
+| `approved` | Approuvée | Approuvée par la trésorerie |
+| `rejected` | Refusée | Refusée, par la trésorerie ou, pour une note hors sortie, par son responsable. Une fois corrigée, une note hors sortie repasse par son responsable, s'il y en a un |
+| `accounted` | Comptabilisée | Comptabilisée : plus aucune action |
 
-Le montant affiché d'une note de sortie est calculé par compta-club ; celui d'une note hors sortie est son `totalDeclare`, figé par la plateforme, avec dessous son `totalRemboursable` quand il est plus bas. La date de soumission d'une note hors sortie est son dernier envoi (`dateEnvoi`).
+Le montant affiché d'une note de sortie est calculé par compta-club ; celui d'une note hors sortie est son `totalDeclare`, figé par la plateforme, avec dessous son `totalRemboursable` quand il est plus bas (« dont X € remb. », « dont X € dans les plafonds » pour un don). La date de soumission d'une note hors sortie est son dernier envoi (`dateEnvoi`). Sous l'objet, la commission et le circuit (« Validée par … », « Directement à la trésorerie », « renvoyée après un refus ») ; pour une note refusée, qui l'a refusée, d'après `derniereDecision` (« Refusée par la trésorerie le JJ/MM », « Refusée par Prénom NOM (responsable de commission) le JJ/MM »). Le titre de la liste donne le total de l'API pour le statut choisi : « Notes de frais · À valider (19) ».
 
 #### Page d'une note hors sortie
 
-Une note hors sortie (formation, achat) s'ouvre depuis la liste sur sa page, `/note-de-frais/note/{id}` ; une note de sortie se traite sur la page de sa sortie, `/note-de-frais/{idSortie}`. La page lit `GET /notes-de-frais/{id}` et montre les champs de la note hors sortie : `utilisateur`, `type`, `commission`, `objet`, `dateDepense`, `lienFormation` (lien seulement en http ou https), `motPourResponsable`, `validationResponsable`, `lignesAffichees` avec le justificatif de chaque ligne (`piecesJointes`, par `expenseId`), `totalDeclare`, `totalRemboursable`, `avertissements`, `refundRequired`, `libelleComptable`.
+Une note hors sortie (formation, achat) s'ouvre depuis la liste sur sa page, `/note-de-frais/note/{id}` ; une note de sortie se traite sur la page de sa sortie, `/note-de-frais/{idSortie}`. La page lit `GET /notes-de-frais/{id}` et montre les champs de la note hors sortie : `utilisateur`, `type`, `commission`, `objet`, `dateDepense`, `lienFormation` (lien seulement en http ou https), `motPourResponsable` (« Mot du demandeur »), `validationResponsable`, `lignesAffichees` avec le justificatif de chaque ligne (`piecesJointes`, par `expenseId`), `totalDeclare`, `totalRemboursable`, `avertissements`, `refundRequired`, `libelleComptable`.
 
+- Au-dessus du titre : type, commission et demandeur ; sous le badge, avant les boutons : le refus, l'attente du responsable et les `avertissements`.
 - En tête, à côté du titre : le montant à payer (`totalRemboursable`), « À rembourser » tant que le paiement reste à faire (`submitted`, `preapproved`, `approved`), « Remboursement » sinon (note comptabilisée, refusée, brouillon), « Don » pour un don ; l'écart avec `totalDeclare` (« au-delà des plafonds du club »), le libellé comptable et les actions.
+- Dépenses : un seul « Total » quand `totalRemboursable` égale `totalDeclare` ; sinon « Total déclaré » puis, en gras, « Total remboursable » (« Total dans les plafonds du club » pour un don).
 - Refus : le bloc rouge du refus en cours seulement si la note est `rejected` (`derniereDecision`, sinon `commentaireStatut`). Une note refusée puis renvoyée (`derniereDecision` encore un refus, `dateEnvoi` plus récente) garde un rappel neutre : « Refusée par la trésorerie le JJ/MM, corrigée et renvoyée le JJ/MM : « message » ». Un `commentaireStatut` sur une note qui n'est pas refusée n'est jamais montré comme un refus.
 - Décisions signées selon `derniereDecision.niveau` : « la trésorerie » (jamais le nom de son compte), ou le nom du responsable de commission. Une note approuvée ou comptabilisée affiche « Approuvée par la trésorerie le … ».
 - Une note encore chez son responsable (`submitted` avec des `valideurs`) affiche qui elle attend.
@@ -61,29 +63,31 @@ Actions, comme l'API les permet à un gestionnaire :
 
 | Statut de la note | Actions |
 |-------------------|---------|
-| `preapproved` | Approuver (`approved`), Rejeter (`rejected`, avec un commentaire obligatoire) |
-| `submitted` sans `valideurs` | Approuver, Rejeter |
+| `preapproved` | Approuver (`approved`), Refuser (`rejected`, avec un message au demandeur obligatoire) |
+| `submitted` sans `valideurs` | Approuver, Refuser |
 | `submitted` avec des `valideurs` | aucune : la note attend son responsable de commission |
 | `approved` | Comptabiliser (`accounted`) |
 
 Une note `approved` ou `accounted` se télécharge aussi en PDF, depuis sa page ou depuis la liste. Le bouton de la page est désactivé pendant l'envoi d'une action.
 
+Chaque fenêtre de confirmation nomme le demandeur : « Approuver la note de Prénom NOM ? » avec le montant à payer et le mail qui part ; « Comptabiliser la note de Prénom NOM ? Elle sera close : plus aucune action possible. » ; « Refuser la note », avec le « Message au demandeur, envoyé par mail » (une note validée par son responsable lui reviendra : il le verra aussi). Ces fenêtres sont les mêmes sur la page d'une sortie.
+
 Une seule action à la fois : pendant l'envoi, les boutons sont désactivés (le hook des actions bloque aussi tout second envoi sur la page d'une sortie). Autour de l'envoi, la page relit la note :
 
 - juste avant : si elle a changé depuis l'affichage (traitée dans un autre onglet), rien ne part. L'API répond 200, sans effet ni mail, à une comptabilisation déjà faite ;
-- juste après : « Note approuvée. Un mail a été envoyé à Prénom NOM. » (refusée, comptabilisée) seulement si la note relue a bien le statut demandé ;
+- juste après : « Note approuvée. Un mail a été envoyé à Prénom NOM. » (refusée, comptabilisée) seulement si la note relue a bien le statut demandé ; le focus va sur cette confirmation. Si la relecture échoue, la note reste affichée et la page dit qu'elle n'a pas pu être relue ;
 - après tout refus de l'API (4xx) : la page montre la note telle qu'elle est.
 
-Une note qui a changé, ou « Cette demande a déjà été traitée. » (422), ouvre la fenêtre d'information « Note déjà traitée » avec le statut relu (« Elle est maintenant : approuvée. ») ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
+Une note qui a changé, ou « Cette note a déjà été traitée. » (422), ouvre la fenêtre d'information « Note déjà traitée » avec le statut relu (« Elle est maintenant : approuvée. »), puis le focus va sur le titre ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
 
 #### PDF d'une note hors sortie
 
-Son propre modèle, généré dans le navigateur (jsPDF), celui des notes de sortie ne change pas :
+Son propre modèle, généré dans le navigateur (jsPDF) ; celui des notes de sortie ne change pas, à ses libellés près (statut accordé, « STATUT: APPROUVÉE », et « Don ou remboursement ») :
 
 - en-tête : nom du club (`NEXT_PUBLIC_CLUB_NAME`), statut ;
 - en tête du document, comme sur la page : « Note n° <id> », « À rembourser : X € » (« Remboursement : X € » sur une note comptabilisée) ou « Don : X € », l'écart dû aux plafonds (« Y € déclarés, dont Z € au-delà des plafonds du club ») et le libellé comptable ;
 - informations générales : demandeur, type, commission, objet, date de la formation ou de la dépense ;
-- dépenses : `lignesAffichees` (libellé, détail comme « 240 km × 0,26 € », montant), puis `totalDeclare` et `totalRemboursable`. Les montants sont ceux figés par la plateforme, jamais recalculés ;
+- dépenses : `lignesAffichees` (libellé, détail comme « 240 km × 0,26 € », montant), puis les totaux comme sur la page (« Total », ou « Total déclaré » et « Total remboursable », « Total dans les plafonds du club » pour un don). Les montants sont ceux figés par la plateforme, jamais recalculés ;
 - validation : celle du responsable (ou « Aucune : la note est allée directement à la trésorerie. ») et la décision de la trésorerie.
 
 Les phrases sont celles de la page. Un caractère que les polices du PDF ne savent pas écrire (espace fine des nombres de la plateforme, lettre hors du jeu Windows-1252, émoji) est remplacé, pour que le reste de la ligne reste lisible ; un caractère de format invisible (espace sans largeur, liant, sélecteur de variante) est retiré.
@@ -105,7 +109,13 @@ Le navigateur n'appelle que les routes de compta-club, derrière la session (coo
 - L'identifiant d'une sortie (`GET /api/expense-reports/{idSortie}`) aussi : sinon 400 « Identifiant de sortie invalide », sans appel à l'API, qui ignorerait le filtre `event` et renverrait toutes les notes du club.
 - Une erreur garde le statut de l'API et renvoie `{ "error": "…" }`, jamais la trace ni le détail technique.
   - `PATCH /api/expense-reports/{id}` est la seule route qui transmet le message de l'API : pour un refus (4xx), les messages des `violations`, sinon `detail` ; pour une erreur serveur, un message générique.
-  - `GET /api/expense-reports/note/{id}` a ses propres messages : « Note de frais introuvable » pour un 404, un message générique sinon. La page montre « Cette adresse ne correspond à aucune note de frais. » pour un identifiant invalide ou inconnu.
+  - `GET /api/expense-reports/note/{id}` a ses propres messages : « Note de frais introuvable » pour un 404, un message générique sinon. La page montre « Cette adresse ne correspond à aucune note de frais. » pour un identifiant invalide ou inconnu ; la page d'une sortie, « Cette adresse ne correspond à aucune sortie. » pour un identifiant invalide (400), inconnu (404) ou sans note.
+
+## Session
+
+- Une session qui ne peut plus être rafraîchie pendant le travail (`/api/auth/check` répond 401) mène à la connexion, `/?session=expiree&retour=<page quittée>` : « Votre session a expiré. Reconnectez-vous. », puis retour à la page quittée.
+- Une page privée ouverte sans session mène de même à la connexion, `/?retour=<page demandée>` (`middleware.ts` passe le chemin au layout privé par l'en-tête `x-compta-club-path`).
+- `retour` n'est suivi que s'il est un chemin de compta-club : il commence par un seul `/`, sans `\`, sans caractère de contrôle ni autre origine ; sinon la connexion mène à la liste.
 
 ## Architecture
 
