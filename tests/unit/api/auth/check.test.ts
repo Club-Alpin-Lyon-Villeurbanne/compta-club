@@ -33,7 +33,21 @@ describe('GET /api/auth/check', () => {
     expect(data.authenticated).toBe(true);
   });
 
-  it.each([403, 429, 502])('returns 502, not 401, when HEAD returns %i', async (apiStatus) => {
+  it('returns 403, not 401, when the account lost its management rights', async () => {
+    createFetchMock().on(
+      (url) => url.includes('/admin/notes-de-frais'),
+      () => new Response(null, { status: 403 })
+    );
+
+    const req = createMockRequest(CHECK_URL, {
+      cookies: { access_token: 'some-token' },
+    });
+    const { status } = await parseJsonResponse(await GET(req));
+
+    expect(status).toBe(403);
+  });
+
+  it.each([429, 502])('returns 502, not 401, when HEAD returns %i', async (apiStatus) => {
     createFetchMock().on(
       (url) => url.includes('/admin/notes-de-frais'),
       () => new Response(null, { status: apiStatus })
@@ -66,7 +80,7 @@ describe('GET /api/auth/check', () => {
     expect(status).toBe(502);
   });
 
-  it('returns 502 when the retried request fails for another reason than 401', async () => {
+  it('returns 502 but keeps the refreshed tokens when the retried request fails for another reason than 401', async () => {
     createFetchMock()
       .on(
         (url) => url.includes('/admin/notes-de-frais'),
@@ -80,9 +94,11 @@ describe('GET /api/auth/check', () => {
     const req = createMockRequest(CHECK_URL, {
       cookies: { access_token: 'expired', refresh_token: 'valid-refresh' },
     });
-    const { status } = await parseJsonResponse(await GET(req));
+    const response = await GET(req);
 
-    expect(status).toBe(502);
+    expect(response.status).toBe(502);
+    expect(response.cookies.get('access_token')?.value).toBe(mockRefreshResponse.token);
+    expect(response.cookies.get('refresh_token')?.value).toBe(mockRefreshResponse.refresh_token);
   });
 
   it('returns 401 when token expired and no refresh_token', async () => {

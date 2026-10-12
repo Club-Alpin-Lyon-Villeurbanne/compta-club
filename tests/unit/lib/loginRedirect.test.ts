@@ -10,6 +10,15 @@ describe('safeReturnPath', () => {
   );
 
   it.each([
+    ['/note-de-frais/./note/../101', '/note-de-frais/101'],
+    ['/aide page', '/aide%20page'],
+    ['/%2F%2Fevil.example', '/%2F%2Fevil.example'],
+    ['/note-de-frais?retour=//evil#//evil', '/note-de-frais?retour=//evil#//evil'],
+  ])('returns the normalised form of %s', (path, normalised) => {
+    expect(safeReturnPath(path)).toBe(normalised);
+  });
+
+  it.each([
     ['another site, without scheme', '//evil.example'],
     ['another site, behind a backslash', '/\\evil.example'],
     ['a backslash further on', '/note-de-frais\\..\\evil'],
