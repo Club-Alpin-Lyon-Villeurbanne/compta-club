@@ -1,5 +1,7 @@
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { patch } from '../fetchClient';
+import { DEJA_TRAITEE } from '../apiError';
 
 const getSwal = () => import('sweetalert2').then(m => m.default);
 
@@ -10,10 +12,32 @@ function refusalReason(error: unknown): string | null {
   return error.message || null;
 }
 
-export function useExpenseActions(fetchData: () => Promise<void>) {
-  const router = useRouter();
+export type ExpenseAction = 'approved' | 'rejected' | 'accounted';
 
-  const handleAction = async (reportId: number, action: 'approved' | 'rejected' | 'accounted') => {
+interface ExpenseActionsOptions {
+  // Après « Cette demande a déjà été traitée. » : relit la note et donne le libellé de son statut.
+  onAlreadyProcessed?: () => Promise<string | null>;
+}
+
+export function useExpenseActions(fetchData: () => Promise<unknown>, options: ExpenseActionsOptions = {}) {
+  const router = useRouter();
+  const busy = useRef(false);
+  // L'action envoyée, de la confirmation à la relecture de la note
+  const [pendingAction, setPendingAction] = useState<ExpenseAction | null>(null);
+
+  const handleAction = async (reportId: number, action: ExpenseAction) => {
+    // Une action à la fois : un second clic pendant l'envoi ne repart pas, et ne finit pas en « déjà traitée ».
+    if (busy.current) return false;
+    busy.current = true;
+    try {
+      return await runAction(reportId, action);
+    } finally {
+      busy.current = false;
+      setPendingAction(null);
+    }
+  };
+
+  const runAction = async (reportId: number, action: ExpenseAction) => {
     let Swal: Awaited<ReturnType<typeof getSwal>>;
     try {
       Swal = await getSwal();
@@ -60,6 +84,7 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
           return false;
         }
 
+        setPendingAction(action);
         await patch(`/api/expense-reports/${reportId}`, {
           status: 'rejected',
           commentaireStatut: comment,
@@ -81,6 +106,7 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
         }
       }
       if (action !== 'rejected') {
+        setPendingAction(action);
         await patch(`/api/expense-reports/${reportId}`, {
           status: action,
         });
@@ -90,6 +116,19 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
       return true;
     } catch (error) {
       const reason = refusalReason(error);
+      if (reason === DEJA_TRAITEE && options.onAlreadyProcessed) {
+        const statut = await options.onAlreadyProcessed().catch(() => null);
+        Swal.fire({
+          title: 'Note déjà traitée',
+          text: [
+            'Elle a été traitée entre-temps.',
+            statut ? `Elle est maintenant : ${statut}.` : null,
+            action === 'rejected' ? 'Votre refus n\'a pas été envoyé.' : 'Votre action n\'a pas été enregistrée.',
+          ].filter(Boolean).join(' '),
+          icon: 'info',
+        });
+        return false;
+      }
       const text = 'Une erreur est survenue lors de l\'action sur la note de frais.';
       Swal.fire({
         title: 'Erreur',
@@ -103,5 +142,6 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
 
   return {
     handleAction,
+    pendingAction,
   };
 }

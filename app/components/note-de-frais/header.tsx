@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import { config } from '@/app/config';
+import { commissionPictoUrl } from '@/app/utils/helper';
 
 export type HeaderProps = {
     commission: number;
@@ -11,7 +12,7 @@ export type HeaderProps = {
 }
 
 export default function Header({commission, titre, id}: HeaderProps) {
-    const [imgSrc, setImgSrc] = useState(`https://www.clubalpinlyon.fr/ftp/commission/${commission}/picto-dark.png`);
+    const [imgSrc, setImgSrc] = useState(commissionPictoUrl(commission));
 
     return (
         <div className="flex items-center justify-between mb-6">

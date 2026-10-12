@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTotals, formatEuro, getFileUrlByExpenseId, truncateText } from '@/app/utils/helper';
+import { calculateTotals, commissionPictoUrl, formatEuro, getFileUrlByExpenseId, truncateText } from '@/app/utils/helper';
+import { config } from '@/app/config';
 import { Details } from '@/app/interfaces/DetailsInterface';
 
 describe('formatEuro', () => {
@@ -32,6 +33,14 @@ describe('truncateText', () => {
   it('should use default maxLength of 30', () => {
     const text = 'This is a text with exactly thirty-five chars';
     expect(truncateText(text)).toBe('This is a text with exactly th...');
+  });
+});
+
+describe('commissionPictoUrl', () => {
+  it('builds the picto of a commission, or falls back on the default one', () => {
+    expect(commissionPictoUrl(7)).toBe('https://www.clubalpinlyon.fr/ftp/commission/7/picto-dark.png');
+    expect(commissionPictoUrl(null)).toBe(config.DEFAULT_COMMISSION_ICON);
+    expect(commissionPictoUrl(undefined)).toBe(config.DEFAULT_COMMISSION_ICON);
   });
 });
 

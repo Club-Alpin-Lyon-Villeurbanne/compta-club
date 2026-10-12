@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Badge } from './Badge';
 import { config } from '@/app/config';
 import { FaCalendarAlt, FaClipboardList, FaGift, FaMoneyBillWave, FaCopy, FaFilePdf } from 'react-icons/fa';
-import { formatEuro, truncateText } from '@/app/utils/helper';
+import { commissionPictoUrl, formatEuro, truncateText } from '@/app/utils/helper';
 import {
     formatReportDate,
     getReportAmount,
@@ -27,9 +27,7 @@ interface ReportRowProps {
 
 const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
     const commission = getReportCommission(report);
-    const [imgSrc, setImgSrc] = useState(
-        commission ? `https://www.clubalpinlyon.fr/ftp/commission/${commission.id}/picto-dark.png` : config.DEFAULT_COMMISSION_ICON
-    );
+    const [imgSrc, setImgSrc] = useState(commissionPictoUrl(commission?.id));
     const [copied, setCopied] = useState(false);
     const amount = useMemo(() => getReportAmount(report), [report]);
     const title = getReportTitle(report);

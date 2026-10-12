@@ -1,6 +1,10 @@
 import { Details, Transport } from '../interfaces/DetailsInterface';
 import { config } from '../config';
 
+export function commissionPictoUrl(commissionId: number | null | undefined): string {
+    return commissionId ? `https://www.clubalpinlyon.fr/ftp/commission/${commissionId}/picto-dark.png` : config.DEFAULT_COMMISSION_ICON;
+}
+
 export function getFileUrlByExpenseId(piecesJointes: any[], expenseId: string): string | undefined {
     if (!piecesJointes || piecesJointes.length === 0) {
         return undefined;

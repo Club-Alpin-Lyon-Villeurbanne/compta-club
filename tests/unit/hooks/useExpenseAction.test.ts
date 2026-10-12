@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 const state = vi.hoisted(() => ({ failLoad: false, fire: vi.fn() }));
 vi.mock('sweetalert2', () => ({
@@ -81,6 +81,59 @@ describe('useExpenseActions', () => {
       icon: 'error',
       text: 'Une erreur est survenue lors de l\'action sur la note de frais.',
     }));
+  });
+
+  it('sends one action at a time: a second click during the sending does nothing', async () => {
+    state.fire.mockResolvedValue({ isConfirmed: true });
+    let respond: (value: unknown) => void = () => {};
+    vi.mocked(patch).mockReturnValue(new Promise((resolve) => { respond = resolve; }));
+    const fetchData = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => useExpenseActions(fetchData));
+
+    let first: Promise<boolean> = Promise.resolve(false);
+    act(() => { first = result.current.handleAction(202, 'approved'); });
+    await waitFor(() => expect(result.current.pendingAction).toBe('approved'));
+
+    let second = true;
+    await act(async () => { second = await result.current.handleAction(202, 'approved'); });
+    expect(second).toBe(false);
+    expect(state.fire).toHaveBeenCalledTimes(1);
+    expect(patch).toHaveBeenCalledTimes(1);
+
+    await act(async () => { respond({}); expect(await first).toBe(true); });
+    expect(result.current.pendingAction).toBeNull();
+    expect(fetchData).toHaveBeenCalledOnce();
+  });
+
+  it('accepts a new action once the previous one is over', async () => {
+    state.fire.mockResolvedValueOnce({ isConfirmed: false }).mockResolvedValue({ isConfirmed: true });
+    vi.mocked(patch).mockResolvedValue({});
+    const { result } = renderHook(() => useExpenseActions(vi.fn().mockResolvedValue(undefined)));
+
+    await act(async () => { expect(await result.current.handleAction(204, 'accounted')).toBe(false); });
+    await act(async () => { expect(await result.current.handleAction(204, 'accounted')).toBe(true); });
+    expect(patch).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['approved', 'Votre action n\'a pas été enregistrée.'],
+    ['rejected', 'Votre refus n\'a pas été envoyé.'],
+  ] as const)('tells, without an error, that the note was processed in between (%s)', async (action, lost) => {
+    state.fire.mockResolvedValue({ isConfirmed: true, value: 'Il manque la facture.' });
+    vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Cette demande a déjà été traitée.'), { status: 422 }));
+    const onAlreadyProcessed = vi.fn().mockResolvedValue('Approuvé');
+    const { result } = renderHook(() => useExpenseActions(vi.fn(), { onAlreadyProcessed }));
+
+    let outcome = true;
+    await act(async () => { outcome = await result.current.handleAction(202, action); });
+
+    expect(outcome).toBe(false);
+    expect(onAlreadyProcessed).toHaveBeenCalledOnce();
+    expect(state.fire).toHaveBeenLastCalledWith({
+      title: 'Note déjà traitée',
+      text: `Elle a été traitée entre-temps. Elle est maintenant : Approuvé. ${lost}`,
+      icon: 'info',
+    });
   });
 
   it('falls back to an alert when the dialog library cannot be loaded', async () => {

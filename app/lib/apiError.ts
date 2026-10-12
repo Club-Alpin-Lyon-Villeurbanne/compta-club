@@ -1,3 +1,6 @@
+// Refus de la plateforme quand une note a quitté l'étape de celui qui décide (deux onglets, deux trésoriers…).
+export const DEJA_TRAITEE = 'Cette demande a déjà été traitée.';
+
 const asText = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() ? value.trim() : null;
 
