@@ -36,6 +36,16 @@ describe('middleware — rafraîchissement de la session', () => {
     }
   });
 
+  it('overwrites a path header sent by the client', async () => {
+    createFetchMock();
+
+    const response = await middleware(
+      createMockRequest('/note-de-frais/note/202', { headers: { 'x-compta-club-path': '//evil.example' } })
+    );
+
+    expect(response.headers.get('x-middleware-request-x-compta-club-path')).toBe('/note-de-frais/note/202');
+  });
+
   it('refreshes an expired access token and passes the new one to the page', async () => {
     const newToken = jwt(3600);
     let sentBody: unknown;

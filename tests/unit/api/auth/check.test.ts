@@ -33,10 +33,10 @@ describe('GET /api/auth/check', () => {
     expect(data.authenticated).toBe(true);
   });
 
-  it('returns 401 when HEAD returns non-401 error (e.g. 403)', async () => {
+  it.each([403, 429, 502])('returns 502, not 401, when HEAD returns %i', async (apiStatus) => {
     createFetchMock().on(
       (url) => url.includes('/admin/notes-de-frais'),
-      () => new Response(null, { status: 403 })
+      () => new Response(null, { status: apiStatus })
     );
 
     const req = createMockRequest(CHECK_URL, {
@@ -44,7 +44,45 @@ describe('GET /api/auth/check', () => {
     });
     const { status } = await parseJsonResponse(await GET(req));
 
-    expect(status).toBe(401);
+    expect(status).toBe(502);
+  });
+
+  it('returns 502, not 401, when the refresh endpoint is down', async () => {
+    createFetchMock()
+      .on(
+        (url) => url.includes('/admin/notes-de-frais'),
+        () => new Response(null, { status: 401 })
+      )
+      .on(
+        (url) => url.includes('/token/refresh'),
+        () => new Response(null, { status: 503 })
+      );
+
+    const req = createMockRequest(CHECK_URL, {
+      cookies: { access_token: 'expired', refresh_token: 'valid-refresh' },
+    });
+    const { status } = await parseJsonResponse(await GET(req));
+
+    expect(status).toBe(502);
+  });
+
+  it('returns 502 when the retried request fails for another reason than 401', async () => {
+    createFetchMock()
+      .on(
+        (url) => url.includes('/admin/notes-de-frais'),
+        (_url, init) => new Response(null, { status: init?.method === 'HEAD' ? 401 : 500 })
+      )
+      .on(
+        (url) => url.includes('/token/refresh'),
+        () => Response.json(mockRefreshResponse)
+      );
+
+    const req = createMockRequest(CHECK_URL, {
+      cookies: { access_token: 'expired', refresh_token: 'valid-refresh' },
+    });
+    const { status } = await parseJsonResponse(await GET(req));
+
+    expect(status).toBe(502);
   });
 
   it('returns 401 when token expired and no refresh_token', async () => {

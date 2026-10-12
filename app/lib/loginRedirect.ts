@@ -12,7 +12,10 @@ export function safeReturnPath(value: unknown): string | null {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return null;
   if (/[\u0000-\u001f\u007f\\]/.test(value)) return null;
   try {
-    return new URL(value, ORIGIN).origin === ORIGIN ? value : null;
+    // Forme résolue : « /..//site.fr » devient « //site.fr », que certains lecteurs prendraient pour un autre site.
+    const url = new URL(value, ORIGIN);
+    if (url.origin !== ORIGIN || url.pathname.startsWith('//')) return null;
+    return url.pathname + url.search + url.hash;
   } catch {
     return null;
   }

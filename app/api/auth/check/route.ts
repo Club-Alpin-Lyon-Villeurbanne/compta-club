@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { COOKIE_NAMES } from '../../../lib/constants';
 
+// 401 seulement quand l'API dit que la session est finie : le client part alors vers la connexion.
+function sessionExpired() {
+  return NextResponse.json({ error: 'Token invalide ou expiré' }, { status: 401 });
+}
+
+function apiUnavailable() {
+  return NextResponse.json({ error: 'La vérification de la session a échoué' }, { status: 502 });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const accessToken = request.cookies.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
@@ -42,10 +51,7 @@ export async function GET(request: NextRequest) {
         }
       );
       if (!refreshRes.ok) {
-        return NextResponse.json(
-          { error: 'Token invalide ou expiré' },
-          { status: 401 }
-        );
+        return refreshRes.status === 401 ? sessionExpired() : apiUnavailable();
       }
       const data = await refreshRes.json();
       const { token: newAccess, refresh_token: newRefresh } = data;
@@ -61,10 +67,7 @@ export async function GET(request: NextRequest) {
         headers: { 'Authorization': `Bearer ${newAccess}` },
       });
       if (!retry.ok) {
-        return NextResponse.json(
-          { error: 'Token invalide après rafraîchissement' },
-          { status: 401 }
-        );
+        return retry.status === 401 ? sessionExpired() : apiUnavailable();
       }
       // Préparer la réponse avec les cookies mis à jour
       const COOKIE_OPTIONS = {
@@ -81,12 +84,8 @@ export async function GET(request: NextRequest) {
       res.cookies.set(COOKIE_NAMES.REFRESH_TOKEN, newRefresh, COOKIE_OPTIONS);
       return res;
     }
-    // Pour les autres erreurs, renvoyer 401
     if (!response.ok) {
-      return NextResponse.json(
-        { error: 'Token invalide ou expiré' },
-        { status: 401 }
-      );
+      return apiUnavailable();
     }
     
     return NextResponse.json(

@@ -10,9 +10,10 @@ export function createMockRequest(
     method?: string;
     body?: Record<string, unknown>;
     cookies?: Record<string, string>;
+    headers?: Record<string, string>;
   } = {}
 ): NextRequest {
-  const { method = 'GET', body, cookies: cookieMap } = options;
+  const { method = 'GET', body, cookies: cookieMap, headers } = options;
 
   const init: RequestInit & { headers?: Record<string, string> } = { method };
 
@@ -20,6 +21,8 @@ export function createMockRequest(
     init.body = JSON.stringify(body);
     init.headers = { 'Content-Type': 'application/json' };
   }
+
+  if (headers) init.headers = { ...(init.headers ?? {}), ...headers };
 
   // Build Cookie header from map
   if (cookieMap) {
