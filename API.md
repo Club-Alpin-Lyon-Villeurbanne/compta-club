@@ -48,7 +48,7 @@ Une note hors sortie (formation, achat) s'ouvre depuis la liste sur sa page, `/n
 - En tête, à côté du titre : le montant à payer (`totalRemboursable`, « À rembourser » ou « Don »), l'écart avec `totalDeclare` (« au-delà des plafonds du club »), le libellé comptable et les actions.
 - Refus : le bloc rouge du refus en cours seulement si la note est `rejected` (`derniereDecision`, sinon `commentaireStatut`). Une note refusée puis renvoyée (`derniereDecision` encore un refus, `dateEnvoi` plus récente) garde un rappel neutre : « Refusée par la trésorerie le JJ/MM, corrigée et renvoyée le JJ/MM : « message » ». Un `commentaireStatut` sur une note qui n'est pas refusée n'est jamais montré comme un refus.
 - Décisions signées selon `derniereDecision.niveau` : « la trésorerie » (jamais le nom de son compte), ou le nom du responsable de commission. Une note approuvée ou comptabilisée affiche « Approuvée par la trésorerie le … ».
-- Une note encore chez son responsable (`submitted` avec des `valideurs`) affiche qui elle attend ; une note `submitted` sans valideur, que sa commission n'a pas de responsable.
+- Une note encore chez son responsable (`submitted` avec des `valideurs`) affiche qui elle attend ; une note `submitted` sans valideur, ou approuvée par la trésorerie (`derniereDecision.niveau`) sans `validationResponsable` (elle n'approuve directement qu'une note sans valideur), que sa commission n'a pas de responsable.
 
 Actions, comme l'API les permet à un gestionnaire :
 
@@ -59,6 +59,8 @@ Actions, comme l'API les permet à un gestionnaire :
 | `submitted` avec des `valideurs` | aucune : la note attend son responsable de commission |
 | `approved` | Comptabiliser (`accounted`) |
 
+Une note `approved` ou `accounted` se télécharge aussi en PDF, depuis sa page ou depuis la liste.
+
 Une seule action à la fois : pendant l'envoi, les boutons sont désactivés (le hook des actions bloque aussi tout second envoi sur la page d'une sortie). Autour de l'envoi, la page relit la note :
 
 - juste avant : si elle a changé depuis l'affichage (traitée dans un autre onglet), rien ne part. L'API répond 200, sans effet ni mail, à une comptabilisation déjà faite ;
@@ -66,6 +68,19 @@ Une seule action à la fois : pendant l'envoi, les boutons sont désactivés (le
 - après tout refus de l'API (4xx) : la page montre la note telle qu'elle est.
 
 Une note qui a changé, ou « Cette demande a déjà été traitée. » (422), ouvre la fenêtre d'information « Note déjà traitée » avec le statut relu (« Elle est maintenant : approuvée. ») ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
+
+#### PDF d'une note hors sortie
+
+Son propre modèle, généré dans le navigateur (jsPDF), celui des notes de sortie ne change pas :
+
+- en-tête : nom du club (`NEXT_PUBLIC_CLUB_NAME`), statut ; demandeur, type, commission, objet, date de la formation ou de la dépense ;
+- dépenses : `lignesAffichees` (libellé, détail comme « 240 km × 0,26 € », montant), puis `totalDeclare` et `totalRemboursable`. Les montants sont ceux figés par la plateforme, jamais recalculés ;
+- validation : celle du responsable (ou « Aucune, la commission n'a pas de responsable. ») et la décision de la trésorerie ;
+- récapitulatif : « À rembourser » ou « Don », l'écart dû aux plafonds, le choix entre remboursement et don, le libellé comptable.
+
+Les phrases sont celles de la page. Un caractère que les polices du PDF ne savent pas écrire (espace fine des nombres de la plateforme, lettre hors du jeu Windows-1252, émoji) est remplacé, pour que le reste de la ligne reste lisible.
+
+Nom du fichier : `note-de-frais-<achat|formation>-<id>-<NOM>.pdf`, par exemple `note-de-frais-formation-202-PETIT.pdf` ; le nom du demandeur est mis en majuscules sans accents, tout autre caractère devient un tiret.
 
 ## Routes internes
 
