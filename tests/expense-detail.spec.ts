@@ -61,7 +61,7 @@ test.describe('Error Handling on Detail Page', () => {
   test('should lead back to the list from a sortie without expense report', async ({ page }) => {
     await page.goto('/note-de-frais/999999');
 
-    await expect(page.getByText('Cette adresse ne correspond à aucune sortie.')).toBeVisible();
+    await expect(page.getByText('Aucune note de frais à traiter pour cette sortie.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Actualiser la page' })).toHaveCount(0);
     await page.getByRole('link', { name: 'Retour à la liste des notes' }).click();
     await expect(page).toHaveURL('/note-de-frais');
@@ -70,7 +70,7 @@ test.describe('Error Handling on Detail Page', () => {
   test('should lead back to the list, not show every note of the club, for an address without a sortie id', async ({ page }) => {
     await page.goto('/note-de-frais/note');
 
-    await expect(page.getByText('Cette adresse ne correspond à aucune sortie.')).toBeVisible();
+    await expect(page.getByText('Aucune note de frais à traiter pour cette sortie.')).toBeVisible();
     expect((await page.request.get('/api/expense-reports/note')).status()).toBe(400);
   });
 
@@ -80,5 +80,17 @@ test.describe('Error Handling on Detail Page', () => {
 
     await expect(page.getByRole('alert').filter({ hasText: 'chargement' }))
       .toHaveText(/^Erreur : Une erreur est survenue lors du chargement des données/);
+    await page.getByRole('link', { name: 'Retour à la liste' }).click();
+    await expect(page).toHaveURL('/note-de-frais');
   });
+
+  for (const [name, path] of [['Aide', '/aide'], ['À propos', '/a-propos']]) {
+    test(`should tell a screen reader that ${name} is the current page`, async ({ page }) => {
+      await page.goto(path);
+
+      const menu = page.getByRole('navigation');
+      await expect(menu.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'page');
+      await expect(menu.getByRole('link', { name: 'Notes de frais', exact: true })).not.toHaveAttribute('aria-current', 'page');
+    });
+  }
 });

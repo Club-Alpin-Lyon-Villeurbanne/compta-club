@@ -5,6 +5,7 @@ import { ExpenseReport, NonEventExpenseReport } from "@/app/interfaces/noteDeFra
 import { get } from "@/app/lib/fetchClient";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
 import { getActionConfirmation, getDecisionSummary, isEventReport, TreasuryAction } from "@/app/utils/expenseReport";
+import { useDocumentTitle } from "@/app/lib/hooks/useDocumentTitle";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import NoteHorsSortieDetail from "@/app/components/note-de-frais/NoteHorsSortieDetail";
@@ -67,15 +68,7 @@ export default function NoteHorsSortiePage() {
     fetchNote();
   }, [fetchNote]);
 
-  // Deux notes ouvertes dans deux onglets se distinguent par leur titre.
-  useEffect(() => {
-    if (!note) return;
-    const previous = document.title;
-    document.title = `Note ${note.id} : ${note.objet} · Compta Club`;
-    return () => {
-      document.title = previous;
-    };
-  }, [note]);
+  useDocumentTitle(note ? `Note ${note.id} : ${note.objet} · Compta Club` : null);
 
   if (error === "introuvable") return <AdresseIntrouvable>Cette adresse ne correspond à aucune note de frais.</AdresseIntrouvable>;
   if (error) return <ErrorMessage message="Une erreur est survenue lors du chargement de la note de frais" variant="page" />;

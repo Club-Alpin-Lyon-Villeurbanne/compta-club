@@ -10,7 +10,15 @@ import LoadingSpinner from "@/app/components/LoadingSpinner";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import EventInfo from "@/app/components/EventInfo";
 import ExpensesList from "@/app/components/note-de-frais/ExpensesTables/ExpensesList";
+import { useDocumentTitle } from "@/app/lib/hooks/useDocumentTitle";
 import AdresseIntrouvable from "@/app/components/note-de-frais/AdresseIntrouvable";
+
+const RetourALaListe = () => (
+  <Link href="/note-de-frais" className="inline-flex items-center mb-5 text-sm text-blue-700 hover:underline">
+    <FaArrowLeft className="mr-2" aria-hidden="true" />
+    Retour à la liste
+  </Link>
+);
 
 const ExpenseReportContent = ({
   event,
@@ -22,10 +30,7 @@ const ExpenseReportContent = ({
   fetchData: () => Promise<void>;
 }) => (
   <div className="container max-w-6xl px-4 mx-auto">
-    <Link href="/note-de-frais" className="inline-flex items-center mb-5 text-sm text-blue-700 hover:underline">
-      <FaArrowLeft className="mr-2" aria-hidden="true" />
-      Retour à la liste
-    </Link>
+    <RetourALaListe />
     <Header commission={event.commission.id} titre={event.titre} id={event.id} />
     <EventInfo event={event} />
     <div className="p-6 bg-white rounded-lg shadow-sm">
@@ -98,18 +103,10 @@ export default function ExpenseReportPage() {
     }
   }, [slug, fetchExpenseReports]);
 
-  // Comme sur la page d'une note : l'onglet nomme ce qu'il montre.
-  useEffect(() => {
-    if (!event) return;
-    const previous = document.title;
-    document.title = `${event.titre} · Compta Club`;
-    return () => {
-      document.title = previous;
-    };
-  }, [event]);
+  useDocumentTitle(event ? `${event.titre} · Compta Club` : null);
 
   if (introuvable) {
-    return <AdresseIntrouvable>Cette adresse ne correspond à aucune sortie.</AdresseIntrouvable>;
+    return <AdresseIntrouvable>Aucune note de frais à traiter pour cette sortie.</AdresseIntrouvable>;
   }
 
   if (isLoading) {
@@ -117,7 +114,12 @@ export default function ExpenseReportPage() {
   }
 
   if (error) {
-    return <ErrorMessage message={error} />;
+    return (
+      <div className="container max-w-6xl px-4 mx-auto">
+        <RetourALaListe />
+        <ErrorMessage message={error} />
+      </div>
+    );
   }
 
   if (!event || !expenseReports) {
