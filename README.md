@@ -13,6 +13,7 @@ Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes d
 
 - 👀 Visualisation des notes de frais, avec filtres et recherche : par défaut « À valider » (soumises, ou validées par le responsable), filtre par type (sorties, formations, achats) ; la recherche et la date portent sur les sorties.
 - ✅ Validation, rejet et comptabilisation des notes de frais par les gestionnaires.
+- 🧾 Page d'une note hors sortie : demandeur, commission, objet, lien de la formation, validation du responsable, lignes et justificatifs, totaux déclaré et remboursable, avertissements, don ou remboursement, libellé comptable et dernier refus, avec les actions Approuver, Rejeter et Comptabiliser.
 - 📜 Visualisation de l'historique des frais.
 - 📄 Export PDF des notes de sortie approuvées/comptabilisées.
 
@@ -111,10 +112,11 @@ Les tests unitaires couvrent :
 - Fonctions d'authentification
 - Helpers et store Zustand
 - Liste des notes de frais (notes de sortie et hors sortie, filtres)
+- Page d'une note hors sortie (affichage, actions) et routes proxy (identifiant invalide, refus de l'API transmis sans détail technique)
 
 ### **Tests E2E avec Playwright**
 
-Les tests end-to-end sont implémentés avec Playwright. Ils n'ont besoin ni du backend ni d'identifiants : Playwright construit l'application en mode production, la sert sur le port 3100 et la branche sur un faux backend (`tests/mocks/fake-backend.ts`, données dans `tests/mocks/fixtures.ts`) qui reproduit les formats de l'API de production. Les notes hors sortie ne sont servies qu'aux tests qui les demandent (`login(page, { notesHorsSortie: true })`) : les tests des notes de sortie gardent leurs données. Le build écrase `.next` : ne lancez pas `pnpm dev` en même temps.
+Les tests end-to-end sont implémentés avec Playwright. Ils n'ont besoin ni du backend ni d'identifiants : Playwright construit l'application en mode production, la sert sur le port 3100 et la branche sur un faux backend (`tests/mocks/fake-backend.ts`, données dans `tests/mocks/fixtures.ts`) qui reproduit les formats de l'API de production. Les notes hors sortie ne sont servies qu'aux tests qui les demandent (`login(page, { notesHorsSortie: true })`) : les tests des notes de sortie gardent leurs données. Le faux backend sert aussi une note par son identifiant et refuse les décisions comme la plateforme (« Cette demande a déjà été traitée. », commentaire obligatoire au refus d'une note hors sortie). Le build écrase `.next` : ne lancez pas `pnpm dev` en même temps.
 
 1. Lancez les tests avec la commande :
    ```bash
