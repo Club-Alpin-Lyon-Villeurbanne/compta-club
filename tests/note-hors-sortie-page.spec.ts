@@ -1,5 +1,6 @@
 import { Page, Route } from '@playwright/test';
-import { test, expect, backendReceived, login, rows } from './test-utils';
+import { test, expect, backendReceived, downloadedPdf, login, rows } from './test-utils';
+import { textAfter } from './pdf-text';
 
 // Notes des données de test : 201 achat soumis sans responsable, 202 formation validée par le
 // responsable (avec une ligne de voiture), 203 achat validé par le responsable, en don, 204 formation
@@ -400,5 +401,75 @@ test.describe('Page of a note hors sortie', () => {
     expect(await backendReceived(page)).toEqual([
       { method: 'PATCH', path: '/notes-de-frais/203', body: { status: 'rejected' } },
     ]);
+  });
+});
+
+test.describe('PDF of a note hors sortie', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page, { notesHorsSortie: true });
+  });
+
+  const approve = async (page: Page) => {
+    await button(page, 'Approuver').click();
+    await page.locator('.swal2-confirm').click();
+    await expect(confirmation(page)).toContainText('Note approuvée.');
+  };
+
+  const downloadFromSummary = async (page: Page) => {
+    const download = page.waitForEvent('download');
+    await summary(page).getByRole('button', { name: 'Télécharger en PDF' }).click();
+    return downloadedPdf(await download);
+  };
+
+  test('should download the PDF of a formation once approved, with its car line', async ({ page }) => {
+    await page.goto(note(202));
+    await expect(summary(page).getByRole('button', { name: 'Télécharger en PDF' })).toHaveCount(0);
+    await approve(page);
+
+    const pdf = await downloadFromSummary(page);
+
+    expect(pdf.fileName).toBe('note-de-frais-formation-202-PETIT.pdf');
+    expect(pdf.raw.startsWith('%PDF')).toBe(true);
+    expect(pdf.texts).toContain('STATUT : APPROUVÉE');
+    expect(textAfter(pdf.texts, 'Demandeur')).toBe('Thomas Petit');
+    expect(textAfter(pdf.texts, 'Type')).toBe('Formation');
+    expect(textAfter(pdf.texts, 'Commission')).toBe('Escalade');
+    expect(textAfter(pdf.texts, 'Objet')).toBe('Formation initiateur escalade');
+    expect(textAfter(pdf.texts, 'Date de la formation')).toBe('25/01/2025');
+    expect(textAfter(pdf.texts, 'Voiture')).toBe('240 km × 0,26\u00a0€');
+    expect(textAfter(pdf.texts, 'Total déclaré')).toBe('312.40 €');
+    expect(textAfter(pdf.texts, 'Total remboursable')).toBe('287.40 €');
+    expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Validée par Hugo BLANC le 27/01/2025');
+    expect(textAfter(pdf.texts, 'Décision')).toMatch(new RegExp(`^Approuvée par la trésorerie le ${today.source}$`));
+    expect(pdf.texts).toContain('312.40 € déclarés, dont 25.00 € au-delà des plafonds du club');
+    expect(pdf.texts).toContain('Remboursement demandé');
+    expect(textAfter(pdf.texts, 'Libellé comptable')).toBe('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade');
+  });
+
+  test('should download the PDF of an achat given as a don, its text as typed', async ({ page }) => {
+    await page.goto(note(203));
+    await approve(page);
+
+    const pdf = await downloadFromSummary(page);
+
+    expect(pdf.fileName).toBe('note-de-frais-achat-203-FAURE.pdf');
+    expect(textAfter(pdf.texts, 'Type')).toBe('Achat');
+    expect(textAfter(pdf.texts, 'Objet')).toBe("Sac <b>30 L</b> & cordelette d'attache");
+    expect(textAfter(pdf.texts, 'Date de la dépense')).toBe('18/01/2025');
+    expect(pdf.texts).toContain('Don : 42.00 €');
+    expect(pdf.texts).toContain('Don au club');
+  });
+
+  test('should download the PDF of an accounted achat, its only action', async ({ page }) => {
+    await page.goto(note(208));
+    await expect(actionButtons(page)).toHaveCount(0);
+    await expect(summary(page).getByRole('button', { name: 'Télécharger en PDF' })).toBeVisible();
+
+    const pdf = await downloadFromSummary(page);
+
+    expect(pdf.fileName).toBe('note-de-frais-achat-208-FAURE.pdf');
+    expect(pdf.texts).toContain('STATUT : COMPTABILISÉE');
+    expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune, la commission n\'a pas de responsable.');
+    expect(textAfter(pdf.texts, 'Total remboursable')).toBe('32.50 €');
   });
 });

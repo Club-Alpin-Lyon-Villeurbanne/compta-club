@@ -1,5 +1,6 @@
 import { Page } from '@playwright/test';
-import { test, expect, login, rows } from './test-utils';
+import { test, expect, downloadedPdf, login, rows } from './test-utils';
+import { textAfter } from './pdf-text';
 
 const statusSelect = (page: Page) => page.getByRole('combobox', { name: 'Statut' });
 const typeSelect = (page: Page) => page.getByRole('combobox', { name: 'Type de note' });
@@ -103,10 +104,11 @@ test.describe('Notes hors sortie in the list', () => {
     // Une ligne de badge fait 24 px, deux en font 40.
     expect(preapproved!.height).toBeLessThan(48);
 
-    await statusSelect(page).selectOption('approved');
-    await expect(rows(page)).toHaveText([/Recyclage initiateur randonnée/, /Randonnee Vercors/]);
-    const withoutPdf = await badge('Recyclage initiateur randonnée').boundingBox();
-    const withPdf = await badge('Randonnee Vercors').boundingBox();
+    await statusSelect(page).selectOption('Toutes');
+    await expect(row(page, 'Recyclage initiateur randonnée').getByRole('button', { name: 'Télécharger en PDF' })).toBeVisible();
+    await expect(row(page, 'Formation initiateur escalade').getByRole('button', { name: 'Télécharger en PDF' })).toHaveCount(0);
+    const withoutPdf = await badge('Formation initiateur escalade').boundingBox();
+    const withPdf = await badge('Recyclage initiateur randonnée').boundingBox();
     expect(withoutPdf!.x).toBe(withPdf!.x);
   });
 
@@ -248,14 +250,27 @@ test.describe('Notes hors sortie in the list', () => {
     await expect(dateInput(page)).toBeEnabled();
   });
 
-  test('should not offer the sortie PDF for a note hors sortie', async ({ page }) => {
+  test('should download the PDF of an approved note hors sortie from the list', async ({ page }) => {
     await login(page, { notesHorsSortie: true });
 
     await statusSelect(page).selectOption('approved');
 
     await expect(rows(page)).toHaveText([/Recyclage initiateur randonnée/, /Randonnee Vercors/]);
     await expect(row(page, 'Randonnee Vercors').getByRole('button', { name: 'Télécharger en PDF' })).toHaveCount(1);
-    await expect(row(page, 'Recyclage initiateur randonnée').getByRole('button', { name: 'Télécharger en PDF' })).toHaveCount(0);
+    const download = page.waitForEvent('download');
+    await row(page, 'Recyclage initiateur randonnée').getByRole('button', { name: 'Télécharger en PDF' }).click();
+
+    const pdf = await downloadedPdf(await download);
+    expect(pdf.fileName).toBe('note-de-frais-formation-204-ROUX.pdf');
+    expect(pdf.raw.startsWith('%PDF')).toBe(true);
+    expect(pdf.texts).toContain('STATUT : APPROUVÉE');
+    expect(textAfter(pdf.texts, 'Demandeur')).toBe('Lucie Roux');
+    expect(textAfter(pdf.texts, 'Objet')).toBe('Recyclage initiateur randonnée');
+    expect(textAfter(pdf.texts, 'Date de la formation')).toBe('11/01/2025');
+    expect(textAfter(pdf.texts, 'Stage')).toBe('120.00 €');
+    expect(textAfter(pdf.texts, 'Total remboursable')).toBe('120.00 €');
+    expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune, la commission n\'a pas de responsable.');
+    expect(textAfter(pdf.texts, 'Libellé comptable')).toBe('ROUX Lucie NDF 11/01/2025 Recyclage initiateur randonnée');
   });
 
   test('should copy the accounting label of a note hors sortie', async ({ page, context }) => {

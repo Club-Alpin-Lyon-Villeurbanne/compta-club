@@ -69,11 +69,18 @@ describe('ReportTable', () => {
     expect(titles()).toEqual(['Sortie Mont Blanc']);
   });
 
-  it('offers the PDF of an approved note de sortie only', () => {
+  it('offers the PDF of an approved note, de sortie or not', () => {
     act(() => useStore.getState().setStatus('approved'));
     render(<ReportTable reports={reports} isLoading={false} />);
 
     expect(within(rowOf('Randonnee Vercors')).queryByTitle('Télécharger en PDF')).not.toBeNull();
-    expect(within(rowOf('Recyclage initiateur randonnée')).queryByTitle('Télécharger en PDF')).toBeNull();
+    expect(within(rowOf('Recyclage initiateur randonnée')).queryByTitle('Télécharger en PDF')).not.toBeNull();
+  });
+
+  it('offers no PDF before the treasury approves a note hors sortie', () => {
+    render(<ReportTable reports={reports} isLoading={false} />);
+
+    expect(within(rowOf('Formation initiateur escalade')).queryByTitle('Télécharger en PDF')).toBeNull();
+    expect(within(rowOf('Cordelettes pour la SAE')).queryByTitle('Télécharger en PDF')).toBeNull();
   });
 });

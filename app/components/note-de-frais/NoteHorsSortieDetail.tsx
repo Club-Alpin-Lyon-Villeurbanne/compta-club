@@ -9,6 +9,7 @@ import {
     FaExclamationTriangle,
     FaExternalLinkAlt,
     FaFileInvoiceDollar,
+    FaFilePdf,
     FaGift,
     FaInfoCircle,
     FaMoneyBillWave,
@@ -18,11 +19,13 @@ import { NonEventExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
 import { config } from '@/app/config';
 import { commissionPictoUrl, formatEuro, getFileUrlByExpenseId } from '@/app/utils/helper';
 import {
+    canDownloadPdf,
     formatReportDate,
     getAmountSummary,
     getApproval,
     getExpenseDateLabel,
     getLastRefusal,
+    getRefundChoice,
     getReportTypeLabel,
     getStatusNote,
     getTreasuryActions,
@@ -117,7 +120,13 @@ export default function NoteHorsSortieDetail({ note, onAction, pendingAction = n
     const approval = getApproval(note);
     const actions = getTreasuryActions(note);
     const busy = pendingAction !== null;
+    const pdf = canDownloadPdf(note);
     const withDetail = note.lignesAffichees.some((ligne) => ligne.detail);
+
+    const downloadPdf = useCallback(async () => {
+        const { generateNoteHorsSortiePDF } = await import('@/app/utils/noteHorsSortiePdf');
+        generateNoteHorsSortiePDF(note);
+    }, [note]);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -161,16 +170,11 @@ export default function NoteHorsSortieDetail({ note, onAction, pendingAction = n
                         {summary.detail && <p className="mt-1 text-sm text-gray-600">{summary.detail}</p>}
                         <p className="mt-2 text-sm text-gray-700">
                             {note.refundRequired ? (
-                                <>
-                                    <FaMoneyBillWave className="inline-block mr-1 text-green-600" aria-hidden="true" />
-                                    Remboursement demandé
-                                </>
+                                <FaMoneyBillWave className="inline-block mr-1 text-green-600" aria-hidden="true" />
                             ) : (
-                                <>
-                                    <FaGift className="inline-block mr-1 text-blue-600" aria-hidden="true" />
-                                    Don au club
-                                </>
+                                <FaGift className="inline-block mr-1 text-blue-600" aria-hidden="true" />
                             )}
+                            {getRefundChoice(note)}
                         </p>
                         {note.libelleComptable && (
                             <div className="mt-3">
@@ -180,7 +184,7 @@ export default function NoteHorsSortieDetail({ note, onAction, pendingAction = n
                                 </div>
                             </div>
                         )}
-                        {actions.length > 0 && (
+                        {(actions.length > 0 || pdf) && (
                             <div className="flex flex-wrap gap-2 mt-4">
                                 {actions.map((action) => {
                                     const { label, pending, icon: Icon, className } = ACTION_BUTTONS[action];
@@ -198,6 +202,16 @@ export default function NoteHorsSortieDetail({ note, onAction, pendingAction = n
                                         </button>
                                     );
                                 })}
+                                {pdf && (
+                                    <button
+                                        type="button"
+                                        onClick={downloadPdf}
+                                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200"
+                                    >
+                                        <FaFilePdf className="mr-2 text-red-600" aria-hidden="true" />
+                                        Télécharger en PDF
+                                    </button>
+                                )}
                             </div>
                         )}
                     </section>

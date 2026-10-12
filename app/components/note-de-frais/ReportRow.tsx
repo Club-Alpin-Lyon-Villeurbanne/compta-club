@@ -7,6 +7,7 @@ import { config } from '@/app/config';
 import { FaCalendarAlt, FaClipboardList, FaGift, FaMoneyBillWave, FaCopy, FaFilePdf } from 'react-icons/fa';
 import { commissionPictoUrl, formatEuro, truncateText } from '@/app/utils/helper';
 import {
+    canDownloadPdf,
     formatReportDate,
     getReportAmount,
     getReportCommission,
@@ -19,7 +20,6 @@ import {
     getReportTypeLabel,
     isEventReport,
 } from '@/app/utils/expenseReport';
-import { ExpenseStatus } from '@/app/enums/ExpenseStatus';
 
 interface ReportRowProps {
     report: ExpenseReport;
@@ -49,14 +49,16 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
     }, [textToCopy]);
 
     const handleDownloadPDF = useCallback(async () => {
-        if (!isEventReport(report)) return;
-        const { generateExpenseReportPDF } = await import('@/app/utils/pdfGenerator');
-        generateExpenseReportPDF(report);
+        if (isEventReport(report)) {
+            const { generateExpenseReportPDF } = await import('@/app/utils/pdfGenerator');
+            generateExpenseReportPDF(report);
+        } else {
+            const { generateNoteHorsSortiePDF } = await import('@/app/utils/noteHorsSortiePdf');
+            generateNoteHorsSortiePDF(report);
+        }
     }, [report]);
 
-    // Le PDF d'une note hors sortie n'existe pas encore : le modèle des sorties lui serait faux.
-    const canDownloadPDF = isEventReport(report) &&
-        (report.status === ExpenseStatus.APPROVED || report.status === ExpenseStatus.ACCOUNTED);
+    const canDownloadPDF = canDownloadPdf(report);
 
     return (
         <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">

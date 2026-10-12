@@ -2,8 +2,11 @@
  * Utilitaires pour les tests Playwright
  */
 
-import { Page, expect, test as base } from '@playwright/test';
+import { Download, Page, expect, test as base } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { E2E_CREDENTIALS } from './mocks/fake-backend';
+import { pdfTexts } from './pdf-text';
 import { FAKE_BACKEND_URL } from '../playwright.config';
 
 export const TEST_CREDENTIALS = E2E_CREDENTIALS;
@@ -98,4 +101,15 @@ export async function failNextListRequest(page: Page, status: number) {
     headers: { ...(await backendSession(page)), 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   });
+}
+
+/**
+ * Le PDF téléchargé : son nom, son contenu brut et ses textes. Avec la variable PDF_SAMPLES_DIR, il
+ * est aussi copié dans ce dossier, pour le regarder.
+ */
+export async function downloadedPdf(download: Download) {
+  const fileName = download.suggestedFilename();
+  if (process.env.PDF_SAMPLES_DIR) await download.saveAs(join(process.env.PDF_SAMPLES_DIR, fileName));
+  const bytes = readFileSync((await download.path())!);
+  return { fileName, raw: bytes.toString('latin1'), texts: pdfTexts(bytes) };
 }

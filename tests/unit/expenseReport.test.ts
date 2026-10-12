@@ -3,6 +3,7 @@ import { ExpenseReport, NonEventExpenseReport } from '@/app/interfaces/noteDeFra
 import { ExpenseStatus, getExpenseStatusColor, getExpenseStatusTranslation } from '@/app/enums/ExpenseStatus';
 import {
   buildReportListParams,
+  canDownloadPdf,
   formatReportDate,
   decisionPhrase,
   getActionConfirmation,
@@ -12,6 +13,7 @@ import {
   getLastRefusal,
   getNonEventReportDetails,
   getRefundableNote,
+  getRefundChoice,
   getReportAmount,
   getReportCommission,
   getReportDate,
@@ -192,9 +194,21 @@ describe('getValidationResponsable', () => {
     expect(getValidationResponsable(noteHorsSortie(201))).toBe('Aucune, la commission n\'a pas de responsable.');
   });
 
-  it('says nothing for a note decided without validation by a responsable, or still waiting for one', () => {
-    expect(getValidationResponsable(noteHorsSortie(204))).toBeNull();
+  it('says that a note approved without validation went straight to the treasury', () => {
+    expect(getValidationResponsable(noteHorsSortie(204))).toBe('Aucune, la commission n\'a pas de responsable.');
+    expect(getValidationResponsable(noteHorsSortie(208))).toBe('Aucune, la commission n\'a pas de responsable.');
+  });
+
+  it('says nothing for a note refused or still waiting for its responsable', () => {
     expect(getValidationResponsable(noteHorsSortie(206))).toBeNull();
+    expect(getValidationResponsable(noteHorsSortie(205, { validationResponsable: null }))).toBeNull();
+  });
+
+  it('says nothing for a note approved without validation by anyone but the treasury', () => {
+    const derniereDecision = noteHorsSortie(204).derniereDecision!;
+    expect(getValidationResponsable(noteHorsSortie(204, { derniereDecision: { ...derniereDecision, niveau: 'responsable' } }))).toBeNull();
+    expect(getValidationResponsable(noteHorsSortie(204, { derniereDecision: { ...derniereDecision, niveau: null } }))).toBeNull();
+    expect(getValidationResponsable(noteHorsSortie(208, { derniereDecision: null }))).toBeNull();
   });
 });
 
@@ -287,6 +301,19 @@ describe('page of a note hors sortie', () => {
     expect(getExpenseStatusTranslation(ExpenseStatus.DRAFT)).toBe('Brouillon');
   });
 
+  it('names the choice of the requester between a refund and a don', () => {
+    expect(getRefundChoice(noteHorsSortie(202))).toBe('Remboursement demandé');
+    expect(getRefundChoice(noteHorsSortie(203))).toBe('Don au club');
+  });
+
+  it('offers the PDF of an approved or accounted note, de sortie or not', () => {
+    expect(canDownloadPdf(noteHorsSortie(204))).toBe(true);
+    expect(canDownloadPdf(noteHorsSortie(208))).toBe(true);
+    for (const id of [201, 202, 205, 206, 207]) expect(canDownloadPdf(noteHorsSortie(id))).toBe(false);
+    expect(canDownloadPdf({ ...noteDeSortie, status: ExpenseStatus.APPROVED } as ExpenseReport)).toBe(true);
+    expect(canDownloadPdf({ ...noteDeSortie, status: ExpenseStatus.SUBMITTED } as ExpenseReport)).toBe(false);
+  });
+
   it('names the date of a formation and of an achat', () => {
     expect(getExpenseDateLabel(noteHorsSortie(202))).toBe('Date de la formation');
     expect(getExpenseDateLabel(noteHorsSortie(201))).toBe('Date de la dépense');
@@ -364,6 +391,11 @@ describe('formatReportDate', () => {
     } finally {
       process.env.TZ = timeZone;
     }
+  });
+
+  it('formats in the language it is given', () => {
+    expect(formatReportDate('2025-01-25', 'fr-FR')).toBe('25/01/2025');
+    expect(formatReportDate('2025-01-25', 'en-US')).toBe('1/25/2025');
   });
 
   it('returns nothing for a missing or unreadable date', () => {

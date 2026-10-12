@@ -1,8 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import NoteHorsSortieDetail from '@/app/components/note-de-frais/NoteHorsSortieDetail';
 import { NonEventExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
+import { generateNoteHorsSortiePDF } from '@/app/utils/noteHorsSortiePdf';
 import { mockNotesHorsSortie } from '@/tests/mocks/fixtures';
+
+vi.mock('@/app/utils/noteHorsSortiePdf', () => ({ generateNoteHorsSortiePDF: vi.fn() }));
 
 const noteHorsSortie = (id: number, changes: Partial<NonEventExpenseReport> = {}) =>
   ({ ...mockNotesHorsSortie.find((note) => note.id === id), ...changes }) as unknown as NonEventExpenseReport;
@@ -12,7 +15,10 @@ const field = (label: string) => screen.getByText(label, { selector: 'dt' }).nex
 const lineOf = (libelle: string) => screen.getByText(libelle, { selector: 'td' }).closest('tr') as HTMLElement;
 const summary = () => screen.getByRole('region', { name: 'Synthèse' });
 const actionButtons = () =>
-  screen.queryAllByRole('button').filter((button) => !button.getAttribute('aria-label')?.startsWith('Copier'));
+  screen.queryAllByRole('button').filter(
+    (button) => !button.getAttribute('aria-label')?.startsWith('Copier') && button.textContent !== 'Télécharger en PDF'
+  );
+const pdfButton = () => screen.queryByRole('button', { name: 'Télécharger en PDF' });
 
 describe('NoteHorsSortieDetail', () => {
   it('shows everything the treasury needs about a formation', () => {
@@ -168,6 +174,32 @@ describe('NoteHorsSortieDetail', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(id)} onAction={vi.fn()} />);
 
     expect(actionButtons().map((button) => button.textContent)).toEqual(expected);
+  });
+
+  it.each([
+    [204, true],
+    [208, true],
+    [202, false],
+    [201, false],
+    [205, false],
+    [206, false],
+    [207, false],
+  ])('offers the PDF of note %i once the treasury has approved it: %s', (id, offered) => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(id)} onAction={vi.fn()} />);
+
+    expect(pdfButton() !== null).toBe(offered);
+  });
+
+  it('puts the PDF after the actions, in the summary, and downloads it', async () => {
+    const note = noteHorsSortie(204);
+    render(<NoteHorsSortieDetail note={note} onAction={vi.fn()} />);
+
+    expect(within(summary()).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent))
+      .toEqual(['Copier le libellé comptable', 'Comptabiliser', 'Télécharger en PDF']);
+
+    fireEvent.click(pdfButton()!);
+
+    await waitFor(() => expect(generateNoteHorsSortiePDF).toHaveBeenCalledWith(note));
   });
 
   it('hands the chosen action over', () => {

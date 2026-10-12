@@ -46,12 +46,12 @@ export function getReportDate(report: ExpenseReport): string | null {
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-export function formatReportDate(date: string | null): string {
+export function formatReportDate(date: string | null, locale?: string): string {
     if (!date) return '';
     // Une date sans heure lue par new Date() tombe à minuit UTC : la veille à l'ouest de Greenwich.
     const day = DATE_ONLY.exec(date);
     const parsed = day ? new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3])) : new Date(date);
-    return Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleDateString();
+    return Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleDateString(locale);
 }
 
 /**
@@ -127,14 +127,35 @@ export function getNonEventReportDetails(report: ExpenseReport): string | null {
 }
 
 /**
- * « Validée par Hugo BLANC le 27/01/2025 », ou, pour une note envoyée sans valideur, qu'elle n'en a pas ;
- * rien si aucun responsable ne l'a validée depuis son envoi.
+ * « Validée par Hugo BLANC le 27/01/2025 », ou, pour une note venue droit à la trésorerie, qu'elle n'a
+ * pas de responsable ; rien pour une note refusée ou encore chez son responsable.
  */
 export function getValidationResponsable(report: NonEventExpenseReport): string | null {
     if (report.validationResponsable) return decisionPhrase(validationDecision(report.validationResponsable));
-    return report.status === ExpenseStatus.SUBMITTED && !(report.valideurs ?? []).length
-        ? 'Aucune, la commission n\'a pas de responsable.'
-        : null;
+    return sansResponsable(report) ? 'Aucune, la commission n\'a pas de responsable.' : null;
+}
+
+// Approuvée par la trésorerie sans validation : l'API ne la laisse approuver une note envoyée que si
+// elle n'a pas de valideur.
+function sansResponsable(report: NonEventExpenseReport): boolean {
+    switch (report.status) {
+        case ExpenseStatus.SUBMITTED:
+            return !(report.valideurs ?? []).length;
+        case ExpenseStatus.APPROVED:
+        case ExpenseStatus.ACCOUNTED:
+            return report.derniereDecision?.statut === 'approved' && report.derniereDecision.niveau === 'tresorerie';
+        default:
+            return false;
+    }
+}
+
+export function getRefundChoice(report: NonEventExpenseReport): string {
+    return report.refundRequired ? 'Remboursement demandé' : 'Don au club';
+}
+
+/** Le PDF d'une note, de sortie ou non, une fois approuvée par la trésorerie. */
+export function canDownloadPdf(report: ExpenseReport): boolean {
+    return report.status === ExpenseStatus.APPROVED || report.status === ExpenseStatus.ACCOUNTED;
 }
 
 /** « Approuvée par la trésorerie le … », sur une note approuvée ou comptabilisée. */
