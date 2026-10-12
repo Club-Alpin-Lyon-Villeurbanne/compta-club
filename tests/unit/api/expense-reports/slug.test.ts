@@ -146,6 +146,61 @@ describe('PATCH /api/expense-reports/[slug]', () => {
     expect(status).toBe(500);
   });
 
+  it.each(['abc', '0', '-1', '1.5', '../admin/notes-de-frais', '1/clone'])(
+    'refuses the id "%s" without calling the API',
+    async (slug) => {
+      const req = new NextRequest(
+        new URL('http://localhost:3000/api/expense-reports/x'),
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'approved' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      const { status, data } = await parseJsonResponse(await PATCH(req, makeContext(slug)));
+
+      expect(status).toBe(400);
+      expect(data.error).toBe('Identifiant de note invalide');
+      expect(patch).not.toHaveBeenCalled();
+    }
+  );
+
+  it('passes on the reason the API refused the update with', async () => {
+    vi.mocked(patch).mockRejectedValue(
+      Object.assign(new Error('Erreur 422'), { status: 422, apiMessage: 'Cette demande a déjà été traitée.' })
+    );
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/202'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved' }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    const { status, data } = await parseJsonResponse(await PATCH(req, makeContext('202')));
+
+    expect(status).toBe(422);
+    expect(data).toEqual({ error: 'Cette demande a déjà été traitée.' });
+  });
+
+  it('keeps the generic message when the API gives no reason', async () => {
+    vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Erreur 500'), { status: 500, apiMessage: null }));
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/1'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved' }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    const { status, data } = await parseJsonResponse(await PATCH(req, makeContext('1')));
+
+    expect(status).toBe(500);
+    expect(data).toEqual({ error: 'Erreur lors de la mise à jour de la note de frais' });
+  });
+
   it('propagates the backend status when the update is refused', async () => {
     vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Erreur 422'), { status: 422 }));
 

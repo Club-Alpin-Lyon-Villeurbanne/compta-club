@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { get, patch } from '@/app/lib/fetchServer';
+import { isNoteId } from '@/app/lib/noteId';
 
 // Configure max execution time for this route
 export const maxDuration = 10; // 10 seconds (max for Hobby plan)
@@ -34,7 +35,10 @@ export async function PATCH(
   try {
     // Attendre les paramètres avant de les utiliser
     const { slug } = await context.params;
-    
+    if (!isNoteId(slug)) {
+      return NextResponse.json({ error: 'Identifiant de note invalide' }, { status: 400 });
+    }
+
     const body = await request.json();
     const { status, commentaireStatut } = body;
 
@@ -46,9 +50,11 @@ export async function PATCH(
 
     return NextResponse.json(expenseReport);
   } catch (error) {
+    // Un refus de l'API (« Cette demande a déjà été traitée. ») est montré tel quel à la trésorerie.
+    const { status, apiMessage } = error as { status?: number; apiMessage?: string | null };
     return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour de la note de frais' },
-      { status: (error as { status?: number }).status ?? 500 }
+      { error: apiMessage ?? 'Erreur lors de la mise à jour de la note de frais' },
+      { status: status ?? 500 }
     );
   }
-} 
+}

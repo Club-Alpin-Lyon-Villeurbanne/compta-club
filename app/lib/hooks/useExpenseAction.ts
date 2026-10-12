@@ -3,6 +3,13 @@ import { patch } from '../fetchClient';
 
 const getSwal = () => import('sweetalert2').then(m => m.default);
 
+// Un refus de la plateforme (4xx) dit pourquoi : « Cette demande a déjà été traitée. », message obligatoire…
+function refusalReason(error: unknown): string | null {
+  const status = (error as { status?: number } | null)?.status;
+  if (!(error instanceof Error) || !status || status < 400 || status >= 500 || status === 401) return null;
+  return error.message || null;
+}
+
 export function useExpenseActions(fetchData: () => Promise<void>) {
   const router = useRouter();
 
@@ -82,10 +89,13 @@ export function useExpenseActions(fetchData: () => Promise<void>) {
       await fetchData();
       return true;
     } catch (error) {
+      const reason = refusalReason(error);
+      const text = 'Une erreur est survenue lors de l\'action sur la note de frais.';
       Swal.fire({
         title: 'Erreur',
-        text: 'Une erreur est survenue lors de l\'action sur la note de frais.',
+        text: reason ? `${text}\n\n${reason}` : text,
         icon: 'error',
+        customClass: { htmlContainer: 'whitespace-pre-line' },
       });
       return false;
     }

@@ -3,6 +3,7 @@
  */
 
 import { cookies } from 'next/headers';
+import { apiErrorMessage } from './apiError';
 
 /**
  * Options pour les requêtes fetch
@@ -58,7 +59,10 @@ export async function fetchServer<T = any>(
     // Vérifier si la réponse est OK
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw Object.assign(new Error(errorData.error || `Erreur ${response.status}`), { status: response.status });
+      throw Object.assign(new Error(errorData.error || `Erreur ${response.status}`), {
+        status: response.status,
+        apiMessage: apiErrorMessage(response.status, errorData),
+      });
     }
 
     // Retourner les données

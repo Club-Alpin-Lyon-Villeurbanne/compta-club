@@ -51,6 +51,38 @@ describe('useExpenseActions', () => {
     expect(fetchData).not.toHaveBeenCalled();
   });
 
+  it('shows the reason the platform refused the decision with', async () => {
+    state.fire.mockResolvedValue({ isConfirmed: true });
+    vi.mocked(patch).mockRejectedValue(
+      Object.assign(new Error('Cette demande a déjà été traitée.'), { status: 422 })
+    );
+
+    const { result } = renderHook(() => useExpenseActions(vi.fn()));
+    await result.current.handleAction(202, 'approved');
+
+    expect(state.fire).toHaveBeenLastCalledWith(expect.objectContaining({
+      icon: 'error',
+      text: 'Une erreur est survenue lors de l\'action sur la note de frais.\n\nCette demande a déjà été traitée.',
+    }));
+  });
+
+  it.each([
+    ['a server error', Object.assign(new Error('Erreur lors de la mise à jour de la note de frais'), { status: 500 })],
+    ['a lost session', Object.assign(new Error('Non authentifié'), { status: 401 })],
+    ['a network error', new TypeError('Failed to fetch')],
+  ])('shows no reason for %s', async (_, error) => {
+    state.fire.mockResolvedValue({ isConfirmed: true });
+    vi.mocked(patch).mockRejectedValue(error);
+
+    const { result } = renderHook(() => useExpenseActions(vi.fn()));
+    await result.current.handleAction(1, 'accounted');
+
+    expect(state.fire).toHaveBeenLastCalledWith(expect.objectContaining({
+      icon: 'error',
+      text: 'Une erreur est survenue lors de l\'action sur la note de frais.',
+    }));
+  });
+
   it('falls back to an alert when the dialog library cannot be loaded', async () => {
     state.failLoad = true;
     const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});

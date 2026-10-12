@@ -89,6 +89,15 @@ describe('fetchClient', () => {
     await expect(fetchClient('/data')).rejects.toThrow('Not Found');
   });
 
+  it('attaches the HTTP status to the thrown error', async () => {
+    createFetchMock().on(
+      (url) => url.includes('/data'),
+      () => Response.json({ error: 'Cette demande a déjà été traitée.' }, { status: 422 })
+    );
+
+    await expect(fetchClient('/data')).rejects.toMatchObject({ message: 'Cette demande a déjà été traitée.', status: 422 });
+  });
+
   it('get() helper uses GET method', async () => {
     let capturedInit: RequestInit | undefined;
     createFetchMock().on(
