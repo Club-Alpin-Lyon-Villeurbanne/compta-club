@@ -71,6 +71,22 @@ describe('useStore', () => {
 
       expect(useStore.getState().reportTypeFilter).toBe('');
     });
+
+    it('should clear the search and the date, which only apply to sorties, for formations and achats', () => {
+      act(() => {
+        useStore.getState().setSearchTerm('canyon');
+        useStore.getState().setDateFilter('2025-01-15');
+        useStore.getState().setReportTypeFilter('sortie');
+      });
+      expect(useStore.getState().searchTerm).toBe('canyon');
+
+      act(() => {
+        useStore.getState().setReportTypeFilter('autre');
+      });
+
+      expect(useStore.getState().searchTerm).toBe('');
+      expect(useStore.getState().dateFilter).toBe('');
+    });
   });
 
   describe('setExpenseReports', () => {

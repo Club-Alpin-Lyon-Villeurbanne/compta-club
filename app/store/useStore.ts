@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ExpenseReport, PaginationMeta } from "../interfaces/noteDeFraisInterface";
+import { sortieFiltersApply } from "../utils/expenseReport";
 
 
 interface StoreState {
@@ -56,7 +57,12 @@ const useStore = create<StoreState>((set) => ({
     setDateFilter: (date) => set({ dateFilter: date, currentPage: 1 }),
     setRequesterFilter: (requester) => set({ requesterFilter: requester, currentPage: 1 }),
     setTypeFilter: (type) => set({ typeFilter: type, currentPage: 1 }),
-    setReportTypeFilter: (type) => set({ reportTypeFilter: type, currentPage: 1 }),
+    // La recherche et la date ne portent que sur les sorties : elles se vident pour les formations et les achats.
+    setReportTypeFilter: (type) => set({
+        reportTypeFilter: type,
+        currentPage: 1,
+        ...(sortieFiltersApply(type) ? {} : { searchTerm: '', dateFilter: '' }),
+    }),
     resetFilters: () => set({
         status: 'submitted',
         searchTerm: '',

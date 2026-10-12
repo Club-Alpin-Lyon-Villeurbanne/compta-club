@@ -176,8 +176,9 @@ export const mockNotesHorsSortie = [
     commission: commissionRandonnee,
     objet: 'Cordelettes pour la SAE',
     dateDepense: '2025-01-20',
+    // Brouillon commencé le 21, envoyé le 23 : la liste montre l'envoi.
     dateCreation: '2025-01-21T09:00:00',
-    dateEnvoi: '2025-01-21T09:05:00+01:00',
+    dateEnvoi: '2025-01-23T09:05:00+01:00',
     libelleComptable: 'ROUX Lucie NDF 20/01/2025 Cordelettes pour la SAE',
   },
   {
@@ -196,18 +197,18 @@ export const mockNotesHorsSortie = [
     dateEnvoi: '2025-01-26T10:10:00+01:00',
     details: {
       lignes: [
-        { id: 'ligne-202-stage', nature: 'stage', montant: 210, description: '' },
-        { id: 'ligne-202-train', nature: 'train', montant: 35.6, description: '' },
+        { id: 'ligne-202-stage', nature: 'stage', montant: 250, description: '' },
+        { id: 'ligne-202-train', nature: 'train', montant: 62.4, description: '' },
       ],
     },
     lignesAffichees: [
-      { id: 'ligne-202-stage', nature: 'stage', libelle: 'Stage', detail: null, montant: 210 },
-      { id: 'ligne-202-train', nature: 'train', libelle: 'Train ou bus', detail: null, montant: 35.6 },
+      { id: 'ligne-202-stage', nature: 'stage', libelle: 'Stage', detail: null, montant: 250 },
+      { id: 'ligne-202-train', nature: 'train', libelle: 'Train ou bus', detail: null, montant: 62.4 },
     ],
     piecesJointes: [{ id: 202, expenseId: 'ligne-202-stage', fileUrl: 'https://example.com/facture-stage.pdf' }],
-    // Le remboursable diffère du déclaré : la liste affiche le déclaré.
-    totalDeclare: 245.6,
-    totalRemboursable: 231.4,
+    // Plafonnée : le remboursable est plus bas que le déclaré.
+    totalDeclare: 312.4,
+    totalRemboursable: 287.4,
     valideurs: [responsableEscalade],
     derniereDecision: { statut: 'preapproved', niveau: 'responsable', ...validationParLeResponsable, message: null },
     validationResponsable: validationParLeResponsable,

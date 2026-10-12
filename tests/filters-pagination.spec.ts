@@ -4,7 +4,7 @@ import { test, expect, login, rows } from './test-utils';
 const statusSelect = (page: Page) => page.locator('select:has(option[value="Toutes"])');
 const typeSelect = (page: Page) => page.locator('select:has(option[value="don"])');
 const dateInput = (page: Page) => page.locator('input[type="date"]');
-const searchInput = (page: Page) => page.locator('input[placeholder="Rechercher une note de frais"]');
+const searchInput = (page: Page) => page.locator('input[placeholder="Rechercher une sortie"]');
 const requesterInput = (page: Page) => page.locator('input[placeholder="Nom du demandeur"]');
 
 const SUBMITTED_REPORTS = [/Sortie Mont Blanc/, /Canyon Ardeche/, /Via ferrata Chamechaude/];
@@ -156,7 +156,7 @@ test.describe('Column Sorting', () => {
   });
 
   test('should sort by event date, latest first', async ({ page }) => {
-    const header = page.getByRole('columnheader', { name: 'Date sortie' });
+    const header = page.getByRole('columnheader', { name: 'Date', exact: true });
 
     await header.click();
     await header.click();

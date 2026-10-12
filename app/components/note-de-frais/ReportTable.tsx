@@ -8,10 +8,12 @@ import {
     getReportAmount,
     getReportCommission,
     getReportDate,
+    getReportSubmissionDate,
     getReportTitle,
     getReportType,
     getReportTypeLabel,
     isEventReport,
+    sortieFiltersApply,
     statusesOfFilter,
 } from '@/app/utils/expenseReport';
 
@@ -38,6 +40,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
             commissionId: getReportCommission(report)?.id,
             title: getReportTitle(report),
             reportDate: getReportDate(report),
+            submissionDate: getReportSubmissionDate(report),
             calculatedAmount: getReportAmount(report)
         }));
     }, [reports]);
@@ -45,15 +48,16 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
     // TODO: Supprimer ce filtrage client-side une fois les ApiFilter déployés sur le backend.
     // En attendant, on filtre dans la page courante pour que les filtres restent fonctionnels.
     const reportFiltered = useMemo(() => {
-        const search = searchTerm.toLowerCase();
+        // La recherche et la date ne portent que sur les sorties : actives, elles ne gardent que les sorties.
+        const search = sortieFiltersApply(reportTypeFilter) ? searchTerm.toLowerCase() : '';
+        const date = sortieFiltersApply(reportTypeFilter) ? dateFilter : '';
         const requester = requesterFilter.toLowerCase();
         const statuses = statusesOfFilter(status);
         return reportsWithSortValues.filter((report) => {
             const matchesStatus = !statuses.length || statuses.includes(report.status);
-            // Comme côté serveur, la recherche et la date ne portent que sur les sorties : une note hors sortie reste.
             const eventReport = isEventReport(report);
-            const matchesSearchTerm = !eventReport || report.title.toLowerCase().includes(search);
-            const matchesDate = !dateFilter || !eventReport || new Date(report.reportDate ?? '').toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
+            const matchesSearchTerm = !search || (eventReport && report.title.toLowerCase().includes(search));
+            const matchesDate = !date || (eventReport && new Date(report.reportDate ?? '').toLocaleDateString() === new Date(date).toLocaleDateString());
             const matchesRequester = !requester ||
                 (report.utilisateur.prenom.toLowerCase() + " " + report.utilisateur.nom.toLowerCase()).includes(requester);
             const matchesType = !typeFilter ||
@@ -85,7 +89,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
     }
 
     return (
-        <div className="inline-block min-w-full overflow-hidden rounded-lg shadow">
+        <div className="w-full overflow-x-auto rounded-lg shadow">
             <table className="min-w-full leading-normal">
                 <thead>
                     <tr>
@@ -122,7 +126,8 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                             className="w-1/6 px-2 py-2"
                         />
                         <SortableHeader
-                            label="Date sortie / dépense"
+                            label="Date"
+                            title="Date de la sortie ou de la dépense"
                             sortKey="reportDate"
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
@@ -131,7 +136,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                         />
                         <SortableHeader
                             label="Soumission"
-                            sortKey="dateCreation"
+                            sortKey="submissionDate"
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}
@@ -160,8 +165,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}
-                            className="w-20 px-2 py-2"
-                            align="center"
+                            className="w-32 px-2 py-2"
                         />
                     </tr>
                 </thead>

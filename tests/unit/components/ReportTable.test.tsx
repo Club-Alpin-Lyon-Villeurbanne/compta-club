@@ -12,6 +12,8 @@ const notesHorsSortie = mockNotesHorsSortie.filter(
 const reports = [...mockExpenseReports, ...notesHorsSortie] as unknown as ExpenseReport[];
 
 const rowOf = (text: string) => screen.getByText(text).closest('tr') as HTMLElement;
+// Titre de chaque ligne, sans la ligne grise qui le suit
+const titles = () => screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[2].querySelector('p')?.textContent);
 
 describe('ReportTable', () => {
   beforeEach(() => {
@@ -21,8 +23,7 @@ describe('ReportTable', () => {
   it('lists notes de sortie and notes hors sortie waiting for the treasury', () => {
     render(<ReportTable reports={reports} isLoading={false} />);
 
-    const titles = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[2].textContent);
-    expect(titles).toEqual([
+    expect(titles()).toEqual([
       'Sortie Mont Blanc',
       'Canyon Ardeche',
       'Cordelettes pour la SAE',
@@ -36,7 +37,9 @@ describe('ReportTable', () => {
 
     const formation = rowOf('Formation initiateur escalade');
     expect(within(formation).getByText('Formation')).toBeTruthy();
-    expect(within(formation).getByText('245.60 €')).toBeTruthy();
+    expect(within(formation).getByText('312.40 €')).toBeTruthy();
+    expect(within(formation).getByText('dont 287.40 € remb.')).toBeTruthy();
+    expect(within(formation).getByText('Escalade · Validée par Hugo BLANC le 27/01')).toBeTruthy();
     expect(within(formation).getByText('Validée par le responsable')).toBeTruthy();
     expect(within(formation).getByText(new Date(2025, 0, 25).toLocaleDateString())).toBeTruthy();
     expect(within(formation).queryByRole('link')).toBeNull();
@@ -54,6 +57,13 @@ describe('ReportTable', () => {
     expect(screen.queryByText('Sortie Mont Blanc')).toBeNull();
     expect(screen.queryByText('Formation initiateur escalade')).toBeNull();
     expect(rowOf('Cordelettes pour la SAE')).toBeTruthy();
+  });
+
+  it('keeps the sorties only while searching', () => {
+    act(() => useStore.getState().setSearchTerm('mont'));
+    render(<ReportTable reports={reports} isLoading={false} />);
+
+    expect(titles()).toEqual(['Sortie Mont Blanc']);
   });
 
   it('offers the PDF of an approved note de sortie only', () => {

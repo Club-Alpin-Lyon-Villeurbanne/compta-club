@@ -5,7 +5,7 @@ import {
     ExpenseReportType,
 } from '@/app/interfaces/noteDeFraisInterface';
 import { ExpenseStatus, getExpenseStatusTranslation } from '@/app/enums/ExpenseStatus';
-import { calculateTotals, toAmount } from '@/app/utils/helper';
+import { calculateTotals, formatEuro, toAmount } from '@/app/utils/helper';
 
 export const REPORT_TYPE_LABELS: Record<ExpenseReportType, string> = {
     sortie: 'Sortie',
@@ -58,6 +58,35 @@ export function getReportAmount(report: ExpenseReport): number {
     return isEventReport(report) ? calculateTotals(report.details).totalRemboursable : toAmount(report.totalDeclare);
 }
 
+/** Sous le total déclaré d'une note hors sortie : « dont 287.40 € remb. » quand les plafonds le réduisent. */
+export function getRefundableNote(report: ExpenseReport): string | null {
+    if (isEventReport(report)) return null;
+    const remboursable = toAmount(report.totalRemboursable);
+    return Math.round(remboursable * 100) < Math.round(toAmount(report.totalDeclare) * 100)
+        ? `dont ${formatEuro(remboursable)} remb.`
+        : null;
+}
+
+/** Date de création d'une note de sortie ; dernier envoi d'une note hors sortie, qu'on a pu corriger et renvoyer. */
+export function getReportSubmissionDate(report: ExpenseReport): string {
+    return isEventReport(report) ? report.dateCreation : report.dateEnvoi ?? report.dateCreation;
+}
+
+const jourMois = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+
+/**
+ * Sous l'objet d'une note hors sortie : « Escalade · Validée par Hugo BLANC le 27/01 », ou
+ * « Randonnée · Sans responsable de commission » quand elle est venue droit à la trésorerie.
+ */
+export function getNonEventReportDetails(report: ExpenseReport): string | null {
+    if (isEventReport(report)) return null;
+    const validation = report.validationResponsable;
+    const circuit = validation
+        ? `Validée par ${validation.auteur.prenom} ${validation.auteur.nom} le ${jourMois(validation.date)}`
+        : report.status === ExpenseStatus.SUBMITTED ? 'Sans responsable de commission' : null;
+    return [report.commission?.title, circuit].filter(Boolean).join(' · ') || null;
+}
+
 interface StatusFilter {
     value: string;
     label: string;
@@ -92,6 +121,11 @@ export const REPORT_TYPE_FILTERS: { value: '' | ExpenseReportType; label: string
     { value: 'autre', label: 'Achats' },
 ];
 
+/** La recherche et la date ne portent que sur les sorties : sans objet pour les formations et les achats. */
+export function sortieFiltersApply(reportTypeFilter: string): boolean {
+    return reportTypeFilter === '' || reportTypeFilter === 'sortie';
+}
+
 export interface ReportListFilters {
     page: number;
     status: string;
@@ -117,23 +151,31 @@ export function buildReportListParams(filters: ReportListFilters): URLSearchPara
     } else {
         statuses.forEach((status) => params.append('status[]', status));
     }
-    if (filters.searchTerm) {
-        params.set('event.titre', filters.searchTerm);
+    const reportType = REPORT_TYPE_FILTERS.some(({ value }) => value && value === filters.reportTypeFilter)
+        ? filters.reportTypeFilter
+        : '';
+    const searchTerm = sortieFiltersApply(reportType) ? filters.searchTerm : '';
+    const dateFilter = sortieFiltersApply(reportType) ? filters.dateFilter : '';
+    if (searchTerm) {
+        params.set('event.titre', searchTerm);
     }
     if (filters.requesterFilter) {
         params.set('user.lastname', filters.requesterFilter);
     }
-    if (filters.dateFilter) {
-        params.set('event.startDate[after]', `${filters.dateFilter}T00:00:00`);
-        params.set('event.startDate[before]', `${filters.dateFilter}T23:59:59`);
+    if (dateFilter) {
+        params.set('event.startDate[after]', `${dateFilter}T00:00:00`);
+        params.set('event.startDate[before]', `${dateFilter}T23:59:59`);
     }
     if (filters.typeFilter === 'don') {
         params.set('refundRequired', 'false');
     } else if (filters.typeFilter === 'remboursement') {
         params.set('refundRequired', 'true');
     }
-    if (REPORT_TYPE_FILTERS.some(({ value }) => value && value === filters.reportTypeFilter)) {
-        params.set('type', filters.reportTypeFilter);
+    // L'API garde les notes hors sortie quand la recherche ou la date est active : elles
+    // rempliraient les pages avant les sorties cherchées.
+    const type = reportType || (searchTerm || dateFilter ? 'sortie' : '');
+    if (type) {
+        params.set('type', type);
     }
     return params;
 }

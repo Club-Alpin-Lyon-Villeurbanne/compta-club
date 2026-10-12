@@ -4,14 +4,18 @@ import { ExpenseStatus, getExpenseStatusColor, getExpenseStatusTranslation } fro
 import {
   buildReportListParams,
   formatReportDate,
+  getNonEventReportDetails,
+  getRefundableNote,
   getReportAmount,
   getReportCommission,
   getReportDate,
+  getReportSubmissionDate,
   getReportTitle,
   getReportType,
   getReportTypeLabel,
   isEventReport,
   REPORT_TYPE_FILTERS,
+  sortieFiltersApply,
   STATUS_FILTERS,
   statusesOfFilter,
 } from '@/app/utils/expenseReport';
@@ -76,8 +80,51 @@ describe('getReportAmount', () => {
   });
 
   it('takes the declared amount fixed by the platform for a note hors sortie', () => {
-    expect(getReportAmount(formation)).toBe(245.6);
+    expect(getReportAmount(formation)).toBe(312.4);
     expect(getReportAmount(achat)).toBe(55);
+  });
+});
+
+describe('getRefundableNote', () => {
+  it('gives the refundable amount of a note hors sortie when the caps lower it', () => {
+    expect(getRefundableNote(formation)).toBe('dont 287.40 € remb.');
+  });
+
+  it('says nothing when everything is refundable, nor for a note de sortie', () => {
+    expect(getRefundableNote(achat)).toBeNull();
+    expect(getRefundableNote({ ...formation, totalRemboursable: 312.4 } as ExpenseReport)).toBeNull();
+    expect(getRefundableNote(noteDeSortie)).toBeNull();
+  });
+});
+
+describe('getReportSubmissionDate', () => {
+  it('takes the last sending of a note hors sortie', () => {
+    expect(getReportSubmissionDate(achat)).toBe('2025-01-23T09:05:00+01:00');
+  });
+
+  it('falls back on the creation date, and keeps it for a note de sortie', () => {
+    expect(getReportSubmissionDate({ ...achat, dateEnvoi: null } as ExpenseReport)).toBe('2025-01-21T09:00:00');
+    expect(getReportSubmissionDate(noteDeSortie)).toBe('2025-01-10T10:00:00');
+  });
+});
+
+describe('getNonEventReportDetails', () => {
+  it('names the commission and who validated the note', () => {
+    expect(getNonEventReportDetails(formation)).toBe('Escalade · Validée par Hugo BLANC le 27/01');
+  });
+
+  it('says that a submitted note has no responsable to validate it', () => {
+    expect(getNonEventReportDetails(achat)).toBe('Randonnée · Sans responsable de commission');
+  });
+
+  it('only names the commission of a note decided without validation by a responsable', () => {
+    const approuvee = mockNotesHorsSortie.find((note) => note.id === 204) as unknown as ExpenseReport;
+
+    expect(getNonEventReportDetails(approuvee)).toBe('Randonnée');
+  });
+
+  it('says nothing for a note de sortie', () => {
+    expect(getNonEventReportDetails(noteDeSortie)).toBeNull();
   });
 });
 
@@ -128,6 +175,15 @@ describe('status filter', () => {
     ]);
     expect(statusesOfFilter('approved')).toEqual([ExpenseStatus.APPROVED]);
     expect(statusesOfFilter('Toutes')).toEqual([]);
+  });
+});
+
+describe('search and date', () => {
+  it('apply to the sorties: off for formations and achats', () => {
+    expect(sortieFiltersApply('')).toBe(true);
+    expect(sortieFiltersApply('sortie')).toBe(true);
+    expect(sortieFiltersApply('formation')).toBe(false);
+    expect(sortieFiltersApply('autre')).toBe(false);
   });
 });
 
@@ -183,6 +239,23 @@ describe('buildReportListParams', () => {
 
   it('sends no type outside of the offered choices', () => {
     expect(buildReportListParams({ ...defaults, reportTypeFilter: 'draft' }).has('type')).toBe(false);
+  });
+
+  it('asks for the sorties only while searching or filtering by date', () => {
+    const search = buildReportListParams({ ...defaults, searchTerm: 'canyon' });
+    expect(search.get('event.titre')).toBe('canyon');
+    expect(search.get('type')).toBe('sortie');
+
+    expect(buildReportListParams({ ...defaults, dateFilter: '2025-01-15' }).get('type')).toBe('sortie');
+    expect(buildReportListParams({ ...defaults, searchTerm: 'canyon', reportTypeFilter: 'sortie' }).getAll('type')).toEqual(['sortie']);
+  });
+
+  it('sends neither search nor date for formations and achats', () => {
+    const params = buildReportListParams({ ...defaults, searchTerm: 'canyon', dateFilter: '2025-01-15', reportTypeFilter: 'autre' });
+
+    expect(params.get('type')).toBe('autre');
+    expect(params.has('event.titre')).toBe(false);
+    expect(params.has('event.startDate[after]')).toBe(false);
   });
 
   it('keeps the other filters unchanged', () => {

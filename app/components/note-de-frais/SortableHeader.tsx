@@ -4,6 +4,7 @@ import { SortDirection } from '@/app/hooks/useSortableTable';
 
 interface SortableHeaderProps {
   label: string;
+  title?: string;
   sortKey: string;
   currentSortKey: string;
   sortDirection: SortDirection;
@@ -14,6 +15,7 @@ interface SortableHeaderProps {
 
 const SortableHeader: React.FC<SortableHeaderProps> = ({
   label,
+  title,
   sortKey,
   currentSortKey,
   sortDirection,
@@ -37,6 +39,7 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
 
   return (
     <th 
+      title={title}
       className={`${className} bg-gray-100 border-b-2 border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors`}
       onClick={() => onSort(sortKey)}
     >

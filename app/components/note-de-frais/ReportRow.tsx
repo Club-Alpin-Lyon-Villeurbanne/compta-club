@@ -10,7 +10,10 @@ import {
     formatReportDate,
     getReportAmount,
     getReportCommission,
+    getNonEventReportDetails,
+    getRefundableNote,
     getReportDate,
+    getReportSubmissionDate,
     getReportTitle,
     getReportTypeLabel,
     isEventReport,
@@ -29,6 +32,8 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
     const [copied, setCopied] = useState(false);
     const amount = useMemo(() => getReportAmount(report), [report]);
     const title = getReportTitle(report);
+    const details = getNonEventReportDetails(report);
+    const refundableNote = getRefundableNote(report);
     const requester = `${report.utilisateur.prenom} ${report.utilisateur.nom}`;
     // La page d'une note hors sortie viendra plus tard : pas de lien d'ici là.
     const eventHref = isEventReport(report) && report.sortie ? `/note-de-frais/${report.sortie.id}` : null;
@@ -94,6 +99,7 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                         </button>
                     )}
                 </p>
+                {details && <p className="mt-0.5 text-xs text-gray-500">{details}</p>}
             </td>
             <td className="w-1/6 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 truncate whitespace-nowrap">
@@ -115,13 +121,14 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 whitespace-nowrap">
                     <FaCalendarAlt className="inline-block mr-1 text-gray-500" />
-                    {new Date(report.dateCreation).toLocaleDateString()}
+                    {new Date(getReportSubmissionDate(report)).toLocaleDateString()}
                 </p>
             </td>
             <td className="w-24 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <span className="text-gray-900 whitespace-nowrap">
                     {formatEuro(amount)}
                 </span>
+                {refundableNote && <p className="text-xs text-gray-500 whitespace-nowrap">{refundableNote}</p>}
             </td>
             <td className="px-2 py-2 text-sm text-center bg-white border-b border-gray-200 w-28">
                 <p className="text-gray-900 whitespace-nowrap">
@@ -138,8 +145,9 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                     )}
                 </p>
             </td>
-            <td className="w-24 px-2 py-2 text-sm text-center bg-white border-b border-gray-200">
-                <div className="flex items-center justify-center gap-2">
+            <td className="w-32 px-2 py-2 text-sm bg-white border-b border-gray-200">
+                {/* Badges alignés à gauche, qu'un bouton PDF les suive ou non ; « Validée par le responsable » sur deux lignes au plus */}
+                <div className="flex items-center gap-2 min-w-[7rem]">
                     <Badge status={report.status} />
                     {canDownloadPDF && (
                         <button

@@ -3,16 +3,18 @@ import { test, expect, login, rows } from './test-utils';
 
 const statusSelect = (page: Page) => page.getByRole('combobox', { name: 'Statut' });
 const typeSelect = (page: Page) => page.getByRole('combobox', { name: 'Type de note' });
-const searchInput = (page: Page) => page.locator('input[placeholder="Rechercher une note de frais"]');
+const searchInput = (page: Page) => page.locator('input[placeholder="Rechercher une sortie"]');
+const dateInput = (page: Page) => page.locator('input[type="date"]');
 const row = (page: Page, text: string) => rows(page).filter({ hasText: text });
 
+// Les notes hors sortie, plus récentes, arrivent en tête (voir le faux backend).
 const A_VALIDER = [
-  /Sortie Mont Blanc/,
-  /Canyon Ardeche/,
-  /Via ferrata Chamechaude/,
   /Cordelettes pour la SAE/,
   /Formation initiateur escalade/,
   /Sac <b>30 L<\/b>/,
+  /Sortie Mont Blanc/,
+  /Canyon Ardeche/,
+  /Via ferrata Chamechaude/,
 ];
 
 function listRequests(page: Page): URL[] {
@@ -22,6 +24,14 @@ function listRequests(page: Page): URL[] {
     if (url.pathname === '/api/expense-reports') requests.push(url);
   });
   return requests;
+}
+
+async function listRequest(page: Page, matches: (params: URLSearchParams) => boolean): Promise<URLSearchParams> {
+  const request = await page.waitForRequest((r) => {
+    const url = new URL(r.url());
+    return url.pathname === '/api/expense-reports' && matches(url.searchParams);
+  });
+  return new URL(request.url()).searchParams;
 }
 
 test.describe('Notes hors sortie in the list', () => {
@@ -34,33 +44,70 @@ test.describe('Notes hors sortie in the list', () => {
     await expect(statusSelect(page).locator('option:checked')).toHaveText('À valider');
     expect(requests[0].searchParams.getAll('status[]')).toEqual(['submitted', 'preapproved']);
     expect(requests[0].searchParams.has('status')).toBe(false);
+    expect(requests[0].searchParams.has('type')).toBe(false);
     // Encore chez le responsable, ou en brouillon : la plateforme ne les envoie pas
     await expect(page.getByText('Piles pour les DVA')).toHaveCount(0);
     await expect(page.getByText('Gants pour la via ferrata')).toHaveCount(0);
   });
 
-  test('should show the type, commission, expense date and declared amount of a note hors sortie', async ({ page }) => {
+  test('should show the columns of a note hors sortie', async ({ page }) => {
     await login(page, { notesHorsSortie: true });
 
+    // Montant : le total déclaré, et en dessous le remboursable quand les plafonds le réduisent.
+    // Soumission : le dernier envoi.
     const formation = row(page, 'Formation initiateur escalade');
-    // Montant figé par la plateforme : le total déclaré (245,60 €), pas le remboursable (231,40 €)
     await expect(formation.locator('td')).toHaveText([
-      'Formation', '', /Formation initiateur escalade/, 'Thomas Petit', '25/01/2025', '26/01/2025',
-      '245.60 €', 'Remboursement', 'Validée par le responsable',
+      'Formation',
+      '',
+      /^Formation initiateur escalade\s*Escalade · Validée par Hugo BLANC le 27\/01$/,
+      'Thomas Petit',
+      '25/01/2025',
+      '26/01/2025',
+      /^312\.40 €\s*dont 287\.40 € remb\.$/,
+      'Remboursement',
+      'Validée par le responsable',
     ]);
     await expect(formation.locator('img')).toHaveAttribute('alt', 'Escalade');
 
     const achat = row(page, 'Cordelettes pour la SAE');
     await expect(achat.locator('td')).toHaveText([
-      'Achat', '', /Cordelettes pour la SAE/, 'Lucie Roux', '20/01/2025', '21/01/2025', '55.00 €', 'Remboursement', 'Soumis',
+      'Achat',
+      '',
+      /^Cordelettes pour la SAE\s*Randonnée · Sans responsable de commission$/,
+      'Lucie Roux',
+      '20/01/2025',
+      '23/01/2025',
+      '55.00 €',
+      'Remboursement',
+      'Soumis',
     ]);
     await expect(achat.locator('img')).toHaveAttribute('alt', 'Randonnée');
 
+    // Une note de sortie n'a ni ligne sous son titre, ni montant remboursable à part.
     const sortie = row(page, 'Sortie Mont Blanc');
     await expect(sortie.locator('td').first()).toHaveText('Sortie');
+    await expect(sortie.locator('td').nth(2)).toHaveText('Sortie Mont Blanc');
+    await expect(sortie.locator('td').nth(6)).toHaveText('120.00 €');
     await expect(sortie.locator('img')).toHaveAttribute('alt', 'Alpinisme');
-    await expect(page.getByRole('columnheader', { name: 'Date sortie / dépense' })).toBeVisible();
+
+    await expect(page.getByRole('columnheader', { name: 'Date', exact: true }))
+      .toHaveAttribute('title', 'Date de la sortie ou de la dépense');
     await expect(page.getByRole('columnheader', { name: 'Don ou remb.' })).toBeVisible();
+  });
+
+  test('should keep the status badges aligned, with or without a PDF button, on two lines at most', async ({ page }) => {
+    await login(page, { notesHorsSortie: true });
+    const badge = (text: string) => row(page, text).locator('td').last().locator('span').first();
+
+    const preapproved = await badge('Formation initiateur escalade').boundingBox();
+    // Une ligne de badge fait 24 px, deux en font 40.
+    expect(preapproved!.height).toBeLessThan(48);
+
+    await statusSelect(page).selectOption('approved');
+    await expect(rows(page)).toHaveText([/Recyclage initiateur randonnée/, /Randonnee Vercors/]);
+    const withoutPdf = await badge('Recyclage initiateur randonnée').boundingBox();
+    const withPdf = await badge('Randonnee Vercors').boundingBox();
+    expect(withoutPdf!.x).toBe(withPdf!.x);
   });
 
   test('should link a note de sortie to its sortie, and a note hors sortie nowhere yet', async ({ page }) => {
@@ -126,36 +173,73 @@ test.describe('Notes hors sortie in the list', () => {
     await login(page, { notesHorsSortie: true });
 
     await statusSelect(page).selectOption('rejected');
-    await expect(rows(page)).toHaveText([/Escalade Calanques/, /Prises pour le pan/]);
+    await expect(rows(page)).toHaveText([/Prises pour le pan/, /Escalade Calanques/]);
 
     await statusSelect(page).selectOption('approved');
-    await expect(rows(page)).toHaveText([/Randonnee Vercors/, /Recyclage initiateur randonnée/]);
+    await expect(rows(page)).toHaveText([/Recyclage initiateur randonnée/, /Randonnee Vercors/]);
   });
 
-  // Les notes comptabilisées tiennent sur deux pages : la note hors sortie est sur la seconde.
-  test('should find a note hors sortie beyond the first page by type', async ({ page }) => {
+  // Les achats comptabilisés remplissent la première page : la note de sortie est derrière eux.
+  test('should find the notes de sortie behind a page of notes hors sortie, by type', async ({ page }) => {
     await login(page, { notesHorsSortie: true });
     await statusSelect(page).selectOption('accounted');
+    await expect(rows(page).first()).toContainText('Trousse de secours');
+    await expect(page.getByText('Ski de rando Beaufortain')).toHaveCount(0);
+
+    await typeSelect(page).selectOption({ label: 'Sorties' });
+
     await expect(rows(page).first()).toContainText('Ski de rando Beaufortain');
-    await expect(page.getByText('Trousse de secours')).toHaveCount(0);
-
-    await typeSelect(page).selectOption({ label: 'Achats' });
-
-    await expect(rows(page)).toHaveText([/Trousse de secours/]);
   });
 
-  // Comme dans l'API : la recherche et la date ne portent que sur les sorties.
-  test('should keep the notes hors sortie when searching a sortie', async ({ page }) => {
+  test('should search the sorties only', async ({ page }) => {
     await login(page, { notesHorsSortie: true });
+    // La recherche part après une courte pause de saisie.
+    const searched = listRequest(page, (params) => params.get('event.titre') === 'canyon');
 
     await searchInput(page).fill('canyon');
 
-    await expect(rows(page)).toHaveText([
-      /Canyon Ardeche/,
-      /Cordelettes pour la SAE/,
-      /Formation initiateur escalade/,
-      /Sac <b>30 L<\/b>/,
-    ]);
+    expect((await searched).get('type')).toBe('sortie');
+    await expect(rows(page)).toHaveText([/Canyon Ardeche/]);
+  });
+
+  // Sans `type=sortie`, les 36 notes hors sortie, toutes gardées par l'API, rempliraient la première page.
+  test('should find a sortie on the first page among all statuses', async ({ page }) => {
+    await login(page, { notesHorsSortie: true });
+    await statusSelect(page).selectOption('Toutes');
+    await expect(rows(page).first()).toContainText('Cordelettes pour la SAE');
+
+    await searchInput(page).fill('Mont Blanc');
+
+    await expect(rows(page)).toHaveText([/Sortie Mont Blanc/]);
+  });
+
+  test('should filter the sorties only by date', async ({ page }) => {
+    await login(page, { notesHorsSortie: true });
+    const filtered = listRequest(page, (params) => params.has('event.startDate[after]'));
+
+    await dateInput(page).fill('2025-01-15');
+
+    expect((await filtered).get('type')).toBe('sortie');
+    await expect(rows(page)).toHaveText([/Sortie Mont Blanc/, /Canyon Ardeche/]);
+  });
+
+  test('should turn off the search and the date for formations and achats', async ({ page }) => {
+    await login(page, { notesHorsSortie: true });
+    await searchInput(page).fill('canyon');
+    await expect(rows(page)).toHaveText([/Canyon Ardeche/]);
+
+    await typeSelect(page).selectOption({ label: 'Formations' });
+
+    await expect(rows(page)).toHaveText([/Formation initiateur escalade/]);
+    for (const input of [searchInput(page), dateInput(page)]) {
+      await expect(input).toBeDisabled();
+      await expect(input).toHaveValue('');
+      await expect(input).toHaveAttribute('title', 'La recherche et la date portent sur les sorties');
+    }
+
+    await typeSelect(page).selectOption({ label: 'Sorties' });
+    await expect(searchInput(page)).toBeEnabled();
+    await expect(dateInput(page)).toBeEnabled();
   });
 
   test('should not offer the sortie PDF for a note hors sortie', async ({ page }) => {
@@ -163,7 +247,7 @@ test.describe('Notes hors sortie in the list', () => {
 
     await statusSelect(page).selectOption('approved');
 
-    await expect(rows(page)).toHaveText([/Randonnee Vercors/, /Recyclage initiateur randonnée/]);
+    await expect(rows(page)).toHaveText([/Recyclage initiateur randonnée/, /Randonnee Vercors/]);
     await expect(row(page, 'Randonnee Vercors').getByRole('button', { name: 'Télécharger en PDF' })).toHaveCount(1);
     await expect(row(page, 'Recyclage initiateur randonnée').getByRole('button', { name: 'Télécharger en PDF' })).toHaveCount(0);
   });
@@ -183,7 +267,7 @@ test.describe('Notes hors sortie in the list', () => {
     await login(page, { notesHorsSortie: true });
     await expect(rows(page)).toHaveText(A_VALIDER);
 
-    // 42 € < 55 € < 65,83 € < 90 € < 120 € < 245,60 €
+    // 42 € < 55 € < 65,83 € < 90 € < 120 € < 312,40 €
     await page.getByRole('columnheader', { name: 'Montant' }).click();
     await expect(rows(page)).toHaveText([
       /Sac <b>30 L<\/b>/,
@@ -195,7 +279,7 @@ test.describe('Notes hors sortie in the list', () => {
     ]);
 
     // Sorties du 15/01, achats du 18/01 et du 20/01, formation du 25/01, sortie du 08/02
-    await page.getByRole('columnheader', { name: 'Date sortie / dépense' }).click();
+    await page.getByRole('columnheader', { name: 'Date', exact: true }).click();
     await expect(rows(page)).toHaveText([
       /Sortie Mont Blanc/,
       /Canyon Ardeche/,

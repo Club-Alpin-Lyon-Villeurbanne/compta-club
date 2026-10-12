@@ -105,7 +105,17 @@ const archivedReports = Array.from({ length: 31 }, (_, i) => {
 }) as Report[];
 
 const allReports: Report[] = [...(mockExpenseReports as Report[]), ownReport, ...archivedReports];
-const notesHorsSortie = mockNotesHorsSortie as Report[];
+
+// Plus récentes, les notes hors sortie arrivent en tête, comme dans l'API. Les achats comptabilisés
+// remplissent une page entière : seul le filtre `type=sortie` du serveur ramène les sorties derrière eux.
+const accountedPurchase = mockNotesHorsSortie.find((note) => note.status === 'accounted')!;
+const archivedPurchases = Array.from({ length: 30 }, (_, i) => ({
+  ...accountedPurchase,
+  id: 3000 + i,
+  objet: `Achat archivé ${i + 1}`,
+  libelleComptable: `FAURE Camille NDF 05/01/2025 Achat archivé ${i + 1}`,
+}));
+const notesHorsSortie = [...mockNotesHorsSortie, ...archivedPurchases] as Report[];
 
 const MANAGER_TRANSITIONS: Record<string, string[]> = {
   submitted: ['approved', 'rejected'],
@@ -129,7 +139,7 @@ function getSession(sid: string): Session {
 }
 
 function reportsSeenBy(session: Session): Report[] {
-  const reports = session.notesHorsSortie ? [...allReports, ...notesHorsSortie] : allReports;
+  const reports = session.notesHorsSortie ? [...notesHorsSortie, ...allReports] : allReports;
   return reports.map((r) => ({ ...r, ...session.changes.get(r.id) }));
 }
 
