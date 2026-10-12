@@ -32,7 +32,7 @@ describe('ReportTable', () => {
     ]);
   });
 
-  it('shows the type, expense date and declared amount of a note hors sortie, without link', () => {
+  it('shows the type, expense date and declared amount of a note hors sortie, linked to its page', () => {
     render(<ReportTable reports={reports} isLoading={false} />);
 
     const formation = rowOf('Formation initiateur escalade');
@@ -42,7 +42,10 @@ describe('ReportTable', () => {
     expect(within(formation).getByText('Escalade · Validée par Hugo BLANC le 27/01')).toBeTruthy();
     expect(within(formation).getByText('Validée par le responsable')).toBeTruthy();
     expect(within(formation).getByText(new Date(2025, 0, 25).toLocaleDateString())).toBeTruthy();
-    expect(within(formation).queryByRole('link')).toBeNull();
+    expect(within(formation).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
+      '/note-de-frais/note/202',
+      '/note-de-frais/note/202',
+    ]);
 
     const sortie = rowOf('Sortie Mont Blanc');
     expect(within(sortie).getByText('Sortie')).toBeTruthy();

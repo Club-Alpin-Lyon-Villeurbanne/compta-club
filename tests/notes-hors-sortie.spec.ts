@@ -110,12 +110,18 @@ test.describe('Notes hors sortie in the list', () => {
     expect(withoutPdf!.x).toBe(withPdf!.x);
   });
 
-  test('should link a note de sortie to its sortie, and a note hors sortie nowhere yet', async ({ page }) => {
+  test('should link a note de sortie to its sortie, and a note hors sortie to its page', async ({ page }) => {
     await login(page, { notesHorsSortie: true });
 
     await expect(row(page, 'Sortie Mont Blanc').getByRole('link').first()).toHaveAttribute('href', '/note-de-frais/101');
-    await expect(row(page, 'Formation initiateur escalade').getByRole('link')).toHaveCount(0);
-    await expect(row(page, 'Cordelettes pour la SAE').getByRole('link')).toHaveCount(0);
+    for (const [text, href] of [
+      ['Formation initiateur escalade', '/note-de-frais/note/202'],
+      ['Cordelettes pour la SAE', '/note-de-frais/note/201'],
+    ]) {
+      const links = row(page, text).getByRole('link');
+      await expect(links).toHaveCount(2);
+      for (const link of await links.all()) await expect(link).toHaveAttribute('href', href);
+    }
   });
 
   test('should show the text of a note hors sortie as is, without HTML', async ({ page }) => {

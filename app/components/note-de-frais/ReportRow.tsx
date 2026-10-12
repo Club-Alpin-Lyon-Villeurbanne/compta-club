@@ -13,6 +13,7 @@ import {
     getNonEventReportDetails,
     getRefundableNote,
     getReportDate,
+    getReportHref,
     getReportSubmissionDate,
     getReportTitle,
     getReportTypeLabel,
@@ -35,8 +36,7 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
     const details = getNonEventReportDetails(report);
     const refundableNote = getRefundableNote(report);
     const requester = `${report.utilisateur.prenom} ${report.utilisateur.nom}`;
-    // La page d'une note hors sortie viendra plus tard : pas de lien d'ici là.
-    const eventHref = isEventReport(report) && report.sortie ? `/note-de-frais/${report.sortie.id}` : null;
+    const href = getReportHref(report);
 
     // Une note hors sortie se copie par son libellé comptable, donné par la plateforme.
     const textToCopy = isEventReport(report)
@@ -82,8 +82,8 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
             <td className="w-1/4 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="flex items-center gap-1 text-gray-900 truncate whitespace-nowrap">
                     <FaClipboardList className="text-gray-500" />
-                    {eventHref ? (
-                        <Link href={eventHref} className="hover:underline" title={title}>
+                    {href ? (
+                        <Link href={href} className="hover:underline" title={title}>
                             {truncateText(title, 40)}
                         </Link>
                     ) : (
@@ -103,8 +103,8 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
             </td>
             <td className="w-1/6 px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 truncate whitespace-nowrap">
-                    {eventHref ? (
-                        <Link href={eventHref} className="hover:underline">
+                    {href ? (
+                        <Link href={href} className="hover:underline">
                             {requester}
                         </Link>
                     ) : (

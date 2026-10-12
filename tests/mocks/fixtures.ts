@@ -195,20 +195,23 @@ export const mockNotesHorsSortie = [
     motPourResponsable: 'Stage validé par la commission en décembre.',
     dateCreation: '2025-01-26T10:00:00',
     dateEnvoi: '2025-01-26T10:10:00+01:00',
+    // Taux kilométrique fictif, sans rapport avec la politique de remboursement.
     details: {
       lignes: [
         { id: 'ligne-202-stage', nature: 'stage', montant: 250, description: '' },
-        { id: 'ligne-202-train', nature: 'train', montant: 62.4, description: '' },
+        { id: 'ligne-202-voiture', nature: 'voiture', montant: null, description: '', distance: 240 },
       ],
+      tauxKilometrique: 0.26,
     },
     lignesAffichees: [
       { id: 'ligne-202-stage', nature: 'stage', libelle: 'Stage', detail: null, montant: 250 },
-      { id: 'ligne-202-train', nature: 'train', libelle: 'Train ou bus', detail: null, montant: 62.4 },
+      { id: 'ligne-202-voiture', nature: 'voiture', libelle: 'Voiture', detail: '240 km × 0,26\u00a0€', montant: 62.4 },
     ],
     piecesJointes: [{ id: 202, expenseId: 'ligne-202-stage', fileUrl: 'https://example.com/facture-stage.pdf' }],
     // Plafonnée : le remboursable est plus bas que le déclaré.
     totalDeclare: 312.4,
     totalRemboursable: 287.4,
+    avertissements: ['Le stage dépasse le plafond de la commission : le remboursable est réduit.'],
     valideurs: [responsableEscalade],
     derniereDecision: { statut: 'preapproved', niveau: 'responsable', ...validationParLeResponsable, message: null },
     validationResponsable: validationParLeResponsable,

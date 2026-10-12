@@ -1,23 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { ExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
+import { ExpenseReport, NonEventExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
 import { ExpenseStatus, getExpenseStatusColor, getExpenseStatusTranslation } from '@/app/enums/ExpenseStatus';
 import {
   buildReportListParams,
   formatReportDate,
+  getLastRefusal,
   getNonEventReportDetails,
   getRefundableNote,
   getReportAmount,
   getReportCommission,
   getReportDate,
+  getReportHref,
   getReportSubmissionDate,
   getReportTitle,
   getReportType,
   getReportTypeLabel,
+  getTreasuryActions,
+  getValidationResponsable,
   isEventReport,
   REPORT_TYPE_FILTERS,
+  safeExternalUrl,
   sortieFiltersApply,
   STATUS_FILTERS,
   statusesOfFilter,
+  waitsForResponsable,
 } from '@/app/utils/expenseReport';
 import { mockExpenseReports, mockNotesHorsSortie } from '@/tests/mocks/fixtures';
 
@@ -125,6 +131,95 @@ describe('getNonEventReportDetails', () => {
 
   it('says nothing for a note de sortie', () => {
     expect(getNonEventReportDetails(noteDeSortie)).toBeNull();
+  });
+});
+
+const noteHorsSortie = (id: number, changes: Partial<NonEventExpenseReport> = {}) =>
+  ({ ...mockNotesHorsSortie.find((note) => note.id === id), ...changes }) as unknown as NonEventExpenseReport;
+
+describe('getReportHref', () => {
+  it('leads a note de sortie to its sortie, a note hors sortie to its own page', () => {
+    expect(getReportHref(noteDeSortie)).toBe('/note-de-frais/101');
+    expect(getReportHref(formation)).toBe('/note-de-frais/note/202');
+    expect(getReportHref(achat)).toBe('/note-de-frais/note/201');
+  });
+
+  it('leads nowhere for a note de sortie without its sortie', () => {
+    expect(getReportHref({ ...noteDeSortie, sortie: null } as unknown as ExpenseReport)).toBeNull();
+  });
+});
+
+describe('getValidationResponsable', () => {
+  it('says who validated the note and when', () => {
+    expect(getValidationResponsable(noteHorsSortie(202))).toBe('Validée par Hugo BLANC le 27/01/2025');
+  });
+
+  it('says nothing when no responsable validated it', () => {
+    expect(getValidationResponsable(noteHorsSortie(201))).toBeNull();
+  });
+});
+
+describe('getLastRefusal', () => {
+  it('gives who refused the note, when, and the message', () => {
+    expect(getLastRefusal(noteHorsSortie(205))).toEqual({
+      intitule: 'Refusée par Claire FONTAINE le 29/01/2025',
+      message: 'Il manque la facture.',
+    });
+  });
+
+  it('falls back on the comment of the status without a decision to read', () => {
+    expect(getLastRefusal(noteHorsSortie(205, { derniereDecision: null }))).toEqual({
+      intitule: 'Refusée',
+      message: 'Il manque la facture.',
+    });
+  });
+
+  it('gives nothing for a note that is not refused', () => {
+    expect(getLastRefusal(noteHorsSortie(202))).toBeNull();
+    expect(getLastRefusal(noteHorsSortie(201))).toBeNull();
+  });
+});
+
+describe('safeExternalUrl', () => {
+  it('keeps a link in http or https', () => {
+    expect(safeExternalUrl('https://example.com/formation?id=3')).toBe('https://example.com/formation?id=3');
+    expect(safeExternalUrl(' http://example.com/stage ')).toBe('http://example.com/stage');
+  });
+
+  it.each(['javascript:alert(1)', 'JAVASCRIPT:alert(1)', 'data:text/html,<script>alert(1)</script>', 'file:///etc/passwd', '//example.com', 'example.com', 'pas un lien', ''])(
+    'drops "%s"',
+    (url) => {
+      expect(safeExternalUrl(url)).toBeNull();
+    }
+  );
+
+  it('drops a missing link', () => {
+    expect(safeExternalUrl(null)).toBeNull();
+  });
+});
+
+describe('treasury actions on a note hors sortie', () => {
+  it('approves or rejects a note validated by the responsable', () => {
+    expect(getTreasuryActions(noteHorsSortie(202))).toEqual(['approved', 'rejected']);
+  });
+
+  it('approves or rejects a submitted note that has no responsable to validate it', () => {
+    expect(getTreasuryActions(noteHorsSortie(201))).toEqual(['approved', 'rejected']);
+    expect(waitsForResponsable(noteHorsSortie(201))).toBe(false);
+  });
+
+  it('leaves a note waiting for its responsable alone', () => {
+    expect(getTreasuryActions(noteHorsSortie(206))).toEqual([]);
+    expect(waitsForResponsable(noteHorsSortie(206))).toBe(true);
+  });
+
+  it('accounts for an approved note', () => {
+    expect(getTreasuryActions(noteHorsSortie(204))).toEqual(['accounted']);
+  });
+
+  it('offers nothing on a rejected or accounted note', () => {
+    expect(getTreasuryActions(noteHorsSortie(205))).toEqual([]);
+    expect(getTreasuryActions(noteHorsSortie(208))).toEqual([]);
   });
 });
 

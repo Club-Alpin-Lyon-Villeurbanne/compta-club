@@ -13,7 +13,9 @@
  * - transitions de statut d'un gestionnaire, refusées (422) sur sa propre note ;
  * - notes hors sortie (achat, formation) : ni brouillon ni note qu'un responsable doit encore
  *   valider dans la liste, `status` et `type` à une ou plusieurs valeurs, recherche et date de la
- *   sortie sans effet sur elles.
+ *   sortie sans effet sur elles ; lecture d'une note par son identifiant ; décisions de la
+ *   trésorerie après le responsable, « Cette demande a déjà été traitée. » et message obligatoire
+ *   au refus.
  *
  * Chaque connexion ouvre une session isolée (identifiant `sid` porté par les jetons) : les
  * changements de statut et les requêtes reçues sont propres à un test, même en parallèle.
@@ -122,6 +124,14 @@ const MANAGER_TRANSITIONS: Record<string, string[]> = {
   approved: ['accounted'],
 };
 
+// Une note hors sortie envoyée sans valideur revient à la trésorerie dès l'envoi (voir managerTransitions).
+const MANAGER_TRANSITIONS_HORS_SORTIE: Record<string, string[]> = {
+  preapproved: ['approved', 'rejected'],
+  approved: ['accounted'],
+};
+
+const DECISIONS = ['preapproved', 'approved', 'rejected'];
+
 interface Session {
   changes: Map<number, Partial<Report>>;
   received: { method: string; path: string; body: unknown }[];
@@ -144,6 +154,21 @@ function reportsSeenBy(session: Session): Report[] {
 }
 
 const typeOf = (report: Report) => report.type ?? 'sortie';
+const isHorsSortie = (report: Report) => typeOf(report) !== 'sortie';
+
+function managerTransitions(report: Report): string[] {
+  if (!isHorsSortie(report)) return MANAGER_TRANSITIONS[report.status] ?? [];
+  if (report.status === 'submitted') return (report.valideurs ?? []).length ? [] : ['approved', 'rejected'];
+  return MANAGER_TRANSITIONS_HORS_SORTIE[report.status] ?? [];
+}
+
+// Une décision demandée sur une note hors sortie qui a quitté l'étape de la trésorerie.
+function dejaTraitee(report: Report, status: string, allowed: string[]): boolean {
+  return isHorsSortie(report)
+    && DECISIONS.includes(status)
+    && [...DECISIONS, 'accounted'].includes(report.status)
+    && !allowed.some((target) => DECISIONS.includes(target));
+}
 
 // La trésorerie ne voit d'une note hors sortie ni le brouillon, ni l'envoi qu'un responsable doit encore valider.
 function inTreasuryList(report: Report): boolean {
@@ -222,9 +247,14 @@ function send(res: http.ServerResponse, status: number, body?: unknown) {
 }
 
 // Erreurs d'API Platform
-function problem(res: http.ServerResponse, status: number, detail: string) {
+function problem(res: http.ServerResponse, status: number, detail: string, extra: object = {}) {
   res.writeHead(status, { 'Content-Type': 'application/problem+json' });
-  res.end(JSON.stringify({ type: `/errors/${status}`, title: 'An error occurred', status, detail }));
+  res.end(JSON.stringify({ type: `/errors/${status}`, title: 'An error occurred', status, detail, ...extra }));
+}
+
+// Refus du validateur, comme l'API : `detail` préfixé du champ, et la liste des violations.
+function violation(res: http.ServerResponse, propertyPath: string, message: string) {
+  problem(res, 422, `${propertyPath}: ${message}`, { violations: [{ propertyPath, message, code: null }] });
 }
 
 async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -278,6 +308,13 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     });
   }
 
+  // Comme API Platform, un identifiant qui n'est pas un entier ne trouve aucune note.
+  const noteMatch = url.pathname.match(/^\/notes-de-frais\/([^/]+)$/);
+  if (req.method === 'GET' && noteMatch) {
+    const report = /^\d+$/.test(noteMatch[1]) ? reportsSeenBy(session).find((r) => r.id === Number(noteMatch[1])) : undefined;
+    return report ? send(res, 200, toApi(report)) : problem(res, 404, 'Not Found');
+  }
+
   const patchMatch = url.pathname.match(/^\/notes-de-frais\/(\d+)$/);
   if (req.method === 'PATCH' && patchMatch) {
     const body = await readJson(req);
@@ -288,12 +325,27 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
 
     // Un gestionnaire ne décide pas de sa propre note : aucune transition ne lui est permise.
     const isOwner = report.utilisateur.id === MANAGER.id;
-    const allowed = isOwner ? [] : MANAGER_TRANSITIONS[report.status] ?? [];
+    const allowed = isOwner ? [] : managerTransitions(report);
+    if (!isOwner && dejaTraitee(report, body.status, allowed)) {
+      return violation(res, 'status', 'Cette demande a déjà été traitée.');
+    }
     if (body.status !== report.status && !allowed.includes(body.status)) {
-      return problem(res, 422, `status: Invalid status transition from "${report.status}" to "${body.status}".`);
+      return violation(res, 'status', `Invalid status transition from "${report.status}" to "${body.status}".`);
+    }
+    if (isHorsSortie(report) && body.status === 'rejected' && !String(body.commentaireStatut ?? '').trim()) {
+      return violation(res, 'commentaireStatut', 'Un message au demandeur est obligatoire pour refuser la note.');
     }
 
-    const change = { status: body.status, commentaireStatut: body.commentaireStatut ?? report.commentaireStatut };
+    const change: Partial<Report> = { status: body.status, commentaireStatut: body.commentaireStatut ?? report.commentaireStatut };
+    if (isHorsSortie(report) && DECISIONS.includes(body.status) && body.status !== report.status) {
+      change.derniereDecision = {
+        statut: body.status,
+        niveau: 'tresorerie',
+        auteur: { prenom: MANAGER.prenom, nom: MANAGER.nom.toUpperCase() },
+        date: new Date().toISOString(),
+        message: body.status === 'rejected' ? body.commentaireStatut : null,
+      };
+    }
     session.changes.set(report.id, { ...session.changes.get(report.id), ...change });
     return send(res, 200, toApi({ ...report, ...change }));
   }

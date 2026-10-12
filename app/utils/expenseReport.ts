@@ -1,8 +1,11 @@
 import {
+    Auteur,
     Commission,
     EventExpenseReport,
     ExpenseReport,
     ExpenseReportType,
+    NonEventExpenseReport,
+    ValidationResponsable,
 } from '@/app/interfaces/noteDeFraisInterface';
 import { ExpenseStatus, getExpenseStatusTranslation } from '@/app/enums/ExpenseStatus';
 import { calculateTotals, formatEuro, toAmount } from '@/app/utils/helper';
@@ -72,7 +75,17 @@ export function getReportSubmissionDate(report: ExpenseReport): string {
     return isEventReport(report) ? report.dateCreation : report.dateEnvoi ?? report.dateCreation;
 }
 
+/** Page d'une note : celle de sa sortie, ou la sienne pour une note hors sortie. */
+export function getReportHref(report: ExpenseReport): string | null {
+    if (!isEventReport(report)) return `/note-de-frais/note/${report.id}`;
+    return report.sortie ? `/note-de-frais/${report.sortie.id}` : null;
+}
+
 const jourMois = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+const jourMoisAnnee = (iso: string) => new Date(iso).toLocaleDateString('fr-FR');
+const nomComplet = (auteur: Auteur) => [auteur.prenom, auteur.nom].filter(Boolean).join(' ');
+const validePar = (validation: ValidationResponsable, date: string) =>
+    `Validée par ${nomComplet(validation.auteur)} le ${date}`;
 
 /**
  * Sous l'objet d'une note hors sortie : « Escalade · Validée par Hugo BLANC le 27/01 », ou
@@ -82,9 +95,60 @@ export function getNonEventReportDetails(report: ExpenseReport): string | null {
     if (isEventReport(report)) return null;
     const validation = report.validationResponsable;
     const circuit = validation
-        ? `Validée par ${validation.auteur.prenom} ${validation.auteur.nom} le ${jourMois(validation.date)}`
+        ? validePar(validation, jourMois(validation.date))
         : report.status === ExpenseStatus.SUBMITTED ? 'Sans responsable de commission' : null;
     return [report.commission?.title, circuit].filter(Boolean).join(' · ') || null;
+}
+
+/** « Validée par Hugo BLANC le 27/01/2025 » ; rien si aucun responsable ne l'a validée depuis son envoi. */
+export function getValidationResponsable(report: NonEventExpenseReport): string | null {
+    const validation = report.validationResponsable;
+    return validation ? validePar(validation, jourMoisAnnee(validation.date)) : null;
+}
+
+/** Le refus en cours d'une note : qui, quand, et le message laissé au demandeur. */
+export function getLastRefusal(report: NonEventExpenseReport): { intitule: string; message: string } | null {
+    const decision = report.derniereDecision;
+    if (decision?.statut === 'rejected') {
+        const auteur = nomComplet(decision.auteur);
+        return {
+            intitule: `Refusée${auteur ? ` par ${auteur}` : ''} le ${jourMoisAnnee(decision.date)}`,
+            message: decision.message ?? report.commentaireStatut ?? '',
+        };
+    }
+    return report.commentaireStatut ? { intitule: 'Refusée', message: report.commentaireStatut } : null;
+}
+
+/** Lien saisi par l'adhérent : seulement en http ou https, jamais javascript: ni data:. */
+export function safeExternalUrl(url: string | null): string | null {
+    if (!url) return null;
+    try {
+        const parsed = new URL(url.trim());
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+    } catch {
+        return null;
+    }
+}
+
+export type TreasuryAction = 'approved' | 'rejected' | 'accounted';
+
+/** Encore chez le responsable de sa commission : la trésorerie n'a rien à décider. */
+export function waitsForResponsable(report: NonEventExpenseReport): boolean {
+    return report.status === ExpenseStatus.SUBMITTED && (report.valideurs ?? []).length > 0;
+}
+
+/** Ce que la trésorerie peut faire d'une note hors sortie, comme l'API le permet à un gestionnaire. */
+export function getTreasuryActions(report: NonEventExpenseReport): TreasuryAction[] {
+    switch (report.status) {
+        case ExpenseStatus.PREAPPROVED:
+            return ['approved', 'rejected'];
+        case ExpenseStatus.SUBMITTED:
+            return waitsForResponsable(report) ? [] : ['approved', 'rejected'];
+        case ExpenseStatus.APPROVED:
+            return ['accounted'];
+        default:
+            return [];
+    }
 }
 
 interface StatusFilter {
