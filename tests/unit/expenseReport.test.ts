@@ -186,6 +186,14 @@ describe('decisionPhrase', () => {
   it('takes the date format it is given', () => {
     expect(decisionPhrase({ statut: 'rejected', niveau: 'tresorerie', auteur, date }, () => '29/01')).toBe('Refusée par la trésorerie le 29/01');
   });
+
+  it('leaves out what the API does not know: the name of the responsable, the date', () => {
+    expect(decisionPhrase({ statut: 'preapproved', niveau: 'responsable', auteur: { prenom: null, nom: null }, date }))
+      .toBe('Validée le 29/01/2025');
+    expect(decisionPhrase({ statut: 'rejected', niveau: 'responsable', auteur: { prenom: null, nom: 'BLANC' }, date }))
+      .toBe('Refusée par BLANC (responsable de commission) le 29/01/2025');
+    expect(decisionPhrase({ statut: 'approved', niveau: 'tresorerie', auteur, date: null })).toBe('Approuvée par la trésorerie');
+  });
 });
 
 describe('getValidationResponsable', () => {
@@ -269,6 +277,24 @@ describe('getLastRefusal', () => {
     expect(getLastRefusal(renvoyee)).toMatchObject({
       enCours: false,
       intitule: 'Refusée par la trésorerie le 29/01, corrigée et renvoyée le 30/01',
+    });
+  });
+
+  it('recalls the refusal of a note sent again even when the API gives no date for the refusal', () => {
+    const sansDate = noteHorsSortie(206, {
+      derniereDecision: {
+        statut: 'rejected',
+        niveau: 'tresorerie',
+        auteur: { prenom: 'Claire', nom: 'FONTAINE' },
+        date: null,
+        message: 'Il manque le ticket de caisse.',
+      },
+    });
+
+    expect(getLastRefusal(sansDate)).toEqual({
+      enCours: false,
+      intitule: 'Refusée par la trésorerie, corrigée et renvoyée le 28/01',
+      message: 'Il manque le ticket de caisse.',
     });
   });
 

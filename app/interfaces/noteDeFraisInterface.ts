@@ -55,7 +55,7 @@ export interface NonEventExpenseReport extends BaseExpenseReport {
     lignesAffichees: LigneAffichee[]
     avertissements: string[]
     dateEnvoi: string | null
-    valideurs: User[]
+    valideurs: Valideur[]
     derniereDecision: DerniereDecision | null
     validationResponsable: ValidationResponsable | null
     libelleComptable: string | null
@@ -63,29 +63,35 @@ export interface NonEventExpenseReport extends BaseExpenseReport {
 
 export type ExpenseReport = EventExpenseReport | NonEventExpenseReport
 
+// Nullables comme dans le normaliseur de la plateforme : une ligne saisie sans identifiant ni
+// description, un auteur ou un valideur sans nom, une décision sans date.
 export interface LigneAffichee {
-    id: string
+    id: string | null
     nature: string | null
-    libelle: string
+    libelle: string | null
     detail: string | null
     montant: number
 }
 
 export interface Auteur {
-    prenom: string
-    nom: string
+    prenom: string | null
+    nom: string | null
+}
+
+export interface Valideur extends Auteur {
+    id: number
 }
 
 export interface ValidationResponsable {
     auteur: Auteur
-    date: string
+    date: string | null
 }
 
 export interface DerniereDecision {
     statut: 'preapproved' | 'approved' | 'rejected'
     niveau: 'responsable' | 'tresorerie' | null
     auteur: Auteur
-    date: string
+    date: string | null
     message: string | null
 }
 

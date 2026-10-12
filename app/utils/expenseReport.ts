@@ -107,7 +107,8 @@ function signataire({ statut, niveau, auteur }: Decision): string {
  * trésorerie le … » ou « Refusée par Hugo BLANC (responsable de commission) le … ».
  */
 export function decisionPhrase(decision: Decision, formatDate: (iso: string) => string = jourMoisAnnee): string {
-    return `${DECISION_VERBES[decision.statut]}${signataire(decision)} le ${formatDate(decision.date)}`;
+    const quand = decision.date ? ` le ${formatDate(decision.date)}` : '';
+    return `${DECISION_VERBES[decision.statut]}${signataire(decision)}${quand}`;
 }
 
 const validationDecision = (validation: ValidationResponsable): Decision =>
@@ -193,7 +194,8 @@ export function getLastRefusal(report: NonEventExpenseReport): Refusal | null {
             message: decision?.message ?? report.commentaireStatut ?? '',
         };
     }
-    if (decision && report.dateEnvoi && new Date(report.dateEnvoi) > new Date(decision.date)) {
+    // Sans date, le refus précède quand même le renvoi : c'est la dernière décision, et la note n'est plus refusée.
+    if (decision && report.dateEnvoi && (!decision.date || new Date(report.dateEnvoi) > new Date(decision.date))) {
         return {
             enCours: false,
             intitule: `${decisionPhrase(decision, jourMois)}, corrigée et renvoyée le ${jourMois(report.dateEnvoi)}`,

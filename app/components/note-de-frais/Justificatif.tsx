@@ -1,6 +1,6 @@
 import { FaFileAlt } from 'react-icons/fa';
 
-export const Justificatif = ({ fileUrl, libelle }: { fileUrl: string | undefined; libelle?: string }) => {
+export const Justificatif = ({ fileUrl, libelle }: { fileUrl: string | undefined; libelle?: string | null }) => {
     const nom = `Justificatif${libelle ? ` : ${libelle}` : ''} (ouvre un nouvel onglet)`;
     return (
         <>

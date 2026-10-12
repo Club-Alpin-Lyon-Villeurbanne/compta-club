@@ -106,6 +106,17 @@ describe('PDF of a note hors sortie', () => {
     expect(texts).not.toContain('100.00 € déclarés');
   });
 
+  it('prints a line typed without description, and a decision the API gives without name nor date', () => {
+    const texts = textsOf(noteHorsSortie(202, {
+      ...approuveeParLaTresorerie,
+      lignesAffichees: [{ id: null, nature: null, libelle: null, detail: null, montant: 100 }],
+      validationResponsable: { auteur: { prenom: null, nom: null }, date: null },
+    }));
+
+    expect(after(texts, 'DÉPENSES', 6)).toEqual(['Dépense', 'Montant', '', '100.00 €', 'Total déclaré', '312.40 €']);
+    expect(textAfter(texts, 'Validation du responsable')).toBe('Validée');
+  });
+
   it('keeps a line readable when it holds characters the PDF font cannot write', () => {
     const texts = textsOf(noteHorsSortie(202, {
       ...approuveeParLaTresorerie,

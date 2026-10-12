@@ -143,14 +143,30 @@ describe('NoteHorsSortieDetail', () => {
     expect(within(field('Lien de la formation')).queryByRole('link')).toBeNull();
   });
 
+  it('shows a line typed without description, and still names its receipt', () => {
+    render(
+      <NoteHorsSortieDetail
+        note={noteHorsSortie(201, {
+          lignesAffichees: [{ id: 'ligne-201', nature: null, libelle: null, detail: null, montant: 55 }],
+        })}
+        onAction={vi.fn()}
+      />
+    );
+
+    const receipt = screen.getByRole('link', { name: 'Justificatif (ouvre un nouvel onglet)' });
+    expect(receipt.getAttribute('href')).toBe('https://example.com/facture-201.pdf');
+    const cells = within(receipt.closest('tr') as HTMLElement).getAllByRole('cell');
+    expect(cells.map((cell) => cell.textContent)).toEqual(['', '55.00 €', '']);
+  });
+
   it('keeps lines without id and repeated warnings apart', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     render(
       <NoteHorsSortieDetail
         note={noteHorsSortie(202, {
           lignesAffichees: [
-            { id: null as unknown as string, nature: null, libelle: 'Corde', detail: null, montant: 10 },
-            { id: null as unknown as string, nature: null, libelle: 'Corde', detail: null, montant: 10 },
+            { id: null, nature: null, libelle: 'Corde', detail: null, montant: 10 },
+            { id: null, nature: null, libelle: 'Corde', detail: null, montant: 10 },
           ],
           avertissements: ['Même avertissement.', 'Même avertissement.'],
         })}
