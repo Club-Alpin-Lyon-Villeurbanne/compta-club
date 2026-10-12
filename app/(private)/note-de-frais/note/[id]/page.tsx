@@ -1,6 +1,5 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ExpenseReport, NonEventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import { get } from "@/app/lib/fetchClient";
@@ -9,19 +8,9 @@ import { getActionConfirmation, getDecisionSummary, isEventReport, TreasuryActio
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import NoteHorsSortieDetail from "@/app/components/note-de-frais/NoteHorsSortieDetail";
+import AdresseIntrouvable from "@/app/components/note-de-frais/AdresseIntrouvable";
 
 type LoadError = "introuvable" | "erreur";
-
-const NoteIntrouvable = () => (
-  <div className="container px-4 py-8 mx-auto">
-    <div className="max-w-lg p-6 mx-auto text-center bg-white rounded-lg shadow-sm">
-      <p className="mb-4 text-gray-700">Cette adresse ne correspond à aucune note de frais.</p>
-      <Link href="/note-de-frais" className="text-blue-700 hover:underline">
-        Retour à la liste des notes
-      </Link>
-    </div>
-  </div>
-);
 
 export default function NoteHorsSortiePage() {
   const router = useRouter();
@@ -88,7 +77,7 @@ export default function NoteHorsSortiePage() {
     };
   }, [note]);
 
-  if (error === "introuvable") return <NoteIntrouvable />;
+  if (error === "introuvable") return <AdresseIntrouvable>Cette adresse ne correspond à aucune note de frais.</AdresseIntrouvable>;
   if (error) return <ErrorMessage message="Une erreur est survenue lors du chargement de la note de frais" variant="page" />;
   if (!note) return <LoadingSpinner />;
 

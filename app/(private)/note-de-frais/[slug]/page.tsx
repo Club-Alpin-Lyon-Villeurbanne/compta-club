@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { FaArrowLeft } from "react-icons/fa";
 import { EventExpenseReport, Event } from "@/app/interfaces/noteDeFraisInterface";
 import Header from "@/app/components/note-de-frais/header";
 import { get } from "@/app/lib/fetchClient";
@@ -8,6 +10,7 @@ import LoadingSpinner from "@/app/components/LoadingSpinner";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import EventInfo from "@/app/components/EventInfo";
 import ExpensesList from "@/app/components/note-de-frais/ExpensesTables/ExpensesList";
+import AdresseIntrouvable from "@/app/components/note-de-frais/AdresseIntrouvable";
 
 const ExpenseReportContent = ({
   event,
@@ -18,26 +21,27 @@ const ExpenseReportContent = ({
   expenseReports: EventExpenseReport[];
   fetchData: () => Promise<void>;
 }) => (
-  <main className="min-h-screen bg-gray-50">
-    <div className="container max-w-6xl px-4 py-8 mx-auto">
-      <Header commission={event.commission.id} titre={event.titre} id={event.id} />
-      <EventInfo event={event} />
-      <div className="p-6 bg-white rounded-lg shadow-sm">
-        <h2 className="mb-4 text-xl font-semibold text-gray-800">
-          Notes de frais
-        </h2>
-        <ExpensesList
-          expenseReports={expenseReports}
-          fetchData={fetchData}
-          params={{ slug: event.id.toString() }}
-        />
-      </div>
+  <div className="container max-w-6xl px-4 mx-auto">
+    <Link href="/note-de-frais" className="inline-flex items-center mb-5 text-sm text-blue-700 hover:underline">
+      <FaArrowLeft className="mr-2" aria-hidden="true" />
+      Retour à la liste
+    </Link>
+    <Header commission={event.commission.id} titre={event.titre} id={event.id} />
+    <EventInfo event={event} />
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <h2 className="mb-4 text-xl font-semibold text-gray-800">
+        Notes de frais
+      </h2>
+      <ExpensesList
+        expenseReports={expenseReports}
+        fetchData={fetchData}
+        params={{ slug: event.id.toString() }}
+      />
     </div>
-  </main>
+  </div>
 );
 
 export default function ExpenseReportPage() {
-  const router = useRouter();
   const params = useParams();
   const slug = params?.slug;
 
@@ -45,6 +49,7 @@ export default function ExpenseReportPage() {
   const [expenseReports, setExpenseReports] = useState<EventExpenseReport[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [introuvable, setIntrouvable] = useState(false);
 
   const fetchExpenseReports = useCallback(async () => {
     if (!slug) return;
@@ -57,7 +62,7 @@ export default function ExpenseReportPage() {
       const reports = await get<EventExpenseReport[]>(`/api/expense-reports/${slug}`);
 
       if (!reports || reports.length === 0) {
-        setError("Aucune note de frais trouvée pour cet événement.");
+        setIntrouvable(true);
         return;
       }
 
@@ -76,7 +81,12 @@ export default function ExpenseReportPage() {
       setEvent(parsedReports[0].sortie);
       setExpenseReports(parsedReports);
     } catch (err) {
-      setError("Une erreur est survenue lors du chargement des données");
+      const status = (err as { status?: number }).status;
+      if (status === 400 || status === 404) {
+        setIntrouvable(true);
+      } else {
+        setError("Une erreur est survenue lors du chargement des données");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +97,10 @@ export default function ExpenseReportPage() {
       fetchExpenseReports();
     }
   }, [slug, fetchExpenseReports]);
+
+  if (introuvable) {
+    return <AdresseIntrouvable>Cette adresse ne correspond à aucune sortie.</AdresseIntrouvable>;
+  }
 
   if (isLoading) {
     return <LoadingSpinner />;

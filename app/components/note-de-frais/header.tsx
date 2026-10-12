@@ -27,7 +27,7 @@ export default function Header({commission, titre, id}: HeaderProps) {
                         setImgSrc(config.DEFAULT_COMMISSION_ICON);
                     }}
                 />
-                <h2 className="ml-4 text-2xl font-semibold leading-tight">{titre}</h2>
+                <h1 className="ml-4 text-2xl font-semibold leading-tight">{titre}</h1>
             </div>
             <Link 
                 href={`https://www.clubalpinlyon.fr/sortie/sortie-${id}.html`}
