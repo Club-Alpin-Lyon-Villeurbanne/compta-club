@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ExpenseReport, NonEventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
@@ -30,7 +30,10 @@ export default function NoteHorsSortiePage() {
 
   const [note, setNote] = useState<NonEventExpenseReport | null>(null);
   const [error, setError] = useState<LoadError | null>(null);
+  const [reloadFailed, setReloadFailed] = useState(false);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const shownId = useRef<string | null>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   const fetchNote = useCallback(async (): Promise<NonEventExpenseReport | null> => {
     try {
@@ -40,10 +43,17 @@ export default function NoteHorsSortiePage() {
         router.replace(`/note-de-frais/${report.sortie.id}`);
         return null;
       }
+      shownId.current = id;
       setNote(report);
       setError(null);
+      setReloadFailed(false);
       return report;
     } catch (err) {
+      // Une note déjà affichée reste à l'écran : seule sa relecture a échoué.
+      if (shownId.current === id) {
+        setReloadFailed(true);
+        return null;
+      }
       const status = (err as { status?: number }).status;
       setError(status === 400 || status === 404 ? "introuvable" : "erreur");
       return null;
@@ -51,8 +61,9 @@ export default function NoteHorsSortiePage() {
   }, [id, router]);
 
   const reloadStatus = useCallback(async () => (await fetchNote())?.status ?? null, [fetchNote]);
+  const focusTitle = useCallback(() => titleRef.current?.focus(), []);
 
-  const { handleAction, pendingAction } = useExpenseActions(fetchNote, { reloadStatus });
+  const { handleAction, pendingAction } = useExpenseActions(fetchNote, { reloadStatus, onAlreadyProcessed: focusTitle });
 
   const onAction = useCallback(
     async (noteId: number, action: TreasuryAction) => {
@@ -87,6 +98,8 @@ export default function NoteHorsSortiePage() {
       onAction={onAction}
       pendingAction={pendingAction}
       confirmation={confirmation}
+      reloadFailed={reloadFailed}
+      titleRef={titleRef}
     />
   );
 }

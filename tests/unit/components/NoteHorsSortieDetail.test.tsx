@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import NoteHorsSortieDetail from '@/app/components/note-de-frais/NoteHorsSortieDetail';
@@ -25,9 +26,8 @@ describe('NoteHorsSortieDetail', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Formation initiateur escalade');
-    expect(screen.getByText('Formation · Escalade')).toBeTruthy();
+    expect(screen.getByText('Formation · Escalade · Thomas Petit')).toBeTruthy();
     expect(screen.getByText('Validée par le responsable')).toBeTruthy();
-    expect(field('Demandeur').textContent).toBe('Thomas Petit');
     expect(field('Date de la formation').textContent).toBe(new Date(2025, 0, 25).toLocaleDateString());
     expect(field('Mot du demandeur').textContent).toBe('Stage validé par la commission en décembre.');
     expect(field('Validation du responsable').textContent).toBe('Validée par Hugo BLANC le 27/01/2025');
@@ -41,10 +41,10 @@ describe('NoteHorsSortieDetail', () => {
     expect(screen.queryByLabelText('Dernier refus')).toBeNull();
   });
 
-  it('does not repeat the type, the commission and the objet of the header', () => {
+  it('does not repeat the type, the commission, the requester and the objet of the header', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
 
-    for (const label of ['Type', 'Commission', 'Objet']) {
+    for (const label of ['Type', 'Commission', 'Demandeur', 'Objet']) {
       expect(screen.queryByText(label, { selector: 'dt' })).toBeNull();
     }
   });
@@ -54,7 +54,6 @@ describe('NoteHorsSortieDetail', () => {
 
     expect(within(summary()).getByText('À rembourser : 287.40 €')).toBeTruthy();
     expect(within(summary()).getByText('312.40 € déclarés, dont 25.00 € au-delà des plafonds du club')).toBeTruthy();
-    expect(within(summary()).getByText('Remboursement demandé')).toBeTruthy();
     expect(within(summary()).getByText('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade')).toBeTruthy();
     expect(within(summary()).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent))
       .toEqual(['Copier le libellé comptable', 'Approuver', 'Refuser']);
@@ -80,6 +79,35 @@ describe('NoteHorsSortieDetail', () => {
     expect(within(screen.getByText('Total remboursable').closest('tr')!).getByText('287.40 €')).toBeTruthy();
   });
 
+  it('does not call the part of a don within the caps of the club refundable', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(202, { refundRequired: false })} onAction={vi.fn()} />);
+
+    expect(within(summary()).getByText('Don : 287.40 €')).toBeTruthy();
+    expect(screen.getByText('Total dans les plafonds du club').closest('tr')!.textContent).toContain('287.40 €');
+    expect(screen.queryByText('Total remboursable')).toBeNull();
+  });
+
+  it('shows the requester, the warnings and the refusal before the buttons of the summary', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(205, { avertissements: ['Plus de 200 € : justificatif détaillé.'] })} onAction={vi.fn()} />);
+
+    const buttonsOrSummary = summary();
+    for (const before of [
+      screen.getByText('Achat · Escalade · Thomas Petit'),
+      screen.getByLabelText('Dernier refus'),
+      screen.getByLabelText('Avertissements'),
+    ]) {
+      expect(before.compareDocumentPosition(buttonsOrSummary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it('puts the copy of the accounting label next to its heading', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
+
+    const copy = within(summary()).getByRole('button', { name: 'Copier le libellé comptable' });
+    expect(copy.parentElement!.textContent).toContain('Libellé comptable');
+    expect(copy.parentElement!.textContent).not.toContain('PETIT Thomas');
+  });
+
   it('shows an achat given as a don, its text as is, and hides an empty Détail column', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(203)} onAction={vi.fn()} />);
 
@@ -87,7 +115,9 @@ describe('NoteHorsSortieDetail', () => {
     expect(document.querySelector('b')).toBeNull();
     expect(field('Date de la dépense')).toBeTruthy();
     expect(within(summary()).getByText('Don : 42.00 €')).toBeTruthy();
-    expect(within(summary()).getByText('Don au club')).toBeTruthy();
+    expect(within(summary()).queryByText('Don au club')).toBeNull();
+    expect(screen.getByText('Total').closest('tr')!.textContent).toBe('Total42.00 €');
+    expect(screen.queryByText('Total déclaré')).toBeNull();
     expect(screen.queryByRole('columnheader', { name: 'Détail' })).toBeNull();
     expect(screen.queryByText('Lien de la formation')).toBeNull();
     expect(screen.queryByText('Mot du demandeur')).toBeNull();
@@ -263,6 +293,32 @@ describe('NoteHorsSortieDetail', () => {
     const announcements = screen.getAllByRole('status');
     expect(announcements[0].getAttribute('aria-live')).toBe('polite');
     expect(announcements[0].textContent).toBe('Note approuvée. Un mail a été envoyé à Lucie Roux.');
+  });
+
+  it('moves the focus to the confirmation, the clicked button being gone', () => {
+    const { rerender } = render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} />);
+
+    rerender(<NoteHorsSortieDetail note={noteHorsSortie(204)} onAction={vi.fn()} confirmation="Note approuvée. Un mail a été envoyé à Thomas Petit." />);
+
+    expect(document.activeElement?.textContent).toBe('Note approuvée. Un mail a été envoyé à Thomas Petit.');
+  });
+
+  it('lets the page put the focus on the title', () => {
+    const titleRef = React.createRef<HTMLHeadingElement>();
+    render(<NoteHorsSortieDetail note={noteHorsSortie(202)} onAction={vi.fn()} titleRef={titleRef} />);
+
+    act(() => titleRef.current!.focus());
+
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }));
+  });
+
+  it('says that the note could not be read again, and keeps showing it', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(204)} onAction={vi.fn()} reloadFailed />);
+
+    expect(screen.getAllByRole('status')[0].textContent).toBe(
+      'La note n\'a pas pu être relue : elle peut avoir changé depuis. Rechargez la page pour la voir à jour.'
+    );
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Recyclage initiateur randonnée');
   });
 
   it('announces the copy of the accounting label, or that it failed', async () => {

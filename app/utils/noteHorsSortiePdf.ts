@@ -10,6 +10,7 @@ import {
     getApproval,
     getExpenseDateLabel,
     getReportTypeLabel,
+    getTotalLines,
     getValidationResponsable,
     noteStatusPhrase,
 } from '@/app/utils/expenseReport';
@@ -147,7 +148,7 @@ export function buildNoteHorsSortiePdf(note: NonEventExpenseReport): jsPDF {
             ...(avecDetail ? [ligne.detail ?? ''] : []),
             montant(ligne.montant),
         ]),
-        foot: [total('Total déclaré', note.totalDeclare, 'normal'), total('Total remboursable', note.totalRemboursable, 'bold')],
+        foot: getTotalLines(note).map(({ libelle, montant, principal }) => total(libelle, montant, principal ? 'bold' : 'normal')),
         startY: y,
         theme: 'striped',
         showFoot: 'lastPage',

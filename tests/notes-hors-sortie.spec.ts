@@ -271,7 +271,7 @@ test.describe('Notes hors sortie in the list', () => {
     expect(textAfter(pdf.texts, 'Objet')).toBe('Recyclage initiateur randonnée');
     expect(textAfter(pdf.texts, 'Date de la formation')).toBe('11/01/2025');
     expect(textAfter(pdf.texts, 'Stage')).toBe('120.00 €');
-    expect(textAfter(pdf.texts, 'Total remboursable')).toBe('120.00 €');
+    expect(textAfter(pdf.texts, 'Total')).toBe('120.00 €');
     expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
     expect(textAfter(pdf.texts, 'Libellé comptable')).toBe('ROUX Lucie NDF 11/01/2025 Recyclage initiateur randonnée');
   });

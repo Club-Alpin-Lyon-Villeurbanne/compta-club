@@ -33,6 +33,8 @@ interface ExpenseActionsOptions {
   // Relit la note et rend son statut (null si la lecture échoue) : avant l'envoi, pour ne pas agir sur une
   // note déjà traitée ailleurs, et après, pour ne confirmer qu'une action qui a pris effet.
   reloadStatus?: () => Promise<string | null>;
+  // Une fois fermée la fenêtre « Note déjà traitée » : le bouton cliqué a pu disparaître, la page place le focus.
+  onAlreadyProcessed?: () => void;
 }
 
 export function useExpenseActions(fetchData: () => Promise<unknown>, options: ExpenseActionsOptions = {}) {
@@ -63,6 +65,7 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
         action === 'rejected' ? 'Votre refus n\'a pas été envoyé.' : 'Votre action n\'a pas été enregistrée.',
       ].filter(Boolean).join(' '),
       icon: 'info',
+      didClose: options.onAlreadyProcessed,
     });
   };
 

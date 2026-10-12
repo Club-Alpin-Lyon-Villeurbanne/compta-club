@@ -56,20 +56,18 @@ test.describe('Page of a note hors sortie', () => {
     await page.goto(note(202));
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Formation initiateur escalade');
-    await expect(page.getByText('Formation · Escalade', { exact: true })).toBeVisible();
+    await expect(page.getByText('Formation · Escalade · Thomas Petit', { exact: true })).toBeVisible();
     await expect(status(page, 'Validée par le responsable')).toBeVisible();
 
     await expect(summary(page)).toContainText('À rembourser : 287.40 €');
     await expect(summary(page)).toContainText('312.40 € déclarés, dont 25.00 € au-delà des plafonds du club');
-    await expect(summary(page)).toContainText('Remboursement demandé');
     await expect(summary(page)).toContainText('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade');
     await expect(summary(page).getByRole('button', { name: /^(Approuver|Refuser)$/ })).toHaveText(['Approuver', 'Refuser']);
 
-    await expect(field(page, 'Demandeur')).toHaveText('Thomas Petit');
     await expect(field(page, 'Date de la formation')).toHaveText('25/01/2025');
     await expect(field(page, 'Mot du demandeur')).toHaveText('Stage validé par la commission en décembre.');
     await expect(field(page, 'Validation du responsable')).toHaveText('Validée par Hugo BLANC le 27/01/2025');
-    for (const label of ['Type', 'Commission', 'Objet']) await expect(field(page, label)).toHaveCount(0);
+    for (const label of ['Type', 'Commission', 'Demandeur', 'Objet']) await expect(field(page, label)).toHaveCount(0);
 
     const lien = field(page, 'Lien de la formation').getByRole('link');
     await expect(lien).toHaveText('https://example.com/formation-initiateur-escalade');
@@ -96,9 +94,9 @@ test.describe('Page of a note hors sortie', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText("Sac <b>30 L</b> & cordelette d'attache");
     await expect(page.locator('b')).toHaveCount(0);
-    await expect(page.getByText('Achat · Escalade', { exact: true })).toBeVisible();
+    await expect(page.getByText('Achat · Escalade · Camille Faure', { exact: true })).toBeVisible();
     await expect(summary(page)).toContainText('Don : 42.00 €');
-    await expect(summary(page)).toContainText('Don au club');
+    await expect(page.locator('tfoot tr')).toHaveText([/^Total\s*42\.00 €$/]);
     await expect(summary(page)).not.toContainText('déclarés');
     await expect(field(page, 'Date de la dépense')).toHaveText('18/01/2025');
     await expect(field(page, 'Validation du responsable')).toHaveText('Validée par Hugo BLANC le 27/01/2025');
@@ -117,7 +115,7 @@ test.describe('Page of a note hors sortie', () => {
   test('should say that a note sent without valideur has no responsable', async ({ page }) => {
     await page.goto(note(201));
 
-    await expect(field(page, 'Demandeur')).toHaveText('Lucie Roux');
+    await expect(page.getByText('Achat · Randonnée · Lucie Roux', { exact: true })).toBeVisible();
     await expect(status(page, 'Soumise')).toBeVisible();
     await expect(field(page, 'Validation du responsable')).toHaveText('Aucune : la note va directement à la trésorerie.');
     await expect(actionButtons(page)).toHaveText(['Approuver', 'Refuser']);
@@ -133,6 +131,8 @@ test.describe('Page of a note hors sortie', () => {
     await page.locator('.swal2-confirm').click();
 
     await expect(confirmation(page)).toHaveText('Note approuvée. Un mail a été envoyé à Thomas Petit.');
+    // Le bouton cliqué a disparu : le focus est sur la confirmation, pas retombé en haut de la page
+    await expect(confirmation(page).locator('p')).toBeFocused();
     await expect(status(page, 'Approuvée')).toBeVisible();
     await expect(field(page, 'Décision')).toHaveText(new RegExp(`^Approuvée par la trésorerie le ${today.source}$`));
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
@@ -280,6 +280,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(page.locator('.swal2-icon-info')).toBeVisible();
     await expect(page.locator('.swal2-icon-error')).toHaveCount(0);
     await page.locator('.swal2-confirm').click();
+    await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
     await expect(status(page, 'Approuvée')).toBeVisible();
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
     await expect(confirmation(page)).toHaveText('');
@@ -322,6 +323,27 @@ test.describe('Page of a note hors sortie', () => {
     await page.locator('.swal2-confirm').click();
     await expect(confirmation(page)).toHaveText('');
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
+  });
+
+  test('should keep the note on screen when it cannot be read again after an action', async ({ page }) => {
+    await page.goto(note(204));
+    await expect(button(page, 'Comptabiliser')).toBeVisible();
+    // La lecture d'avant l'envoi passe, celle d'après échoue.
+    let reads = 0;
+    await page.route('**/api/expense-reports/note/204', (route) =>
+      ++reads > 1 ? route.fulfill({ status: 503, json: { error: 'Service indisponible' } }) : route.continue()
+    );
+
+    await button(page, 'Comptabiliser').click();
+    await page.locator('.swal2-confirm').click();
+
+    await expect(confirmation(page)).toContainText('Note comptabilisée. Un mail a été envoyé à Lucie Roux.');
+    await expect(confirmation(page)).toContainText('La note n\'a pas pu être relue : elle peut avoir changé depuis. Rechargez la page pour la voir à jour.');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recyclage initiateur randonnée');
+    await expect(page.getByText('Oups ! Une erreur est survenue')).toHaveCount(0);
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/204', body: { status: 'accounted' } },
+    ]);
   });
 
   test('should tell that a refusal was not sent when the note was decided during the sending', async ({ page }) => {
@@ -500,6 +522,7 @@ test.describe('PDF of a note hors sortie', () => {
     expect(pdf.texts).toContain('Remboursement : 32.50 €');
     expect(pdf.texts.join('\n')).not.toContain('À rembourser');
     expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
-    expect(textAfter(pdf.texts, 'Total remboursable')).toBe('32.50 €');
+    expect(textAfter(pdf.texts, 'Total')).toBe('32.50 €');
+    expect(pdf.texts).not.toContain('Total remboursable');
   });
 });

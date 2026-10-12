@@ -14,7 +14,6 @@ import {
   getLastRefusal,
   getNonEventReportDetails,
   getRefundableNote,
-  getRefundChoice,
   getReportAmount,
   getReportCommission,
   getReportDate,
@@ -24,6 +23,7 @@ import {
   getReportType,
   getReportTypeLabel,
   getStatusNote,
+  getTotalLines,
   getTreasuryActions,
   getValidationResponsable,
   getWaitingForResponsable,
@@ -390,9 +390,21 @@ describe('page of a note hors sortie', () => {
     expect(getExpenseStatusTranslation(ExpenseStatus.DRAFT)).toBe('Brouillon');
   });
 
-  it('names the choice of the requester between a refund and a don', () => {
-    expect(getRefundChoice(noteHorsSortie(202))).toBe('Remboursement demandé');
-    expect(getRefundChoice(noteHorsSortie(203))).toBe('Don au club');
+  it('totals the expenses once when the caps of the club leave nothing out', () => {
+    expect(getTotalLines(noteHorsSortie(201))).toEqual([{ libelle: 'Total', montant: 55, principal: true }]);
+    expect(getTotalLines(noteHorsSortie(203))).toEqual([{ libelle: 'Total', montant: 42, principal: true }]);
+  });
+
+  it('totals what was declared, then what is refundable in bold', () => {
+    expect(getTotalLines(noteHorsSortie(202))).toEqual([
+      { libelle: 'Total déclaré', montant: 312.4, principal: false },
+      { libelle: 'Total remboursable', montant: 287.4, principal: true },
+    ]);
+  });
+
+  it('does not call the part of a don within the caps of the club refundable', () => {
+    expect(getTotalLines(noteHorsSortie(202, { refundRequired: false })).at(-1))
+      .toEqual({ libelle: 'Total dans les plafonds du club', montant: 287.4, principal: true });
   });
 
   it('offers the PDF of an approved or accounted note, de sortie or not', () => {

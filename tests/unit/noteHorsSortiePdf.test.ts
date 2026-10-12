@@ -80,6 +80,18 @@ describe('PDF of a note hors sortie', () => {
     expect(texts).not.toContain('Détail');
     expect(textAfter(texts, 'Validation du responsable')).toBe('Validée par Hugo BLANC le 27/01/2025');
     expect(texts.join('\n')).not.toContain('déclarés');
+    // Rien de plafonné : un seul total
+    expect(textAfter(texts, 'Total')).toBe('42.00 €');
+    expect(texts).not.toContain('Total déclaré');
+    expect(texts).not.toContain('Total remboursable');
+  });
+
+  it('does not call the part of a don within the caps of the club refundable', () => {
+    const texts = textsOf(noteHorsSortie(202, { ...approuveeParLaTresorerie, refundRequired: false }));
+
+    expect(textAfter(texts, 'Total déclaré')).toBe('312.40 €');
+    expect(textAfter(texts, 'Total dans les plafonds du club')).toBe('287.40 €');
+    expect(texts).not.toContain('Total remboursable');
   });
 
   it('says that an accounted note went straight to the treasury', () => {

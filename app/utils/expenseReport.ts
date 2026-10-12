@@ -168,10 +168,6 @@ export function getValidationResponsable(report: NonEventExpenseReport): string 
         : 'Aucune : la note est allée directement à la trésorerie.';
 }
 
-export function getRefundChoice(report: NonEventExpenseReport): string {
-    return report.refundRequired ? 'Remboursement demandé' : 'Don au club';
-}
-
 /** Le PDF d'une note, de sortie ou non, une fois approuvée par la trésorerie. */
 export function canDownloadPdf(report: ExpenseReport): boolean {
     return report.status === ExpenseStatus.APPROVED || report.status === ExpenseStatus.ACCOUNTED;
@@ -246,6 +242,29 @@ export function getAmountSummary(report: NonEventExpenseReport): { titre: string
             ? `${formatEuro(declare / 100)} déclarés, dont ${formatEuro((declare - remboursable) / 100)} au-delà des plafonds du club`
             : null,
     };
+}
+
+export interface TotalLine {
+    libelle: string;
+    montant: number;
+    // La ligne en gras : le montant qui compte.
+    principal: boolean;
+}
+
+/**
+ * Pied du tableau des dépenses, sur la page comme dans le PDF : « Total » quand les plafonds n'ont rien
+ * retenu ; sinon « Total déclaré », puis « Total remboursable » (« Total dans les plafonds du club » pour un don).
+ */
+export function getTotalLines(report: NonEventExpenseReport): TotalLine[] {
+    const remboursable = toAmount(report.totalRemboursable);
+    const declare = toAmount(report.totalDeclare);
+    if (Math.round(remboursable * 100) >= Math.round(declare * 100)) {
+        return [{ libelle: 'Total', montant: remboursable, principal: true }];
+    }
+    return [
+        { libelle: 'Total déclaré', montant: declare, principal: false },
+        { libelle: report.refundRequired ? 'Total remboursable' : 'Total dans les plafonds du club', montant: remboursable, principal: true },
+    ];
 }
 
 const deCommission = (title: string) => (/^[aeiouyàâäéèêëîïôöûü]/i.test(title) ? `d'${title}` : `de ${title}`);

@@ -183,6 +183,17 @@ describe('useExpenseActions', () => {
       ));
     });
 
+    it('hands the focus back to the page once the dialog of a note processed in between is closed', async () => {
+      state.fire.mockResolvedValue({ isConfirmed: true });
+      const reloadStatus = vi.fn().mockResolvedValue('accounted');
+      const onAlreadyProcessed = vi.fn();
+      const { result } = renderHook(() => useExpenseActions(vi.fn(), { reloadStatus, onAlreadyProcessed }));
+
+      await act(async () => { await result.current.handleAction(204, 'accounted', 'approved'); });
+
+      expect(state.fire).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Note déjà traitée', didClose: onAlreadyProcessed }));
+    });
+
     it('reads the note again after any other refusal of the API, and shows it', async () => {
       state.fire.mockResolvedValue({ isConfirmed: true });
       vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Accès refusé.'), { status: 403 }));
