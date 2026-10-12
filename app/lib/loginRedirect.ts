@@ -4,8 +4,8 @@ export const SESSION_EXPIRED = 'expiree';
 const ORIGIN = 'http://compta-club.invalid';
 
 /**
- * Page où revenir après la connexion : un chemin de compta-club seulement, sinon le lien de connexion
- * enverrait n'importe où (redirection ouverte). Le navigateur retire tabulations et retours à la ligne,
+ * Page où revenir après la connexion : une page des notes de frais seulement, sinon le lien de connexion
+ * enverrait n'importe où (redirection ouverte), ou vers une route de l'API. Le navigateur retire tabulations et retours à la ligne,
  * et lit « \ » comme « / » : « /\t/site.fr » ou « /\site.fr » mèneraient à site.fr.
  */
 export function safeReturnPath(value: unknown): string | null {
@@ -14,7 +14,7 @@ export function safeReturnPath(value: unknown): string | null {
   try {
     // Forme résolue : « /..//site.fr » devient « //site.fr », que certains lecteurs prendraient pour un autre site.
     const url = new URL(value, ORIGIN);
-    if (url.origin !== ORIGIN || url.pathname.startsWith('//')) return null;
+    if (url.origin !== ORIGIN || (url.pathname !== DEFAULT_PAGE && !url.pathname.startsWith(`${DEFAULT_PAGE}/`))) return null;
     return url.pathname + url.search + url.hash;
   } catch {
     return null;

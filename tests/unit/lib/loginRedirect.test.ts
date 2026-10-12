@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { loginUrl, safeReturnPath } from '@/app/lib/loginRedirect';
 
 describe('safeReturnPath', () => {
-  it.each(['/note-de-frais/note/202', '/note-de-frais/101', '/note-de-frais?statut=approved', '/aide'])(
-    'keeps a page of compta-club: %s',
+  it.each(['/note-de-frais/note/202', '/note-de-frais/101', '/note-de-frais?statut=approved'])(
+    'keeps a page of the expense reports: %s',
     (path) => {
       expect(safeReturnPath(path)).toBe(path);
     }
@@ -11,8 +11,8 @@ describe('safeReturnPath', () => {
 
   it.each([
     ['/note-de-frais/./note/../101', '/note-de-frais/101'],
-    ['/aide page', '/aide%20page'],
-    ['/%2F%2Fevil.example', '/%2F%2Fevil.example'],
+    ['/note-de-frais/note 202', '/note-de-frais/note%20202'],
+    ['/note-de-frais/%2F%2Fevil.example', '/note-de-frais/%2F%2Fevil.example'],
     ['/note-de-frais?retour=//evil#//evil', '/note-de-frais?retour=//evil#//evil'],
   ])('returns the normalised form of %s', (path, normalised) => {
     expect(safeReturnPath(path)).toBe(normalised);
@@ -31,6 +31,11 @@ describe('safeReturnPath', () => {
     ['an encoded dot segment', '/%2e%2e//evil.example'],
     ['a dot segment further on', '/note-de-frais/..//evil.example'],
     ['a scheme', 'https://evil.example/note-de-frais'],
+    ['a route of the API', '/api/expense-reports'],
+    ['encoded slashes', '/%2F%2Fevil.example'],
+    ['a public page', '/aide'],
+    ['a look-alike prefix', '/note-de-frais-pirate'],
+    ['a dot segment out of the expense reports', '/note-de-frais/../api/auth/check'],
     ['javascript', 'javascript:alert(1)'],
     ['a relative path', 'note-de-frais'],
     ['nothing', ''],
