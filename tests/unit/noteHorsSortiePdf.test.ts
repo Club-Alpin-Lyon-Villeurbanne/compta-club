@@ -86,6 +86,8 @@ describe('PDF of a note hors sortie', () => {
     const texts = textsOf(noteHorsSortie(208));
 
     expect(texts[2]).toBe('STATUT : COMPTABILISÉE');
+    expect(texts[4]).toBe('Remboursement : 32.50 €');
+    expect(texts.join('\n')).not.toContain('À rembourser');
     expect(textAfter(texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
     expect(textAfter(texts, 'Décision')).toBe('Approuvée par la trésorerie le 07/01/2025');
   });

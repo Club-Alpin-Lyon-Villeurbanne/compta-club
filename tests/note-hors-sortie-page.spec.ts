@@ -471,6 +471,7 @@ test.describe('PDF of a note hors sortie', () => {
 
   test('should download the PDF of an accounted achat, its only action', async ({ page }) => {
     await page.goto(note(208));
+    await expect(summary(page)).toContainText('Remboursement : 32.50 €');
     await expect(actionButtons(page)).toHaveCount(0);
     await expect(summary(page).getByRole('button', { name: 'Télécharger en PDF' })).toBeVisible();
 
@@ -478,6 +479,8 @@ test.describe('PDF of a note hors sortie', () => {
 
     expect(pdf.fileName).toBe('note-de-frais-achat-208-FAURE.pdf');
     expect(pdf.texts).toContain('STATUT : COMPTABILISÉE');
+    expect(pdf.texts).toContain('Remboursement : 32.50 €');
+    expect(pdf.texts.join('\n')).not.toContain('À rembourser');
     expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
     expect(textAfter(pdf.texts, 'Total remboursable')).toBe('32.50 €');
   });

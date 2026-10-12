@@ -291,6 +291,21 @@ describe('page of a note hors sortie', () => {
     expect(getAmountSummary(noteHorsSortie(203))).toEqual({ titre: 'Don : 42.00 €', detail: null });
   });
 
+  it.each([
+    [ExpenseStatus.SUBMITTED, 'À rembourser : 287.40 €'],
+    [ExpenseStatus.PREAPPROVED, 'À rembourser : 287.40 €'],
+    [ExpenseStatus.APPROVED, 'À rembourser : 287.40 €'],
+    [ExpenseStatus.ACCOUNTED, 'Remboursement : 287.40 €'],
+    [ExpenseStatus.REJECTED, 'Remboursement : 287.40 €'],
+    [ExpenseStatus.DRAFT, 'Remboursement : 287.40 €'],
+  ])('says « à rembourser » only while the payment is still to make (%s)', (status, titre) => {
+    expect(getAmountSummary(noteHorsSortie(202, { status })).titre).toBe(titre);
+  });
+
+  it.each(Object.values(ExpenseStatus))('says « don » whatever the status (%s)', (status) => {
+    expect(getAmountSummary(noteHorsSortie(203, { status })).titre).toBe('Don : 42.00 €');
+  });
+
   it('names who a note still waits for', () => {
     expect(getWaitingForResponsable(noteHorsSortie(206)))
       .toBe("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez la valider après lui.");

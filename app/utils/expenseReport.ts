@@ -212,15 +212,24 @@ export function getExpenseDateLabel(report: NonEventExpenseReport): string {
     return report.type === 'formation' ? 'Date de la formation' : 'Date de la dépense';
 }
 
+const PAIEMENT_A_FAIRE: ExpenseStatus[] = [ExpenseStatus.SUBMITTED, ExpenseStatus.PREAPPROVED, ExpenseStatus.APPROVED];
+
+function amountLabel(report: NonEventExpenseReport): string {
+    if (!report.refundRequired) return 'Don';
+    // Le PDF d'une note comptabilisée s'archive : « À rembourser » y ferait croire à une dette.
+    return PAIEMENT_A_FAIRE.includes(report.status) ? 'À rembourser' : 'Remboursement';
+}
+
 /**
- * En tête de la page : « À rembourser : 287.40 € » (« Don : … » pour un don), et
+ * En tête de la page et du PDF : « À rembourser : 287.40 € » tant que le paiement reste à faire,
+ * « Remboursement : … » ensuite (ou sur une note refusée, en brouillon), « Don : … » pour un don ; et
  * « 312.40 € déclarés, dont 25.00 € au-delà des plafonds du club » quand les plafonds le réduisent.
  */
 export function getAmountSummary(report: NonEventExpenseReport): { titre: string; detail: string | null } {
     const remboursable = Math.round(toAmount(report.totalRemboursable) * 100);
     const declare = Math.round(toAmount(report.totalDeclare) * 100);
     return {
-        titre: `${report.refundRequired ? 'À rembourser' : 'Don'} : ${formatEuro(remboursable / 100)}`,
+        titre: `${amountLabel(report)} : ${formatEuro(remboursable / 100)}`,
         detail: remboursable < declare
             ? `${formatEuro(declare / 100)} déclarés, dont ${formatEuro((declare - remboursable) / 100)} au-delà des plafonds du club`
             : null,
