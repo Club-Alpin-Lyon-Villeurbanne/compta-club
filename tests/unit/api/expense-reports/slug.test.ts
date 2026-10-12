@@ -62,6 +62,19 @@ describe('GET /api/expense-reports/[slug]', () => {
     );
   });
 
+  // Sans identifiant entier, l'API ignore le filtre `event` et renvoie toutes les notes du club.
+  it.each(['note', 'abc', '0', '-1', '1.5', '', '42abc', '9007199254740993'])(
+    'refuses the sortie id "%s" without calling the API',
+    async (slug) => {
+      const req = new NextRequest(new URL('http://localhost:3000/api/expense-reports/x'));
+      const { status, data } = await parseJsonResponse(await GET(req, makeContext(slug)));
+
+      expect(status).toBe(400);
+      expect(data.error).toBe('Identifiant de sortie invalide');
+      expect(get).not.toHaveBeenCalled();
+    }
+  );
+
   it('returns 500 when fetchServer.get throws', async () => {
     vi.mocked(get).mockRejectedValue(new Error('API down'));
 

@@ -49,4 +49,11 @@ test.describe('Error Handling on Detail Page', () => {
 
     await expect(page.getByText('Aucune note de frais trouvée pour cet événement.')).toBeVisible();
   });
+
+  test('should show an error, not every note of the club, for an address without a sortie id', async ({ page }) => {
+    await page.goto('/note-de-frais/note');
+
+    await expect(page.getByText('Une erreur est survenue lors du chargement des données')).toBeVisible();
+    expect((await page.request.get('/api/expense-reports/note')).status()).toBe(400);
+  });
 });

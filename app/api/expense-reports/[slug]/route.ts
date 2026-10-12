@@ -12,7 +12,11 @@ export async function GET(
   try {
     // Attendre les paramètres avant de les utiliser
     const { slug } = await context.params;
-    
+    // Sans identifiant entier, l'API ignore le filtre `event` et renverrait toutes les notes du club.
+    if (!isNoteId(slug)) {
+      return NextResponse.json({ error: 'Identifiant de sortie invalide' }, { status: 400 });
+    }
+
     // Récupérer les notes de frais depuis l'API Symfony, sans pagination
     const apiResponse = await get(
       `${process.env.NEXT_PUBLIC_API_URL}/admin/notes-de-frais`,
