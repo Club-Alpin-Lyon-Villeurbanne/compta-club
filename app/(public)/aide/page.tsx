@@ -1,6 +1,8 @@
 import React from 'react';
 import { FaQuestionCircle, FaCheckCircle, FaExclamationTriangle, FaEnvelope, FaFileAlt, FaComments } from 'react-icons/fa';
 
+export const metadata = { title: 'Aide' };
+
 export default function AidePage() {
   return (
     <div className="container max-w-5xl px-4 py-12 mx-auto">

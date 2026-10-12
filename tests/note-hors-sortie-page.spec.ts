@@ -46,6 +46,9 @@ test.describe('Page of a note hors sortie', () => {
     await expect(page).toHaveURL(note(202));
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Formation initiateur escalade');
     await expect(page).toHaveTitle('Note 202 : Formation initiateur escalade · Compta Club');
+    await expect(page.locator('main')).toHaveCount(1);
+    // On est toujours dans « Notes de frais »
+    await expect(page.getByRole('link', { name: 'Notes de frais', exact: true })).toHaveAttribute('aria-current', 'page');
 
     await page.getByRole('link', { name: 'Retour à la liste' }).click();
     await expect(page).toHaveURL('/note-de-frais');

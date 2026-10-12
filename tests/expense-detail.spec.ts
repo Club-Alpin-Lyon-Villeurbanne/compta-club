@@ -25,6 +25,9 @@ test.describe('Expense Report Detail Page', () => {
 
   test('should lead back to the list, like the page of a note', async ({ page }) => {
     await page.goto('/note-de-frais/101');
+    await expect(page).toHaveTitle('Sortie Mont Blanc · Compta Club');
+    await expect(page.locator('main')).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Notes de frais', exact: true })).toHaveAttribute('aria-current', 'page');
 
     await page.getByRole('link', { name: 'Retour à la liste' }).click();
 

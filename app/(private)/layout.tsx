@@ -11,7 +11,7 @@ import '../globals.css'
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Gestion des notes de frais du Club Alpin de Lyon',
+  title: 'Notes de frais',
   description: 'Gestion des notes de frais du Club Alpin de Lyon',
 }
 
@@ -31,7 +31,8 @@ export default async function PrivateLayout({ children }: Props) {
   return (
     <div className="flex flex-col min-h-screen font-sans antialiased bg-gray-200">
       <Navbar />
-      <main className="flex-grow px-4 pt-20 mt-4 sm:px-6 lg:px-8">
+      {/* La barre de navigation est sticky, pas fixed : elle occupe déjà sa place, rien à compenser. */}
+      <main className="flex-grow px-4 py-6 sm:px-6 lg:px-8">
         {children}
       </main>
       <Footer />

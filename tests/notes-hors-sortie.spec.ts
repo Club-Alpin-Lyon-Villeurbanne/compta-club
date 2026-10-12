@@ -42,6 +42,7 @@ test.describe('Notes hors sortie in the list', () => {
 
     await expect(rows(page)).toHaveText(A_VALIDER);
     await expect(page.getByText('6 notes de frais affichées')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Notes de frais · À valider (6)');
     await expect(statusSelect(page).locator('option:checked')).toHaveText('À valider');
     expect(requests[0].searchParams.getAll('status[]')).toEqual(['submitted', 'preapproved']);
     expect(requests[0].searchParams.has('status')).toBe(false);
@@ -49,6 +50,35 @@ test.describe('Notes hors sortie in the list', () => {
     // Encore chez le responsable, ou en brouillon : la plateforme ne les envoie pas
     await expect(page.getByText('Piles pour les DVA')).toHaveCount(0);
     await expect(page.getByText('Gants pour la via ferrata')).toHaveCount(0);
+  });
+
+  test('should hide the counts while the list loads, where they would be the previous ones', async ({ page }) => {
+    await login(page, { notesHorsSortie: true });
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toHaveText('Notes de frais · À valider (6)');
+    let release = () => {};
+    const released = new Promise<void>((resolve) => { release = resolve; });
+    await page.route((url) => url.pathname === '/api/expense-reports', async (route) => {
+      await released;
+      await route.continue();
+    });
+
+    await statusSelect(page).selectOption('approved');
+
+    await expect(page.getByText('Chargement des notes de frais...')).toBeVisible();
+    await expect(heading).toHaveText('Notes de frais');
+    await expect(page.getByText(/de frais affichée/)).toHaveCount(0);
+    release();
+    await expect(heading).toHaveText('Notes de frais · Approuvée (2)');
+    await expect(page.getByText('2 notes de frais affichées')).toBeVisible();
+  });
+
+  test('should name the page in its tab, and hold a single main region', async ({ page }) => {
+    await login(page, { notesHorsSortie: true });
+
+    await expect(page).toHaveTitle('Notes de frais · Compta Club');
+    await expect(page.locator('main')).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Notes de frais', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
   test('should show the columns of a note hors sortie', async ({ page }) => {
@@ -242,15 +272,19 @@ test.describe('Notes hors sortie in the list', () => {
     await typeSelect(page).selectOption({ label: 'Formations' });
 
     await expect(rows(page)).toHaveText([/Formation initiateur escalade/]);
+    // Écrit sous les filtres, pas seulement au survol : un champ désactivé ne prend pas le focus.
+    await expect(page.getByText('La recherche et la date portent sur les sorties.', { exact: true })).toBeVisible();
     for (const input of [searchInput(page), dateInput(page)]) {
       await expect(input).toBeDisabled();
       await expect(input).toHaveValue('');
       await expect(input).toHaveAttribute('title', 'La recherche et la date portent sur les sorties');
+      await expect(input).toHaveAccessibleDescription('La recherche et la date portent sur les sorties.');
     }
 
     await typeSelect(page).selectOption({ label: 'Sorties' });
     await expect(searchInput(page)).toBeEnabled();
     await expect(dateInput(page)).toBeEnabled();
+    await expect(page.getByText('La recherche et la date portent sur les sorties.', { exact: true })).toHaveCount(0);
   });
 
   test('should download the PDF of an approved note hors sortie from the list', async ({ page }) => {

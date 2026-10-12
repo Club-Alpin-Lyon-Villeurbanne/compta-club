@@ -3,6 +3,8 @@ import { isAuthenticated } from '../lib/auth.server';
 import { DEFAULT_PAGE, safeReturnPath, SESSION_EXPIRED } from '../lib/loginRedirect';
 import LoginForm from '../components/LoginForm';
 
+export const metadata = { title: 'Connexion' };
+
 interface HomeProps {
   searchParams: Promise<{ session?: string | string[]; retour?: string | string[] }>;
 }

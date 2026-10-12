@@ -98,6 +98,16 @@ export default function ExpenseReportPage() {
     }
   }, [slug, fetchExpenseReports]);
 
+  // Comme sur la page d'une note : l'onglet nomme ce qu'il montre.
+  useEffect(() => {
+    if (!event) return;
+    const previous = document.title;
+    document.title = `${event.titre} · Compta Club`;
+    return () => {
+      document.title = previous;
+    };
+  }, [event]);
+
   if (introuvable) {
     return <AdresseIntrouvable>Cette adresse ne correspond à aucune sortie.</AdresseIntrouvable>;
   }
