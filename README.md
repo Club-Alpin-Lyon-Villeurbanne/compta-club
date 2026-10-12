@@ -1,7 +1,7 @@
 # Outil de Compta du Club Alpin de Lyon
 
 Cette application permet aux gestionnaires des notes de frais du Club Alpin de Lyon de les traiter : validation, rejet et comptabilisation. Elle est réservée aux administrateurs et aux gestionnaires des notes de frais.
-Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes de sortie par les encadrants, et [notes hors sortie](#-notes-hors-sortie) (formation, achat). Une note hors sortie est d'abord validée sur le site par le responsable de sa commission, puis arrive dans compta-club. La trésorerie fait tout ici : le site n'a aucune fonction de trésorerie.
+Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes de sortie par les encadrants, et [notes hors sortie](#-notes-hors-sortie) (formation, achat). Une note hors sortie est d'abord validée sur le site par le responsable de sa commission, s'il y en a un, puis arrive dans compta-club. La trésorerie fait tout ici : le site n'a aucune fonction de trésorerie.
 
 > ⚠️ **Note importante** :
 > - Cette application s'appuie sur [l'API du site web du Club Alpin de Lyon](https://www.clubalpinlyon.fr/api) pour récupérer les données et gérer l'authentification.
@@ -81,7 +81,7 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
 
 Le déploiement se fait sur vercel automatiquement lorsque des modifications sont poussées sur la branche `main`. Vérifiez que le projets build correctement en lancant `pnpm build` et en vérifiant que le build se passe sans erreur.
 
-Notes hors sortie : cette version marche avec l'API qui ne les envoie pas encore. Elle se déploie avant la version de la plateforme qui les envoie, avec le statut `preapproved`, et après avoir été vérifiée contre la préprod.
+Quand l'API change, compta-club se déploie d'abord, après vérification contre la préprod : chaque version de compta-club marche avec l'API en production comme avec celle qui la remplace.
 
 ## **🤝 Contribution**
 

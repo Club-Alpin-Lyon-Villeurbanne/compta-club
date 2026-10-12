@@ -51,7 +51,7 @@ Le montant affiché d'une note de sortie est calculé par compta-club ; celui d'
 
 Une note hors sortie (formation, achat) s'ouvre depuis la liste sur sa page, `/note-de-frais/note/{id}` ; une note de sortie se traite sur la page de sa sortie, `/note-de-frais/{idSortie}`. La page lit `GET /notes-de-frais/{id}` et montre les champs de la note hors sortie : `utilisateur`, `type`, `commission`, `objet`, `dateDepense`, `lienFormation` (lien seulement en http ou https), `motPourResponsable`, `validationResponsable`, `lignesAffichees` avec le justificatif de chaque ligne (`piecesJointes`, par `expenseId`), `totalDeclare`, `totalRemboursable`, `avertissements`, `refundRequired`, `libelleComptable`.
 
-- En tête, à côté du titre : le montant à payer (`totalRemboursable`, « À rembourser » ou « Don »), l'écart avec `totalDeclare` (« au-delà des plafonds du club »), le libellé comptable et les actions.
+- En tête, à côté du titre : le montant à payer (`totalRemboursable`), « À rembourser » tant que le paiement reste à faire (`submitted`, `preapproved`, `approved`), « Remboursement » sinon (note comptabilisée, refusée, brouillon), « Don » pour un don ; l'écart avec `totalDeclare` (« au-delà des plafonds du club »), le libellé comptable et les actions.
 - Refus : le bloc rouge du refus en cours seulement si la note est `rejected` (`derniereDecision`, sinon `commentaireStatut`). Une note refusée puis renvoyée (`derniereDecision` encore un refus, `dateEnvoi` plus récente) garde un rappel neutre : « Refusée par la trésorerie le JJ/MM, corrigée et renvoyée le JJ/MM : « message » ». Un `commentaireStatut` sur une note qui n'est pas refusée n'est jamais montré comme un refus.
 - Décisions signées selon `derniereDecision.niveau` : « la trésorerie » (jamais le nom de son compte), ou le nom du responsable de commission. Une note approuvée ou comptabilisée affiche « Approuvée par la trésorerie le … ».
 - Une note encore chez son responsable (`submitted` avec des `valideurs`) affiche qui elle attend.
@@ -81,7 +81,7 @@ Une note qui a changé, ou « Cette demande a déjà été traitée. » (422), o
 Son propre modèle, généré dans le navigateur (jsPDF), celui des notes de sortie ne change pas :
 
 - en-tête : nom du club (`NEXT_PUBLIC_CLUB_NAME`), statut ;
-- en tête du document, comme sur la page : « Note n° <id> », « À rembourser : X € » ou « Don : X € », l'écart dû aux plafonds (« Y € déclarés, dont Z € au-delà des plafonds du club ») et le libellé comptable ;
+- en tête du document, comme sur la page : « Note n° <id> », « À rembourser : X € » (« Remboursement : X € » sur une note comptabilisée) ou « Don : X € », l'écart dû aux plafonds (« Y € déclarés, dont Z € au-delà des plafonds du club ») et le libellé comptable ;
 - informations générales : demandeur, type, commission, objet, date de la formation ou de la dépense ;
 - dépenses : `lignesAffichees` (libellé, détail comme « 240 km × 0,26 € », montant), puis `totalDeclare` et `totalRemboursable`. Les montants sont ceux figés par la plateforme, jamais recalculés ;
 - validation : celle du responsable (ou « Aucune : la note est allée directement à la trésorerie. ») et la décision de la trésorerie.
@@ -102,6 +102,7 @@ Le navigateur n'appelle que les routes de compta-club, derrière la session (coo
 | `/api/expense-reports/note/{id}` | GET | `GET /notes-de-frais/{id}` |
 
 - L'identifiant d'une note (`PATCH /api/expense-reports/{id}`, `GET /api/expense-reports/note/{id}`) doit être un entier positif : sinon 400 « Identifiant de note invalide », sans appel à l'API.
+- L'identifiant d'une sortie (`GET /api/expense-reports/{idSortie}`) aussi : sinon 400 « Identifiant de sortie invalide », sans appel à l'API, qui ignorerait le filtre `event` et renverrait toutes les notes du club.
 - Une erreur garde le statut de l'API et renvoie `{ "error": "…" }`, jamais la trace ni le détail technique.
   - `PATCH /api/expense-reports/{id}` est la seule route qui transmet le message de l'API : pour un refus (4xx), les messages des `violations`, sinon `detail` ; pour une erreur serveur, un message générique.
   - `GET /api/expense-reports/note/{id}` a ses propres messages : « Note de frais introuvable » pour un 404, un message générique sinon. La page montre « Cette adresse ne correspond à aucune note de frais. » pour un identifiant invalide ou inconnu.
