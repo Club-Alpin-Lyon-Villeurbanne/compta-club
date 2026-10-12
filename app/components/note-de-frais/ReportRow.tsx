@@ -124,7 +124,7 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                 <span className="text-gray-900 whitespace-nowrap">
                     {formatEuro(amount)}
                 </span>
-                {refundableNote && <p className="text-xs text-gray-500 whitespace-nowrap">{refundableNote}</p>}
+                {refundableNote && <p className="max-w-[8rem] text-xs text-gray-500">{refundableNote}</p>}
             </td>
             <td className="px-2 py-2 text-sm text-center bg-white border-b border-gray-200 w-28">
                 <p className="text-gray-900 whitespace-nowrap">

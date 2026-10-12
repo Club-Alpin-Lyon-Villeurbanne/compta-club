@@ -15,7 +15,12 @@ for (const width of [1280, 1440]) {
     await page.route((url) => url.pathname === '/api/expense-reports', async (route) => {
       const response = await route.fetch();
       const list = await response.json();
-      list.data = list.data.map((report: object) => ({ ...report, utilisateur: LONG_REQUESTER }));
+      // Un don dont les plafonds réduisent le montant : sa ligne « dont X € dans les plafonds » est la plus longue de la colonne.
+      list.data = list.data.map((report: object) => ({
+        ...report,
+        utilisateur: LONG_REQUESTER,
+        ...('totalDeclare' in report ? { refundRequired: false, totalDeclare: 45, totalRemboursable: 12 } : {}),
+      }));
       await route.fulfill({ response, json: list });
     });
     await login(page, { notesHorsSortie: true });
