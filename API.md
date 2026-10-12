@@ -32,13 +32,13 @@ Cette application utilise uniquement les endpoints suivants de l'API backend :
 | `type` | `sortie`, `formation` ou `autre` (achat) |
 | `refundRequired` | Don (`false`) ou remboursement (`true`) |
 | `user.lastname` | Nom du demandeur |
-| `event.titre`, `event.startDate[after]`, `event.startDate[before]` | Recherche et date de la sortie : sans effet sur les notes hors sortie, qui restent dans la liste |
+| `event.titre`, `event.startDate[after]`, `event.startDate[before]` | Recherche et date de la sortie. L'API laisse alors les notes hors sortie dans la liste : compta-club demande aussi `type=sortie`, et désactive recherche et date pour les formations et les achats |
 
 #### Statuts
 
 `submitted` (soumise), `preapproved` (note hors sortie validée par le responsable de sa commission : elle attend la trésorerie), `approved`, `rejected`, `accounted`.
 
-Le montant affiché d'une note de sortie est calculé par compta-club ; celui d'une note hors sortie est son `totalDeclare`, figé par la plateforme.
+Le montant affiché d'une note de sortie est calculé par compta-club ; celui d'une note hors sortie est son `totalDeclare`, figé par la plateforme, avec dessous son `totalRemboursable` quand il est plus bas. La date de soumission d'une note hors sortie est son dernier envoi (`dateEnvoi`).
 
 ## Architecture
 

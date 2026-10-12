@@ -11,7 +11,7 @@ Les notes de frais sont soumises sur le site web du Club Alpin de Lyon : notes d
 
 ## **✨ Fonctionnalités principales**
 
-- 👀 Visualisation des notes de frais, avec filtres et recherche : par défaut « À valider » (soumises, ou validées par le responsable), filtre par type (sorties, formations, achats).
+- 👀 Visualisation des notes de frais, avec filtres et recherche : par défaut « À valider » (soumises, ou validées par le responsable), filtre par type (sorties, formations, achats) ; la recherche et la date portent sur les sorties.
 - ✅ Validation, rejet et comptabilisation des notes de frais par les gestionnaires.
 - 📜 Visualisation de l'historique des frais.
 - 📄 Export PDF des notes de sortie approuvées/comptabilisées.
