@@ -114,39 +114,47 @@ const validationDecision = (validation: ValidationResponsable): Decision =>
     ({ statut: 'preapproved', niveau: 'responsable', ...validation });
 
 /**
+ * Venue droit à la trésorerie : envoyée sans valideur, ou décidée par la trésorerie sans validation du
+ * responsable (l'API ne la laisse décider d'une note envoyée que si elle n'a pas de valideur). Le
+ * demandeur peut être lui-même le seul responsable de sa commission : rien ne dit qu'elle n'en a pas.
+ */
+export function venueDirectementALaTresorerie(report: NonEventExpenseReport): boolean {
+    if (report.validationResponsable) return false;
+    switch (report.status) {
+        case ExpenseStatus.SUBMITTED:
+            return !(report.valideurs ?? []).length;
+        case ExpenseStatus.APPROVED:
+        case ExpenseStatus.ACCOUNTED:
+        case ExpenseStatus.REJECTED:
+            return report.derniereDecision?.niveau === 'tresorerie';
+        default:
+            return false;
+    }
+}
+
+/**
  * Sous l'objet d'une note hors sortie : « Escalade · Validée par Hugo BLANC le 27/01 », ou
- * « Randonnée · Sans responsable de commission » quand elle est venue droit à la trésorerie.
+ * « Randonnée · Directement à la trésorerie ».
  */
 export function getNonEventReportDetails(report: ExpenseReport): string | null {
     if (isEventReport(report)) return null;
     const validation = report.validationResponsable;
     const circuit = validation
         ? decisionPhrase(validationDecision(validation), jourMois)
-        : report.status === ExpenseStatus.SUBMITTED ? 'Sans responsable de commission' : null;
+        : venueDirectementALaTresorerie(report) ? 'Directement à la trésorerie' : null;
     return [report.commission?.title, circuit].filter(Boolean).join(' · ') || null;
 }
 
 /**
- * « Validée par Hugo BLANC le 27/01/2025 », ou, pour une note venue droit à la trésorerie, qu'elle n'a
- * pas de responsable ; rien pour une note refusée ou encore chez son responsable.
+ * « Validée par Hugo BLANC le 27/01/2025 », ou « Aucune : la note va (est allée) directement à la
+ * trésorerie. » ; rien pour une note encore chez son responsable, ou refusée par lui.
  */
 export function getValidationResponsable(report: NonEventExpenseReport): string | null {
     if (report.validationResponsable) return decisionPhrase(validationDecision(report.validationResponsable));
-    return sansResponsable(report) ? 'Aucune, la commission n\'a pas de responsable.' : null;
-}
-
-// Approuvée par la trésorerie sans validation : l'API ne la laisse approuver une note envoyée que si
-// elle n'a pas de valideur.
-function sansResponsable(report: NonEventExpenseReport): boolean {
-    switch (report.status) {
-        case ExpenseStatus.SUBMITTED:
-            return !(report.valideurs ?? []).length;
-        case ExpenseStatus.APPROVED:
-        case ExpenseStatus.ACCOUNTED:
-            return report.derniereDecision?.statut === 'approved' && report.derniereDecision.niveau === 'tresorerie';
-        default:
-            return false;
-    }
+    if (!venueDirectementALaTresorerie(report)) return null;
+    return report.status === ExpenseStatus.SUBMITTED
+        ? 'Aucune : la note va directement à la trésorerie.'
+        : 'Aucune : la note est allée directement à la trésorerie.';
 }
 
 export function getRefundChoice(report: NonEventExpenseReport): string {

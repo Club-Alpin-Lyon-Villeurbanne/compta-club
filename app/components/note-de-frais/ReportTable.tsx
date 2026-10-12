@@ -123,7 +123,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reports, isLoading }) => {
                             currentSortKey={sortConfig.key}
                             sortDirection={sortConfig.direction}
                             onSort={handleSort}
-                            className="w-1/6 px-2 py-2"
+                            className="px-2 py-2"
                         />
                         <SortableHeader
                             label="Date"

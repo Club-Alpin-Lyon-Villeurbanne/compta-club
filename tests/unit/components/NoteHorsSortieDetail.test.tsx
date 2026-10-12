@@ -93,10 +93,10 @@ describe('NoteHorsSortieDetail', () => {
     expect(screen.queryByText('Mot pour le responsable')).toBeNull();
   });
 
-  it('says that a submitted note without valideur has no responsable', () => {
+  it('says that a note sent without valideur goes straight to the treasury', () => {
     render(<NoteHorsSortieDetail note={noteHorsSortie(201)} onAction={vi.fn()} />);
 
-    expect(field('Validation du responsable').textContent).toBe('Aucune, la commission n\'a pas de responsable.');
+    expect(field('Validation du responsable').textContent).toBe('Aucune : la note va directement à la trésorerie.');
     expect(screen.queryByLabelText('Avertissements')).toBeNull();
   });
 
@@ -200,6 +200,20 @@ describe('NoteHorsSortieDetail', () => {
     fireEvent.click(pdfButton()!);
 
     await waitFor(() => expect(generateNoteHorsSortiePDF).toHaveBeenCalledWith(note));
+  });
+
+  it('turns the PDF off while an action is sent', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(204)} onAction={vi.fn()} pendingAction="accounted" />);
+
+    expect((pdfButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('gives every button of the summary a visible keyboard focus', () => {
+    render(<NoteHorsSortieDetail note={noteHorsSortie(204)} onAction={vi.fn()} />);
+
+    for (const button of [screen.getByRole('button', { name: 'Comptabiliser' }), pdfButton()!]) {
+      expect(button.className).toContain('focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2');
+    }
   });
 
   it('hands the chosen action over', () => {

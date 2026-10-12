@@ -74,7 +74,7 @@ test.describe('Notes hors sortie in the list', () => {
     await expect(achat.locator('td')).toHaveText([
       'Achat',
       '',
-      /^Cordelettes pour la SAE\s*Randonnée · Sans responsable de commission$/,
+      /^Cordelettes pour la SAE\s*Randonnée · Directement à la trésorerie$/,
       'Lucie Roux',
       '20/01/2025',
       '23/01/2025',
@@ -269,9 +269,30 @@ test.describe('Notes hors sortie in the list', () => {
     expect(textAfter(pdf.texts, 'Date de la formation')).toBe('11/01/2025');
     expect(textAfter(pdf.texts, 'Stage')).toBe('120.00 €');
     expect(textAfter(pdf.texts, 'Total remboursable')).toBe('120.00 €');
-    expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune, la commission n\'a pas de responsable.');
+    expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
     expect(textAfter(pdf.texts, 'Libellé comptable')).toBe('ROUX Lucie NDF 11/01/2025 Recyclage initiateur randonnée');
   });
+
+  for (const width of [1280, 1440]) {
+    test(`should fit the table in its card at ${width} px, PDF buttons included`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await login(page, { notesHorsSortie: true });
+
+      for (const status of ['approved', 'accounted', 'Toutes']) {
+        await statusSelect(page).selectOption(status);
+        await expect(rows(page).getByRole('button', { name: 'Télécharger en PDF' }).first()).toBeVisible();
+
+        const card = page.locator('table').locator('..');
+        const { clientWidth, scrollWidth } = await card.evaluate((el) => ({ clientWidth: el.clientWidth, scrollWidth: el.scrollWidth }));
+        expect(scrollWidth, status).toBeLessThanOrEqual(clientWidth);
+        const cardBox = (await card.boundingBox())!;
+        for (const button of await rows(page).locator('td:last-child button').all()) {
+          const box = (await button.boundingBox())!;
+          expect(box.x + box.width, status).toBeLessThanOrEqual(cardBox.x + cardBox.width);
+        }
+      }
+    });
+  }
 
   test('should copy the accounting label of a note hors sortie', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);

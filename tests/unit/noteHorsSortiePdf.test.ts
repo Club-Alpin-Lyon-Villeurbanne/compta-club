@@ -28,7 +28,17 @@ describe('PDF of a note hors sortie', () => {
     const texts = textsOf(formation);
 
     expect(getNoteHorsSortiePdfFileName(formation)).toBe('note-de-frais-formation-202-PETIT.pdf');
-    expect(texts.slice(0, 3)).toEqual([config.CLUB_NAME, 'NOTE DE FRAIS', 'STATUT : APPROUVÉE']);
+    expect(texts.slice(0, 9)).toEqual([
+      config.CLUB_NAME,
+      'NOTE DE FRAIS',
+      'STATUT : APPROUVÉE',
+      'Note n° 202',
+      'À rembourser : 287.40 €',
+      '312.40 € déclarés, dont 25.00 € au-delà des plafonds du club',
+      'Libellé comptable',
+      'PETIT Thomas NDF 25/01/2025 Formation initiateur escalade',
+      'INFORMATIONS GÉNÉRALES',
+    ]);
     expect(textAfter(texts, 'Demandeur')).toBe('Thomas Petit');
     expect(textAfter(texts, 'Type')).toBe('Formation');
     expect(textAfter(texts, 'Commission')).toBe('Escalade');
@@ -44,13 +54,17 @@ describe('PDF of a note hors sortie', () => {
     expect(textAfter(texts, 'Validation du responsable')).toBe('Validée par Hugo BLANC le 27/01/2025');
     expect(textAfter(texts, 'Décision')).toBe('Approuvée par la trésorerie le 30/01/2025');
     expect(texts.join('\n')).not.toContain('FONTAINE');
+    expect(texts.at(-3)).toBe('Approuvée par la trésorerie le 30/01/2025');
+  });
 
-    expect(after(texts, 'RÉCAPITULATIF', 3)).toEqual([
-      'À rembourser : 287.40 €',
-      '312.40 € déclarés, dont 25.00 € au-delà des plafonds du club',
-      'Remboursement demandé',
-    ]);
-    expect(textAfter(texts, 'Libellé comptable')).toBe('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade');
+  it('says the amount and the accounting label once, at the top', () => {
+    const texts = textsOf(noteHorsSortie(202, approuveeParLaTresorerie));
+
+    for (const text of ['À rembourser : 287.40 €', 'PETIT Thomas NDF 25/01/2025 Formation initiateur escalade']) {
+      expect(texts.filter((t) => t === text)).toHaveLength(1);
+    }
+    expect(texts).not.toContain('RÉCAPITULATIF');
+    expect(texts).not.toContain('Remboursement demandé');
   });
 
   it('gives an achat given as a don, its text as typed, without a Détail column', () => {
@@ -58,13 +72,13 @@ describe('PDF of a note hors sortie', () => {
     const texts = textsOf(achat);
 
     expect(getNoteHorsSortiePdfFileName(achat)).toBe('note-de-frais-achat-203-FAURE.pdf');
+    expect(texts.slice(3, 6)).toEqual(['Note n° 203', 'Don : 42.00 €', 'Libellé comptable']);
     expect(textAfter(texts, 'Type')).toBe('Achat');
     expect(textAfter(texts, 'Objet')).toBe("Sac <b>30 L</b> & cordelette d'attache");
     expect(textAfter(texts, 'Date de la dépense')).toBe('18/01/2025');
     expect(after(texts, 'DÉPENSES', 4)).toEqual(['Dépense', 'Montant', "Sac <b>30 L</b> & cordelette d'attache", '42.00 €']);
     expect(texts).not.toContain('Détail');
     expect(textAfter(texts, 'Validation du responsable')).toBe('Validée par Hugo BLANC le 27/01/2025');
-    expect(after(texts, 'RÉCAPITULATIF', 2)).toEqual(['Don : 42.00 €', 'Don au club']);
     expect(texts.join('\n')).not.toContain('déclarés');
   });
 
@@ -72,7 +86,7 @@ describe('PDF of a note hors sortie', () => {
     const texts = textsOf(noteHorsSortie(208));
 
     expect(texts[2]).toBe('STATUT : COMPTABILISÉE');
-    expect(textAfter(texts, 'Validation du responsable')).toBe('Aucune, la commission n\'a pas de responsable.');
+    expect(textAfter(texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
     expect(textAfter(texts, 'Décision')).toBe('Approuvée par la trésorerie le 07/01/2025');
   });
 
@@ -100,6 +114,15 @@ describe('PDF of a note hors sortie', () => {
     expect(textAfter(texts, 'Objet')).toBe('Stage ?ódz ? été');
     expect(textAfter(texts, 'Voiture')).toBe('1\u00a0240 km × 0,26\u00a0€');
   });
+
+  it('drops the invisible format characters instead of printing a question mark', () => {
+    const texts = textsOf(noteHorsSortie(202, {
+      ...approuveeParLaTresorerie,
+      objet: 'Co\u200bde\u200c\u200d du\u2060 stage\ufeff ❤\ufe0f',
+    }));
+
+    expect(textAfter(texts, 'Objet')).toBe('Code du stage ?');
+  });
 });
 
 describe('file name of the PDF of a note hors sortie', () => {
@@ -109,11 +132,20 @@ describe('file name of the PDF of a note hors sortie', () => {
     ['Lœuillet', 'note-de-frais-achat-201-LOEUILLET.pdf'],
     ['../../etc/passwd', 'note-de-frais-achat-201-ETC-PASSWD.pdf'],
     ['O\'Brien\\\u0000\u001f', 'note-de-frais-achat-201-O-BRIEN.pdf'],
+    ['日本', 'note-de-frais-achat-201.pdf'],
+    ['- -- -', 'note-de-frais-achat-201.pdf'],
     ['', 'note-de-frais-achat-201.pdf'],
   ])('cleans the name %j', (nom, fileName) => {
     const achat = noteHorsSortie(201, { utilisateur: { id: 8, prenom: 'Lucie', nom } });
 
     expect(getNoteHorsSortiePdfFileName(achat)).toBe(fileName);
+  });
+
+  it('keeps the name short, without a dash before the extension', () => {
+    const achat = (nom: string) => noteHorsSortie(201, { utilisateur: { id: 8, prenom: 'Lucie', nom } });
+
+    expect(getNoteHorsSortiePdfFileName(achat('A'.repeat(200)))).toBe(`note-de-frais-achat-201-${'A'.repeat(56)}.pdf`);
+    expect(getNoteHorsSortiePdfFileName(achat('ABC '.repeat(50)))).toBe(`note-de-frais-achat-201-${'ABC-'.repeat(13)}ABC.pdf`);
   });
 
   it('names the type and the note, never the code of a sortie', () => {

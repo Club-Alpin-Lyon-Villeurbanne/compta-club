@@ -80,8 +80,9 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                 />
             </td>
             <td className="w-1/4 px-2 py-2 text-sm bg-white border-b border-gray-200">
-                <p className="flex items-center gap-1 text-gray-900 truncate whitespace-nowrap">
-                    <FaClipboardList className="text-gray-500" />
+                {/* Le titre peut passer à la ligne : la table tient dans sa carte dès 1280 px, bouton PDF compris. */}
+                <p className="flex items-center gap-1 text-gray-900">
+                    <FaClipboardList className="flex-shrink-0 text-gray-500" />
                     {href ? (
                         <Link href={href} className="hover:underline" title={title}>
                             {truncateText(title, 40)}
@@ -92,7 +93,7 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                     {textToCopy && (
                         <button
                             onClick={handleCopy}
-                            className="p-1 transition-colors rounded-full hover:bg-gray-100"
+                            className="flex-shrink-0 p-1 transition-colors rounded-full hover:bg-gray-100"
                             title={copied ? "Copié !" : isEventReport(report) ? "Copier le titre" : "Copier le libellé comptable"}
                         >
                             <FaCopy className={`text-sm ${copied ? 'text-green-500' : 'text-gray-400'}`} />
@@ -101,7 +102,7 @@ const ReportRow: React.FC<ReportRowProps> = ({ report }) => {
                 </p>
                 {details && <p className="mt-0.5 text-xs text-gray-500">{details}</p>}
             </td>
-            <td className="w-1/6 px-2 py-2 text-sm bg-white border-b border-gray-200">
+            <td className="px-2 py-2 text-sm bg-white border-b border-gray-200">
                 <p className="text-gray-900 truncate whitespace-nowrap">
                     {href ? (
                         <Link href={href} className="hover:underline">

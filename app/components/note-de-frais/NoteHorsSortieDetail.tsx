@@ -47,10 +47,13 @@ interface NoteHorsSortieDetailProps {
 }
 
 const ACTION_BUTTONS: Record<TreasuryAction, { label: string; pending: string; icon: IconType; className: string }> = {
-    approved: { label: 'Approuver', pending: 'Approbation…', icon: FaCheck, className: 'bg-green-600 hover:bg-green-700 focus:ring-green-300' },
-    rejected: { label: 'Rejeter', pending: 'Refus…', icon: FaTimes, className: 'bg-red-600 hover:bg-red-700 focus:ring-red-300' },
-    accounted: { label: 'Comptabiliser', pending: 'Comptabilisation…', icon: FaFileInvoiceDollar, className: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-300' },
+    approved: { label: 'Approuver', pending: 'Approbation…', icon: FaCheck, className: 'bg-green-600 hover:bg-green-700' },
+    rejected: { label: 'Rejeter', pending: 'Refus…', icon: FaTimes, className: 'bg-red-600 hover:bg-red-700' },
+    accounted: { label: 'Comptabiliser', pending: 'Comptabilisation…', icon: FaFileInvoiceDollar, className: 'bg-purple-600 hover:bg-purple-700' },
 };
+
+// Anneau bleu foncé décalé du bouton : visible au clavier sur le blanc de la carte comme sur les boutons colorés.
+const FOCUS_VISIBLE = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2';
 
 const Field = ({ label, children, wide = false }: { label: string; children: React.ReactNode; wide?: boolean }) => (
     <div className={wide ? 'sm:col-span-2' : undefined}>
@@ -195,7 +198,7 @@ export default function NoteHorsSortieDetail({ note, onAction, pendingAction = n
                                             onClick={() => onAction(note.id, action)}
                                             disabled={busy}
                                             aria-busy={busy}
-                                            className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-4 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+                                            className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg ${FOCUS_VISIBLE} disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
                                         >
                                             <Icon className="mr-2" aria-hidden="true" />
                                             {pendingAction === action ? pending : label}
@@ -206,7 +209,8 @@ export default function NoteHorsSortieDetail({ note, onAction, pendingAction = n
                                     <button
                                         type="button"
                                         onClick={downloadPdf}
-                                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200"
+                                        disabled={busy}
+                                        className={`inline-flex items-center px-4 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 ${FOCUS_VISIBLE} disabled:opacity-60 disabled:cursor-not-allowed`}
                                     >
                                         <FaFilePdf className="mr-2 text-red-600" aria-hidden="true" />
                                         Télécharger en PDF

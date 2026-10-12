@@ -119,7 +119,7 @@ test.describe('Page of a note hors sortie', () => {
 
     await expect(field(page, 'Demandeur')).toHaveText('Lucie Roux');
     await expect(status(page, 'Soumis')).toBeVisible();
-    await expect(field(page, 'Validation du responsable')).toHaveText('Aucune, la commission n\'a pas de responsable.');
+    await expect(field(page, 'Validation du responsable')).toHaveText('Aucune : la note va directement à la trésorerie.');
     await expect(actionButtons(page)).toHaveText(['Approuver', 'Rejeter']);
   });
 
@@ -430,7 +430,7 @@ test.describe('PDF of a note hors sortie', () => {
 
     expect(pdf.fileName).toBe('note-de-frais-formation-202-PETIT.pdf');
     expect(pdf.raw.startsWith('%PDF')).toBe(true);
-    expect(pdf.texts).toContain('STATUT : APPROUVÉE');
+    expect(pdf.texts.slice(2, 6)).toEqual(['STATUT : APPROUVÉE', 'Note n° 202', 'À rembourser : 287.40 €', '312.40 € déclarés, dont 25.00 € au-delà des plafonds du club']);
     expect(textAfter(pdf.texts, 'Demandeur')).toBe('Thomas Petit');
     expect(textAfter(pdf.texts, 'Type')).toBe('Formation');
     expect(textAfter(pdf.texts, 'Commission')).toBe('Escalade');
@@ -441,8 +441,6 @@ test.describe('PDF of a note hors sortie', () => {
     expect(textAfter(pdf.texts, 'Total remboursable')).toBe('287.40 €');
     expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Validée par Hugo BLANC le 27/01/2025');
     expect(textAfter(pdf.texts, 'Décision')).toMatch(new RegExp(`^Approuvée par la trésorerie le ${today.source}$`));
-    expect(pdf.texts).toContain('312.40 € déclarés, dont 25.00 € au-delà des plafonds du club');
-    expect(pdf.texts).toContain('Remboursement demandé');
     expect(textAfter(pdf.texts, 'Libellé comptable')).toBe('PETIT Thomas NDF 25/01/2025 Formation initiateur escalade');
   });
 
@@ -456,8 +454,19 @@ test.describe('PDF of a note hors sortie', () => {
     expect(textAfter(pdf.texts, 'Type')).toBe('Achat');
     expect(textAfter(pdf.texts, 'Objet')).toBe("Sac <b>30 L</b> & cordelette d'attache");
     expect(textAfter(pdf.texts, 'Date de la dépense')).toBe('18/01/2025');
-    expect(pdf.texts).toContain('Don : 42.00 €');
-    expect(pdf.texts).toContain('Don au club');
+    expect(pdf.texts.slice(3, 5)).toEqual(['Note n° 203', 'Don : 42.00 €']);
+  });
+
+  test('should ring the buttons of the summary in blue under the keyboard', async ({ page }) => {
+    await page.goto(note(204));
+    await summary(page).getByRole('button', { name: 'Copier le libellé comptable' }).focus();
+
+    for (const name of ['Comptabiliser', 'Télécharger en PDF']) {
+      await page.keyboard.press('Tab');
+      await expect(summary(page).getByRole('button', { name })).toBeFocused();
+      // Anneau blue-600 (ring-2), décalé de 2 px
+      expect(await page.evaluate(() => getComputedStyle(document.activeElement!).boxShadow)).toContain('rgb(37, 99, 235)');
+    }
   });
 
   test('should download the PDF of an accounted achat, its only action', async ({ page }) => {
@@ -469,7 +478,7 @@ test.describe('PDF of a note hors sortie', () => {
 
     expect(pdf.fileName).toBe('note-de-frais-achat-208-FAURE.pdf');
     expect(pdf.texts).toContain('STATUT : COMPTABILISÉE');
-    expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune, la commission n\'a pas de responsable.');
+    expect(textAfter(pdf.texts, 'Validation du responsable')).toBe('Aucune : la note est allée directement à la trésorerie.');
     expect(textAfter(pdf.texts, 'Total remboursable')).toBe('32.50 €');
   });
 });

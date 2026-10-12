@@ -33,6 +33,7 @@ import {
   sortieFiltersApply,
   STATUS_FILTERS,
   statusesOfFilter,
+  venueDirectementALaTresorerie,
   waitsForResponsable,
 } from '@/app/utils/expenseReport';
 import { mockExpenseReports, mockNotesHorsSortie } from '@/tests/mocks/fixtures';
@@ -129,14 +130,16 @@ describe('getNonEventReportDetails', () => {
     expect(getNonEventReportDetails(formation)).toBe('Escalade · Validée par Hugo BLANC le 27/01');
   });
 
-  it('says that a submitted note has no responsable to validate it', () => {
-    expect(getNonEventReportDetails(achat)).toBe('Randonnée · Sans responsable de commission');
+  it('says that a note sent without valideur goes straight to the treasury', () => {
+    expect(getNonEventReportDetails(achat)).toBe('Randonnée · Directement à la trésorerie');
   });
 
-  it('only names the commission of a note decided without validation by a responsable', () => {
-    const approuvee = mockNotesHorsSortie.find((note) => note.id === 204) as unknown as ExpenseReport;
+  it('says so too of a note the treasury decided without validation by a responsable', () => {
+    const approuvee = mockNotesHorsSortie.find((note) => note.id === 204) as unknown as NonEventExpenseReport;
 
-    expect(getNonEventReportDetails(approuvee)).toBe('Randonnée');
+    expect(getNonEventReportDetails(approuvee)).toBe('Randonnée · Directement à la trésorerie');
+    expect(getNonEventReportDetails({ ...approuvee, derniereDecision: { ...approuvee.derniereDecision!, niveau: 'responsable' as const } }))
+      .toBe('Randonnée');
   });
 
   it('says nothing for a note de sortie', () => {
@@ -190,18 +193,28 @@ describe('getValidationResponsable', () => {
     expect(getValidationResponsable(noteHorsSortie(202))).toBe('Validée par Hugo BLANC le 27/01/2025');
   });
 
-  it('says that a submitted note without valideur has no responsable', () => {
-    expect(getValidationResponsable(noteHorsSortie(201))).toBe('Aucune, la commission n\'a pas de responsable.');
+  it('says that a note sent without valideur goes straight to the treasury', () => {
+    expect(getValidationResponsable(noteHorsSortie(201))).toBe('Aucune : la note va directement à la trésorerie.');
   });
 
-  it('says that a note approved without validation went straight to the treasury', () => {
-    expect(getValidationResponsable(noteHorsSortie(204))).toBe('Aucune, la commission n\'a pas de responsable.');
-    expect(getValidationResponsable(noteHorsSortie(208))).toBe('Aucune, la commission n\'a pas de responsable.');
+  it('says that a note decided by the treasury without validation went straight to it', () => {
+    expect(getValidationResponsable(noteHorsSortie(204))).toBe('Aucune : la note est allée directement à la trésorerie.');
+    expect(getValidationResponsable(noteHorsSortie(208))).toBe('Aucune : la note est allée directement à la trésorerie.');
+    expect(getValidationResponsable(noteHorsSortie(205, { validationResponsable: null })))
+      .toBe('Aucune : la note est allée directement à la trésorerie.');
   });
 
-  it('says nothing for a note refused or still waiting for its responsable', () => {
+  it('says nothing for a note still waiting for its responsable, or refused by him', () => {
+    const refusParLeResponsable = { ...noteHorsSortie(205).derniereDecision!, niveau: 'responsable' as const };
     expect(getValidationResponsable(noteHorsSortie(206))).toBeNull();
-    expect(getValidationResponsable(noteHorsSortie(205, { validationResponsable: null }))).toBeNull();
+    expect(getValidationResponsable(noteHorsSortie(205, { validationResponsable: null, derniereDecision: refusParLeResponsable }))).toBeNull();
+    expect(getValidationResponsable(noteHorsSortie(207))).toBeNull();
+  });
+
+  it('never takes a note validated by its responsable for one sent straight to the treasury', () => {
+    expect(venueDirectementALaTresorerie(noteHorsSortie(202))).toBe(false);
+    expect(venueDirectementALaTresorerie(noteHorsSortie(205))).toBe(false);
+    expect(venueDirectementALaTresorerie(noteHorsSortie(201))).toBe(true);
   });
 
   it('says nothing for a note approved without validation by anyone but the treasury', () => {

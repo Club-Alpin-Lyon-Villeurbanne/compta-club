@@ -9,7 +9,6 @@ import {
     getAmountSummary,
     getApproval,
     getExpenseDateLabel,
-    getRefundChoice,
     getReportTypeLabel,
     getValidationResponsable,
     noteStatusPhrase,
@@ -27,9 +26,13 @@ const estWinAnsi = (char: string) => {
     return (code >= 0x20 && code < 0x7f) || (code >= 0xa0 && code <= 0xff) || WIN_ANSI_HORS_LATIN1.includes(char);
 };
 
+// Caractères de format invisibles (espace sans largeur, liant, sélecteur de variante d'émoji, BOM…).
+const INVISIBLES = /[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufe00-\ufe0f\ufeff]/;
+
 function pdfText(text: string): string {
     return Array.from(text.normalize('NFC'), (char) => {
         if (char === '\n' || estWinAnsi(char)) return char;
+        if (INVISIBLES.test(char)) return '';
         if (char === '\u202f' || char === '\u2007') return '\u00a0';
         if (/\s/.test(char)) return ' ';
         const sansAccent = char.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -50,11 +53,14 @@ function fileNamePart(text: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
+const LONGUEUR_MAX_DU_NOM = 80;
+
 /** « note-de-frais-formation-202-PETIT.pdf » : le type, le numéro de la note et le nom du demandeur. */
 export function getNoteHorsSortiePdfFileName(note: NonEventExpenseReport): string {
     const type = fileNamePart(getReportTypeLabel(note)).toLowerCase();
     const parts = [type, fileNamePart(String(note.id)), fileNamePart(note.utilisateur?.nom ?? '')];
-    return `note-de-frais-${parts.filter(Boolean).join('-')}.pdf`;
+    const nom = `note-de-frais-${parts.filter(Boolean).join('-')}`;
+    return `${nom.slice(0, LONGUEUR_MAX_DU_NOM).replace(/-+$/, '')}.pdf`;
 }
 
 const finDuTableau = (doc: jsPDF) => (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
@@ -107,7 +113,19 @@ export function buildNoteHorsSortiePdf(note: NonEventExpenseReport): jsPDF {
     doc.text(`STATUT : ${noteStatusPhrase(note.status).toUpperCase()}`, pageWidth / 2, 40, { align: 'center' });
     doc.setTextColor(0, 0, 0);
 
-    let y = titre(doc, 'INFORMATIONS GÉNÉRALES', 45);
+    // Ce que la trésorerie cherche d'abord, comme en tête de la page de la note : le numéro, le montant
+    // à payer ou le don, et le libellé comptable.
+    const summary = getAmountSummary(note);
+    const ligneSeule = (content: string, styles: Partial<Styles> = {}) =>
+        [{ content, colSpan: 2, styles: { fontStyle: 'normal' as const, ...styles } }];
+    let y = fiche(doc, 48, [
+        ligneSeule(`Note n° ${note.id}`, { fontStyle: 'bold', fontSize: 11 }),
+        ligneSeule(summary.titre, { fontStyle: 'bold', fontSize: 14 }),
+        ...(summary.detail ? [ligneSeule(summary.detail)] : []),
+        ['Libellé comptable', note.libelleComptable ?? ''],
+    ]);
+
+    y = titre(doc, 'INFORMATIONS GÉNÉRALES', y);
     y = fiche(doc, y, [
         ['Demandeur', [note.utilisateur.prenom, note.utilisateur.nom].filter(Boolean).join(' ')],
         ['Type', getReportTypeLabel(note)],
@@ -145,22 +163,11 @@ export function buildNoteHorsSortiePdf(note: NonEventExpenseReport): jsPDF {
     const approval = getApproval(note);
     if (validation || approval) {
         y = titre(doc, 'VALIDATION', y);
-        y = fiche(doc, y, [
+        fiche(doc, y, [
             ...(validation ? [['Validation du responsable', validation]] : []),
             ...(approval ? [['Décision', approval]] : []),
         ]);
     }
-
-    const summary = getAmountSummary(note);
-    const ligneSeule = (content: string, styles: Partial<Styles> = {}) =>
-        [{ content, colSpan: 2, styles: { fontStyle: 'normal' as const, ...styles } }];
-    y = titre(doc, 'RÉCAPITULATIF', y);
-    fiche(doc, y, [
-        ligneSeule(summary.titre, { fontStyle: 'bold', fontSize: 12 }),
-        ...(summary.detail ? [ligneSeule(summary.detail)] : []),
-        ligneSeule(getRefundChoice(note)),
-        ['Libellé comptable', note.libelleComptable ?? ''],
-    ]);
 
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
