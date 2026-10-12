@@ -44,11 +44,7 @@ export default function AidePage() {
               </li>
               <li className="flex items-start">
                 <span className="flex items-center justify-center w-5 h-5 mr-2 mt-0.5 text-sm text-white bg-blue-600 rounded-full">4</span>
-                <span>Validation ou refus des notes de frais</span>
-              </li>
-              <li className="flex items-start">
-                <span className="flex items-center justify-center w-5 h-5 mr-2 mt-0.5 text-sm text-white bg-blue-600 rounded-full">5</span>
-                <span>Ajout de commentaires pour communiquer</span>
+                <span>Approbation ou refus des notes de frais, puis comptabilisation</span>
               </li>
             </ul>
           </section>
@@ -92,24 +88,23 @@ export default function AidePage() {
             </div>
             <div className="space-y-6">
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="mb-2 text-lg font-medium text-gray-800">Comment valider une note de frais ?</h3>
+                <h3 className="mb-2 text-lg font-medium text-gray-800">Comment approuver une note ?</h3>
                 <p className="text-gray-600">
-                  Ouvrez la note de frais, vérifiez tous les détails et justificatifs. Si tout est en ordre, 
-                  cliquez sur le bouton &quot;Valider&quot;. Vous pouvez ajouter un commentaire si nécessaire.
+                  Ouvrez-la depuis «&nbsp;À valider&nbsp;», vérifiez les justificatifs, puis «&nbsp;Approuver&nbsp;». Le demandeur reçoit un mail.
                 </p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="mb-2 text-lg font-medium text-gray-800">Que faire si une note de frais est incomplète ?</h3>
+                <h3 className="mb-2 text-lg font-medium text-gray-800">Une note est incomplète ?</h3>
                 <p className="text-gray-600">
-                  Si des informations ou justificatifs manquent, vous pouvez soit refuser la note de frais, 
-                  soit ajouter un commentaire demandant des compléments d&apos;information au membre.
+                  «&nbsp;Refuser&nbsp;», avec un message au demandeur : il le reçoit par mail, corrige et renvoie sa note. Une note
+                  hors sortie repasse alors par le responsable de sa commission.
                 </p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="mb-2 text-lg font-medium text-gray-800">Comment gérer les litiges sur les notes de frais ?</h3>
+                <h3 className="mb-2 text-lg font-medium text-gray-800">Notes hors sortie (formation, achat)</h3>
                 <p className="text-gray-600">
-                  En cas de litige, utilisez la fonction de commentaire pour communiquer avec le membre. 
-                  Si nécessaire, vous pouvez marquer la note de frais comme &quot;En litige&quot; pour un traitement ultérieur.
+                  Elles arrivent validées par le responsable de leur commission («&nbsp;Validée par le responsable&nbsp;»), ou
+                  directement si personne d&apos;autre ne peut les valider («&nbsp;Directement à la trésorerie&nbsp;»).
                 </p>
               </div>
             </div>
@@ -133,7 +128,7 @@ export default function AidePage() {
               </div>
               <div className="flex items-start">
                 <span className="flex items-center justify-center w-5 h-5 mr-2 mt-0.5 text-sm text-white bg-red-500 rounded-full">!</span>
-                <span>Erreurs lors de la validation : assurez-vous d&apos;avoir les droits nécessaires</span>
+                <span>Erreur lors d&apos;une action : assurez-vous d&apos;avoir les droits nécessaires</span>
               </div>
             </div>
           </section>
