@@ -16,7 +16,7 @@ test.describe('Authentication', () => {
   test('should show error with invalid credentials', async ({ page }) => {
     await fillLoginForm(page, { email: 'invalid@example.com', password: 'wrongpassword' });
 
-    await expect(page.getByText('Identifiants invalides')).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'Identifiants invalides' })).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
   });
 

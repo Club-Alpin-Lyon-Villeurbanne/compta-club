@@ -3,8 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaSpinner } from 'react-icons/fa';
+import { DEFAULT_PAGE } from '../lib/loginRedirect';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  // Page où arriver une fois connecté, déjà contrôlée par la page de connexion
+  returnTo?: string;
+  sessionExpired?: boolean;
+}
+
+export default function LoginForm({ returnTo = DEFAULT_PAGE, sessionExpired = false }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,8 +46,7 @@ export default function LoginForm() {
       }
       
       
-      // Redirection vers la page des notes de frais après connexion réussie
-      router.push('/note-de-frais');
+      router.push(returnTo);
     } catch (err) {
       // Détecter les erreurs de réseau ou d'API indisponible
       if (err instanceof TypeError && err.message.includes('fetch')) {
@@ -55,8 +61,13 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {sessionExpired && !error && (
+        <p className="p-4 text-sm text-blue-800 rounded-lg bg-blue-50">
+          Votre session a expiré. Reconnectez-vous.
+        </p>
+      )}
       {error && (
-        <div className="p-4 text-sm text-red-700 bg-red-100 rounded-lg">
+        <div role="alert" className="p-4 text-sm text-red-700 bg-red-100 rounded-lg">
           {error}
         </div>
       )}

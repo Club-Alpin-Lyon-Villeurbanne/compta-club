@@ -1,11 +1,18 @@
 import { redirect } from 'next/navigation';
 import { isAuthenticated } from '../lib/auth.server';
+import { DEFAULT_PAGE, safeReturnPath, SESSION_EXPIRED } from '../lib/loginRedirect';
 import LoginForm from '../components/LoginForm';
 
-export default async function Home() {
-  // Si l'utilisateur est authentifié, rediriger vers /note-de-frais
+interface HomeProps {
+  searchParams: Promise<{ session?: string | string[]; retour?: string | string[] }>;
+}
+
+export default async function Home({ searchParams }: HomeProps) {
+  const { session, retour } = await searchParams;
+  const returnTo = safeReturnPath(retour) ?? DEFAULT_PAGE;
+
   if (await isAuthenticated()) {
-    redirect('/note-de-frais');
+    redirect(returnTo);
   }
 
   // Sinon, afficher le formulaire de connexion
@@ -20,7 +27,7 @@ export default async function Home() {
             Connectez-vous pour accéder à votre espace
           </p>
         </div>
-        <LoginForm />
+        <LoginForm returnTo={returnTo} sessionExpired={session === SESSION_EXPIRED} />
       </div>
     </div>
   );

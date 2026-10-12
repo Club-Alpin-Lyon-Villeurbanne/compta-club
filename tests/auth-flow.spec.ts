@@ -29,6 +29,46 @@ test.describe('Authentication Flow', () => {
   });
 });
 
+test.describe('Back to the page after the login', () => {
+  test('should open the page asked for while logged out, once logged in', async ({ page }) => {
+    await page.goto('/note-de-frais/101');
+
+    await expect(page).toHaveURL('/?retour=%2Fnote-de-frais%2F101');
+    await expect(page.getByText('Votre session a expiré')).toHaveCount(0);
+    await fillLoginForm(page);
+
+    await expect(page).toHaveURL('/note-de-frais/101');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sortie Mont Blanc');
+  });
+
+  test('should say that the session expired during an action, then come back to the page', async ({ page, context }) => {
+    await login(page);
+    await page.goto('/note-de-frais/102');
+    await expect(page.getByRole('button', { name: 'Comptabiliser', exact: true })).toBeVisible();
+    await context.clearCookies();
+
+    await page.getByRole('button', { name: 'Comptabiliser', exact: true }).click();
+    await page.locator('.swal2-confirm').click();
+
+    await expect(page).toHaveURL('/?session=expiree&retour=%2Fnote-de-frais%2F102');
+    await expect(page.getByText('Votre session a expiré. Reconnectez-vous.')).toBeVisible();
+    await expect(page.locator('.swal2-icon-error')).toHaveCount(0);
+    await fillLoginForm(page);
+    await expect(page).toHaveURL('/note-de-frais/102');
+    await expect(rows(page)).toContainText('Approuvée');
+  });
+
+  test('should not follow a return address outside compta-club', async ({ page }) => {
+    for (const retour of ['//example.com', '/\\example.com', 'https://example.com']) {
+      await page.goto(`/?retour=${encodeURIComponent(retour)}`);
+      await fillLoginForm(page);
+      await expect(page).toHaveURL('/note-de-frais');
+      await page.getByRole('button', { name: 'Déconnexion' }).click();
+      await expect(page).toHaveURL('/');
+    }
+  });
+});
+
 test.describe('Session refresh', () => {
   // Le jeton d'accès dure 1 h, le refresh token 90 jours.
   test('should refresh an expired access token when opening a page', async ({ page, context }) => {

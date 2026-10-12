@@ -25,6 +25,17 @@ describe('middleware — rafraîchissement de la session', () => {
     expect(response.cookies.get('access_token')).toBeUndefined();
   });
 
+  it('passes the path of the page to the layout, which sends back to it after the login', async () => {
+    createFetchMock();
+
+    const valid = await middleware(createMockRequest('/note-de-frais/note/202', { cookies: { access_token: jwt(3600), refresh_token: 'refresh-1' } }));
+    const loggedOut = await middleware(createMockRequest('/note-de-frais/note/202'));
+
+    for (const response of [valid, loggedOut]) {
+      expect(response.headers.get('x-middleware-request-x-compta-club-path')).toBe('/note-de-frais/note/202');
+    }
+  });
+
   it('refreshes an expired access token and passes the new one to the page', async () => {
     const newToken = jwt(3600);
     let sentBody: unknown;
@@ -90,11 +101,12 @@ describe('middleware — rafraîchissement de la session', () => {
       () => Response.json({ code: 401, message: 'JWT Refresh Token Not Found' }, { status: 401 })
     );
 
-    const response = await middleware(pageRequest({ access_token: jwt(-60), refresh_token: 'refresh-1' }));
+    const expired = jwt(-60);
+    const response = await middleware(pageRequest({ access_token: expired, refresh_token: 'refresh-1' }));
 
     // La page voit toujours le jeton expiré et renvoie vers la connexion
     expect(response.cookies.get('access_token')).toBeUndefined();
-    expect(response.headers.get('x-middleware-request-cookie')).toBeNull();
+    expect(response.headers.get('x-middleware-request-cookie')).toBe(`access_token=${expired}; refresh_token=refresh-1`);
   });
 
   it('also runs on the home page, which redirects signed-in users to the list', async () => {

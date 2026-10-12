@@ -1,0 +1,49 @@
+import { describe, it, expect } from 'vitest';
+import { loginUrl, safeReturnPath } from '@/app/lib/loginRedirect';
+
+describe('safeReturnPath', () => {
+  it.each(['/note-de-frais/note/202', '/note-de-frais/101', '/note-de-frais?statut=approved', '/aide'])(
+    'keeps a page of compta-club: %s',
+    (path) => {
+      expect(safeReturnPath(path)).toBe(path);
+    }
+  );
+
+  it.each([
+    ['another site, without scheme', '//evil.example'],
+    ['another site, behind a backslash', '/\\evil.example'],
+    ['a backslash further on', '/note-de-frais\\..\\evil'],
+    ['a tab the browser drops', '/\t/evil.example'],
+    ['a line feed the browser drops', '/\n/evil.example'],
+    ['a carriage return', '/\r/evil.example'],
+    ['a scheme', 'https://evil.example/note-de-frais'],
+    ['javascript', 'javascript:alert(1)'],
+    ['a relative path', 'note-de-frais'],
+    ['nothing', ''],
+  ])('refuses %s', (_, value) => {
+    expect(safeReturnPath(value)).toBeNull();
+  });
+
+  it('refuses what is not a single string', () => {
+    expect(safeReturnPath(undefined)).toBeNull();
+    expect(safeReturnPath(['/note-de-frais/note/202'])).toBeNull();
+    expect(safeReturnPath(42)).toBeNull();
+  });
+});
+
+describe('loginUrl', () => {
+  it('says that the session expired, and where to come back', () => {
+    expect(loginUrl({ expired: true, returnTo: '/note-de-frais/note/202' }))
+      .toBe('/?session=expiree&retour=%2Fnote-de-frais%2Fnote%2F202');
+  });
+
+  it('leaves out the list, where the login leads anyway', () => {
+    expect(loginUrl({ returnTo: '/note-de-frais' })).toBe('/');
+    expect(loginUrl({ expired: true, returnTo: '/note-de-frais' })).toBe('/?session=expiree');
+  });
+
+  it('drops a page outside compta-club', () => {
+    expect(loginUrl({ returnTo: '//evil.example' })).toBe('/');
+    expect(loginUrl({ returnTo: null })).toBe('/');
+  });
+});

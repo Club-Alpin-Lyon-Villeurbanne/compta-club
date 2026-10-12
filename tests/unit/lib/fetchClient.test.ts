@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createFetchMock } from '../helpers/next-request';
+
+vi.mock('@/app/lib/loginRedirect', () => ({ goToLoginAfterExpiry: vi.fn() }));
+
+import { goToLoginAfterExpiry } from '@/app/lib/loginRedirect';
 import { fetchClient, get, post, patch, del } from '@/app/lib/fetchClient';
 
 describe('fetchClient', () => {
@@ -66,7 +70,8 @@ describe('fetchClient', () => {
     expect(callCount).toBe(2);
   });
 
-  it('throws when auth/check also fails (no infinite retry)', async () => {
+  it('goes to the login, then back, when the session has expired, and settles nothing meanwhile', async () => {
+    let calls = 0;
     createFetchMock()
       .on(
         (url) => url.includes('/api/auth/check'),
@@ -74,10 +79,35 @@ describe('fetchClient', () => {
       )
       .on(
         (url) => url.includes('/data'),
+        () => {
+          calls++;
+          return Response.json({}, { status: 401 });
+        }
+      );
+
+    let settled = false;
+    fetchClient('/data').finally(() => { settled = true; });
+
+    await vi.waitFor(() => expect(goToLoginAfterExpiry).toHaveBeenCalledOnce());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(settled).toBe(false);
+    // Pas de nouvel essai
+    expect(calls).toBe(1);
+  });
+
+  it('throws when the session cannot be checked (no infinite retry)', async () => {
+    createFetchMock()
+      .on(
+        (url) => url.includes('/api/auth/check'),
+        () => Response.json({ error: 'Erreur lors de la vérification de l\'authentification' }, { status: 500 })
+      )
+      .on(
+        (url) => url.includes('/data'),
         () => Response.json({}, { status: 401 })
       );
 
-    await expect(fetchClient('/data')).rejects.toThrow();
+    await expect(fetchClient('/data')).rejects.toThrow('Erreur lors de la vérification de l\'authentification');
+    expect(goToLoginAfterExpiry).not.toHaveBeenCalled();
   });
 
   it('throws on non-401 error responses', async () => {

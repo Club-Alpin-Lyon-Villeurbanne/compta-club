@@ -1,7 +1,10 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import { isAuthenticated as isAuthenticatedServer } from '../lib/auth.server';
+import { PATH_HEADER } from '../lib/constants';
+import { loginUrl } from '../lib/loginRedirect';
 import '../globals.css'
 
 // Indiquer à Next.js que ce layout doit être rendu dynamiquement
@@ -20,9 +23,9 @@ export default async function PrivateLayout({ children }: Props) {
   // Vérifier si l'utilisateur est authentifié
   const authenticated = await isAuthenticatedServer();
   
-  // Si l'utilisateur n'est pas authentifié, rediriger vers la page d'accueil
+  // Pas connecté : la connexion, puis retour à la page demandée.
   if (!authenticated) {
-    redirect('/');
+    redirect(loginUrl({ returnTo: (await headers()).get(PATH_HEADER) }));
   }
 
   return (
