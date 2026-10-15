@@ -10,7 +10,8 @@
  * - `details` renvoyé en chaîne JSON, dates avec fuseau horaire ;
  * - `pagination=false` renvoie un tableau nu, sinon `{ data, meta }` ;
  * - erreurs au format application/problem+json ;
- * - transitions de statut d'un gestionnaire, refusées (422) sur sa propre note ;
+ * - transitions de statut d'un gestionnaire, refusées (422) sur sa propre note, avec les motifs
+ *   de la plateforme ;
  * - notes hors sortie (achat, formation) : ni brouillon ni note qu'un responsable doit encore
  *   valider dans la liste, `status` et `type` à une ou plusieurs valeurs, recherche et date de la
  *   sortie sans effet sur elles ; lecture d'une note par son identifiant ; décisions de la
@@ -109,8 +110,8 @@ const archivedReports = Array.from({ length: 31 }, (_, i) => {
 
 const allReports: Report[] = [...(mockExpenseReports as Report[]), ownReport, ...archivedReports];
 
-// Plus récentes, les notes hors sortie arrivent en tête, comme dans l'API. Les achats comptabilisés
-// remplissent une page entière : seul le filtre `type=sortie` du serveur ramène les sorties derrière eux.
+// Les achats comptabilisés remplissent une page entière : seul le filtre `type=sortie` du serveur
+// ramène les sorties derrière eux.
 const accountedPurchase = mockNotesHorsSortie.find((note) => note.status === 'accounted')!;
 const archivedPurchases = Array.from({ length: 30 }, (_, i) => ({
   ...accountedPurchase,
@@ -149,6 +150,8 @@ function getSession(sid: string): Session {
   return sessions.get(sid)!;
 }
 
+// Dans l'ordre du tableau, notes hors sortie en tête. L'API trie par date de création : des notes
+// hors sortie récentes y passent aussi devant les sorties.
 function reportsSeenBy(session: Session): Report[] {
   const reports = session.notesHorsSortie ? [...notesHorsSortie, ...allReports] : allReports;
   return reports.map((r) => ({ ...r, ...session.changes.get(r.id) }));
@@ -169,6 +172,16 @@ function dejaTraitee(report: Report, status: string, allowed: string[]): boolean
     && DECISIONS.includes(status)
     && [...DECISIONS, 'accounted'].includes(report.status)
     && !allowed.some((target) => DECISIONS.includes(target));
+}
+
+// Motifs de la plateforme, que compta-club affiche tels quels.
+function motifDuRefus(report: Report, isOwner: boolean, status: string): string {
+  if (isOwner && [...DECISIONS, 'accounted'].includes(status)) return 'Vous ne pouvez pas décider sur votre propre note de frais.';
+  // Ouverte sans valideur, la note a pu en retrouver un depuis : un responsable redevenu actif.
+  if (isHorsSortie(report) && report.status === 'submitted' && (report.valideurs ?? []).length > 0) {
+    return 'Cette note attend encore la décision du responsable de la commission.';
+  }
+  return 'Ce changement de statut n\'est pas permis.';
 }
 
 // La trésorerie ne voit d'une note hors sortie ni le brouillon, ni l'envoi qu'un responsable doit encore valider.
@@ -338,7 +351,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
       return violation(res, 'status', 'Cette note a déjà été traitée.');
     }
     if (body.status !== report.status && !allowed.includes(body.status)) {
-      return violation(res, 'status', `Invalid status transition from "${report.status}" to "${body.status}".`);
+      return violation(res, 'status', motifDuRefus(report, isOwner, body.status));
     }
     if (isHorsSortie(report) && body.status === 'rejected' && !String(body.commentaireStatut ?? '').trim()) {
       return violation(res, 'commentaireStatut', 'Un message au demandeur est obligatoire pour refuser la note.');

@@ -24,9 +24,9 @@ Une note hors sortie rembourse une formation ou un achat fait pour le club, sans
 1. le responsable de sa commission la valide ou la refuse, sur le site : elle devient « Validée par le responsable » (`preapproved`) ;
 2. la trésorerie l'approuve ou la refuse ici, puis la comptabilise.
 
-Une note sans valideur sur le site (sa commission n'a pas d'autre responsable que le demandeur, ou aucun avec une adresse mail) arrive directement ici, « Soumise » : la liste l'annonce « Directement à la trésorerie ». Une note encore chez son responsable n'apparaît pas dans la liste. Un refus porte toujours un message ; corrigée, la note repasse par le responsable.
+Les valideurs d'une note sont les responsables de sa commission, sauf le demandeur et ceux qui sont supprimés, doivent renouveler leur adhésion ou n'ont pas d'adresse mail. Une note sans valideur arrive directement ici, « Soumise » : la liste l'annonce « Directement à la trésorerie ». Une note encore chez son responsable n'apparaît pas dans la liste. Un refus porte toujours un message ; corrigée, la note repasse par le responsable, s'il y en a un.
 
-- Liste : « À valider » montre les notes soumises et celles validées par le responsable ; le filtre par type sépare sorties, formations et achats ; la recherche et la date ne portent que sur les sorties. Le montant d'une note hors sortie est le total déclaré, figé par la plateforme, avec « dont X € remb. » quand le remboursable est plus bas (« dont X € dans les plafonds » pour un don). Sous l'objet d'une note refusée, qui l'a refusée (« Refusée par la trésorerie le JJ/MM » ou par le responsable de commission) ; une note corrigée porte « renvoyée après un refus ».
+- Liste : « À valider » montre les notes soumises et celles validées par le responsable ; le filtre par type sépare sorties, formations et achats ; la recherche et la date ne portent que sur les sorties. Le montant d'une note hors sortie est le total déclaré, figé à l'envoi par la plateforme, avec « dont X € remb. » quand le remboursable est plus bas (« dont X € dans les plafonds » pour un don). Sous l'objet d'une note refusée, qui l'a refusée (« Refusée par la trésorerie le JJ/MM » ou par le responsable de commission) ; une note corrigée porte « renvoyée après un refus ».
 - Page d'une note (`/note-de-frais/note/{id}`) : type, commission et demandeur, objet, refus et avertissements, montant à payer ou don, libellé comptable, les actions Approuver, Refuser (message au demandeur obligatoire) et Comptabiliser ; puis date, validation du responsable, dépenses et justificatifs, totaux.
 - PDF : son propre modèle, depuis la liste ou la page, une fois la note approuvée.
 
@@ -82,6 +82,8 @@ Avant de commencer, assurez-vous d'avoir les outils suivants installés sur votr
 Le déploiement se fait sur vercel automatiquement lorsque des modifications sont poussées sur la branche `main`. Vérifiez que le projets build correctement en lancant `pnpm build` et en vérifiant que le build se passe sans erreur.
 
 Quand l'API change, compta-club se déploie d'abord, après vérification contre la préprod : chaque version de compta-club marche avec l'API en production comme avec celle qui la remplace.
+
+Une fois la plateforme déployée avec les notes hors sortie, on ne revient pas à une compta-club d'avant elles, dont la liste plante sur un achat sans sortie : on corrige en avant. Le jour même, rechargez compta-club après le déploiement de la plateforme, pour qu'aucun onglet ne garde l'ancienne version.
 
 ## **🤝 Contribution**
 

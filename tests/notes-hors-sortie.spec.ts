@@ -8,7 +8,7 @@ const searchInput = (page: Page) => page.locator('input[placeholder="Rechercher 
 const dateInput = (page: Page) => page.locator('input[type="date"]');
 const row = (page: Page, text: string) => rows(page).filter({ hasText: text });
 
-// Les notes hors sortie, plus récentes, arrivent en tête (voir le faux backend).
+// Les notes hors sortie arrivent en tête : le faux backend garde l'ordre de ses données.
 const A_VALIDER = [
   /Cordelettes pour la SAE/,
   /Formation initiateur escalade/,

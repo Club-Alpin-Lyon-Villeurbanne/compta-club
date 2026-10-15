@@ -21,7 +21,8 @@ interface ExpenseActionsOptions {
   // Page d'une sortie : recharge ses notes après l'action.
   fetchData?: () => Promise<unknown>;
   // Relit la note et rend son statut (null si la lecture échoue) : avant l'envoi, pour ne pas agir sur une
-  // note déjà traitée ailleurs, et après, pour ne confirmer qu'une action qui a pris effet.
+  // note déjà traitée ailleurs, et après, pour ne pas confirmer une action restée sans effet. Si la relecture
+  // d'après échoue, l'action est confirmée sur la foi de la réponse 2xx de l'API.
   reloadStatus?: () => Promise<string | null>;
   // Une fois fermée la fenêtre « Note déjà traitée » : le bouton cliqué a pu disparaître, la page place le focus.
   onAlreadyProcessed?: () => void;

@@ -434,6 +434,28 @@ test.describe('Page of a note hors sortie', () => {
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
   });
 
+  // La synchronisation de la nuit a rendu actif un responsable de sa commission : même statut, la
+  // relecture d'avant l'envoi ne voit rien, mais la décision lui revient.
+  test('should not approve a note that has found a responsable since it was shown', async ({ page }) => {
+    await page.goto(note(201));
+    await expect(button(page, 'Approuver')).toBeVisible();
+    await changeNoteInBackend(page, 201, { valideurs: [{ id: 12, prenom: 'Marc', nom: 'Morel' }] });
+
+    await button(page, 'Approuver').click();
+    await page.locator('.swal2-confirm').click();
+
+    await expect(dialog(page)).toContainText('Cette note attend encore la décision du responsable de la commission.');
+    await expect(page.locator('.swal2-icon-error')).toBeVisible();
+    await page.locator('.swal2-confirm').click();
+    await expect(confirmation(page)).toHaveText('');
+    await expect(status(page, 'Soumise')).toBeVisible();
+    await expect(page.getByText("En attente de Marc Morel (responsable de Randonnée). Vous pourrez l'approuver après lui.")).toBeVisible();
+    await expect(actionButtons(page)).toHaveCount(0);
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/201', body: { status: 'approved', version: 1 } },
+    ]);
+  });
+
   test('should show the rejected note with its refusal, without action', async ({ page }) => {
     await page.goto(note(205));
 

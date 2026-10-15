@@ -117,6 +117,7 @@ test.describe('Expense Report Actions', () => {
     await page.locator('.swal2-confirm').click();
 
     await expect(dialog(page)).toContainText('Une erreur est survenue lors de l\'action sur la note de frais.');
+    await expect(dialog(page)).toContainText('Vous ne pouvez pas décider sur votre propre note de frais.');
     await expect(page.locator('.swal2-icon-error')).toBeVisible();
     expect(await backendReceived(page)).toHaveLength(1);
     await expect(rows(page)).toContainText('Soumise');

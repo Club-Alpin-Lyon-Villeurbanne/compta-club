@@ -17,7 +17,7 @@ export const REPORT_TYPE_LABELS: Record<ExpenseReportType, string> = {
     autre: 'Achat',
 };
 
-// L'API ne donne le type qu'avec les notes hors sortie : une note sans type est une note de sortie.
+// L'API d'avant les notes hors sortie ne donne pas `type` : une note sans type est une note de sortie.
 export function getReportType(report: ExpenseReport): ExpenseReportType {
     return report.type ?? 'sortie';
 }
@@ -56,7 +56,7 @@ export function formatReportDate(date: string | null, locale?: string): string {
 
 /**
  * Montant d'une note de sortie calculé par compta-club, comme toujours ; celui d'une note hors
- * sortie est le total déclaré, figé par la plateforme.
+ * sortie est le total déclaré, figé à l'envoi par la plateforme.
  */
 export function getReportAmount(report: ExpenseReport): number {
     return isEventReport(report) ? calculateTotals(report.details).totalRemboursable : toAmount(report.totalDeclare);
