@@ -137,7 +137,8 @@ export function venueDirectementALaTresorerie(report: NonEventExpenseReport): bo
 
 /**
  * Sous l'objet d'une note hors sortie : « Escalade · Validée par Hugo BLANC le 27/01 », « Randonnée ·
- * Directement à la trésorerie », suivi de « renvoyée après un refus » une fois corrigée ; pour une note
+ * Directement à la trésorerie », suivi de « renvoyée après un refus » une fois corrigée et revenue
+ * directement (revalidée par son responsable, sa dernière décision n'est plus le refus) ; pour une note
  * refusée, qui l'a refusée : « Escalade · Refusée par la trésorerie le 29/01 ».
  */
 export function getNonEventReportDetails(report: ExpenseReport): string | null {
@@ -188,8 +189,9 @@ export interface Refusal {
 }
 
 /**
- * Le refus d'une note : en cours si elle est refusée ; sinon, si elle a été renvoyée depuis, le
- * rappel de ce qu'il fallait corriger. Un mot laissé avec une validation n'est jamais un refus.
+ * Le refus d'une note : en cours si elle est refusée ; sinon, si elle a été renvoyée depuis sans
+ * nouvelle décision, le rappel de ce qu'il fallait corriger. Un mot laissé avec une validation n'est
+ * jamais un refus.
  */
 export function getLastRefusal(report: NonEventExpenseReport): Refusal | null {
     const decision = report.derniereDecision?.statut === 'rejected' ? report.derniereDecision : null;

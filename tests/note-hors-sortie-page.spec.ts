@@ -355,22 +355,26 @@ test.describe('Page of a note hors sortie', () => {
     expect(await backendReceived(page)).toHaveLength(1);
   });
 
-  test('should not confirm an action the platform accepted without effect', async ({ page }) => {
-    await page.goto(note(204));
-    // L'API répond 200 à une comptabilisation sans effet ; la note relue est toujours approuvée.
-    await page.route('**/api/expense-reports/204', (route) =>
-      route.request().method() === 'PATCH' ? route.fulfill({ status: 200, json: {} }) : route.continue()
-    );
+  test('should confirm an approval recorded, even when the note was accounted elsewhere before it was read again', async ({ page }) => {
+    await page.goto(note(202));
+    await page.route('**/api/expense-reports/202', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.continue();
+      const response = await route.fetch();
+      await decideElsewhere(page, 202, 'accounted');
+      await route.fulfill({ response });
+    });
 
-    await button(page, 'Comptabiliser').click();
+    await button(page, 'Approuver').click();
     await page.locator('.swal2-confirm').click();
 
-    await expect(dialog(page)).toContainText(
-      'Elle a été traitée entre-temps. Elle est maintenant : approuvée. Votre action n\'a pas été enregistrée.'
-    );
-    await page.locator('.swal2-confirm').click();
-    await expect(confirmation(page)).toHaveText('');
-    await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
+    await expect(confirmation(page)).toHaveText('Note approuvée. Un mail a été envoyé à Thomas Petit.');
+    await expect(status(page, 'Comptabilisée')).toBeVisible();
+    await expect(dialog(page)).toBeHidden();
+    await expect(actionButtons(page)).toHaveCount(0);
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'approved', version: 1 } },
+      { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'accounted' } },
+    ]);
   });
 
   test('should keep the note on screen when it cannot be read again after an action', async ({ page }) => {

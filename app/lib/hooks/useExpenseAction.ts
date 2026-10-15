@@ -21,8 +21,8 @@ interface ExpenseActionsOptions {
   // Page d'une sortie : recharge ses notes après l'action.
   fetchData?: () => Promise<unknown>;
   // Relit la note et rend son statut (null si la lecture échoue) : avant l'envoi, pour ne pas agir sur une
-  // note déjà traitée ailleurs, et après, pour ne pas confirmer une action restée sans effet. Si la relecture
-  // d'après échoue, l'action est confirmée sur la foi de la réponse 2xx de l'API.
+  // note déjà traitée ailleurs, et après, pour la montrer à jour. L'action est confirmée par la réponse 2xx
+  // de l'API (la `version` envoyée exclut une réponse sans effet), même si la note relue a avancé depuis.
   reloadStatus?: () => Promise<string | null>;
   // Une fois fermée la fenêtre « Note déjà traitée » : le bouton cliqué a pu disparaître, la page place le focus.
   onAlreadyProcessed?: () => void;
@@ -153,16 +153,7 @@ export function useExpenseActions(options: ExpenseActionsOptions = {}) {
       }
 
       await patch(`/api/expense-reports/${reportId}`, body);
-
-      if (!reloadStatus) {
-        await fetchData?.();
-        return true;
-      }
-      const after = await reloadStatus();
-      if (after !== null && after !== action) {
-        alreadyProcessed(Swal, action, after);
-        return false;
-      }
+      await (reloadStatus ?? fetchData)?.();
       return true;
     } catch (error) {
       const reason = refusalReason(error);

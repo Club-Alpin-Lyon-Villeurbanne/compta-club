@@ -99,7 +99,7 @@ export default function AidePage() {
                 <h3 className="mb-2 text-lg font-medium text-gray-800">Une note est incomplète ?</h3>
                 <p className="text-gray-600">
                   «&nbsp;Refuser&nbsp;», avec un message au demandeur : il le reçoit par mail, corrige et renvoie sa note. Une note
-                  hors sortie repasse alors par le responsable de sa commission.
+                  hors sortie repasse alors par le responsable de sa commission, s&apos;il y en a un.
                 </p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
@@ -107,6 +107,9 @@ export default function AidePage() {
                 <p className="text-gray-600">
                   Elles arrivent validées par le responsable de leur commission («&nbsp;Validée par le responsable&nbsp;»), ou
                   directement si personne d&apos;autre ne peut les valider («&nbsp;Directement à la trésorerie&nbsp;»).
+                  Si un responsable de la commission redevient actif (renouvellement, nomination) avant votre décision, la note
+                  quitte la liste et attend la sienne, sans que personne soit prévenu par mail. Une approbation depuis une page
+                  restée ouverte reçoit alors «&nbsp;Cette note attend encore la décision du responsable de la commission.&nbsp;»
                 </p>
               </div>
             </div>

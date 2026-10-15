@@ -178,7 +178,6 @@ describe('getNonEventReportDetails', () => {
   it('tells a note sent again after a refusal from a new one', () => {
     expect(getNonEventReportDetails(noteHorsSortie(206, { valideurs: [] })))
       .toBe('Escalade · Directement à la trésorerie · renvoyée après un refus');
-    expect(getNonEventReportDetails(noteHorsSortie(206))).toBe('Escalade · renvoyée après un refus');
   });
 });
 

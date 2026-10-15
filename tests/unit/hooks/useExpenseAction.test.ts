@@ -117,18 +117,34 @@ describe('useExpenseActions', () => {
   describe('on the page of a note, which reads the note again', () => {
     const alreadyProcessed = (text: string) => ({ title: 'Note déjà traitée', text, icon: 'info' });
 
-    it('confirms an action only once the note shows it', async () => {
+    it('confirms an action the API accepted, then reads the note again to show it', async () => {
       state.fire.mockResolvedValue({ isConfirmed: true });
-      vi.mocked(patch).mockResolvedValue({});
+      vi.mocked(patch).mockResolvedValue({ status: 'approved' });
       const reloadStatus = vi.fn().mockResolvedValueOnce('preapproved').mockResolvedValueOnce('approved');
       const { result } = renderHook(() => useExpenseActions({ reloadStatus }));
 
       let outcome = false;
-      await act(async () => { outcome = await result.current.handleAction(202, 'approved', { status: 'preapproved' }); });
+      await act(async () => { outcome = await result.current.handleAction(202, 'approved', { status: 'preapproved', version: 4 }); });
 
       expect(outcome).toBe(true);
       expect(reloadStatus).toHaveBeenCalledTimes(2);
       expect(state.fire).toHaveBeenCalledTimes(1);
+    });
+
+    // Avec la version, une réponse 2xx veut dire que l'approbation est écrite : la note relue a pu avancer depuis.
+    it('confirms an approval even when another treasurer accounted the note before it was read again', async () => {
+      state.fire.mockResolvedValue({ isConfirmed: true });
+      vi.mocked(patch).mockResolvedValue({ status: 'approved' });
+      const reloadStatus = vi.fn().mockResolvedValueOnce('preapproved').mockResolvedValueOnce('accounted');
+      const { result } = renderHook(() => useExpenseActions({ reloadStatus }));
+
+      let outcome = false;
+      await act(async () => { outcome = await result.current.handleAction(202, 'approved', { status: 'preapproved', version: 4 }); });
+
+      expect(outcome).toBe(true);
+      expect(reloadStatus).toHaveBeenCalledTimes(2);
+      expect(state.fire).toHaveBeenCalledTimes(1);
+      expect(state.fire).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Note déjà traitée' }));
     });
 
     it('sends nothing when the note was processed elsewhere during the confirmation', async () => {
@@ -143,21 +159,6 @@ describe('useExpenseActions', () => {
       expect(patch).not.toHaveBeenCalled();
       expect(state.fire).toHaveBeenLastCalledWith(alreadyProcessed(
         'Elle a été traitée entre-temps. Elle est maintenant : comptabilisée. Votre action n\'a pas été enregistrée.'
-      ));
-    });
-
-    it('does not confirm an action the API accepted without effect', async () => {
-      state.fire.mockResolvedValue({ isConfirmed: true });
-      vi.mocked(patch).mockResolvedValue({});
-      const reloadStatus = vi.fn().mockResolvedValueOnce('approved').mockResolvedValueOnce('approved');
-      const { result } = renderHook(() => useExpenseActions({ reloadStatus }));
-
-      let outcome = true;
-      await act(async () => { outcome = await result.current.handleAction(204, 'accounted', { status: 'approved' }); });
-
-      expect(outcome).toBe(false);
-      expect(state.fire).toHaveBeenLastCalledWith(alreadyProcessed(
-        'Elle a été traitée entre-temps. Elle est maintenant : approuvée. Votre action n\'a pas été enregistrée.'
       ));
     });
 
