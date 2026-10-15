@@ -223,6 +223,7 @@ export function getExpenseDateLabel(report: NonEventExpenseReport): string {
 const PAIEMENT_A_FAIRE: ExpenseStatus[] = [ExpenseStatus.SUBMITTED, ExpenseStatus.PREAPPROVED, ExpenseStatus.APPROVED];
 
 function amountLabel(report: NonEventExpenseReport): string {
+    if (report.refundRequired === null) return 'Montant';
     if (!report.refundRequired) return 'Don';
     // Le PDF d'une note comptabilisée s'archive : « À rembourser » y ferait croire à une dette.
     return PAIEMENT_A_FAIRE.includes(report.status) ? 'À rembourser' : 'Remboursement';
@@ -230,7 +231,8 @@ function amountLabel(report: NonEventExpenseReport): string {
 
 /**
  * En tête de la page et du PDF : « À rembourser : 287.40 € » tant que le paiement reste à faire,
- * « Remboursement : … » ensuite (ou sur une note refusée, en brouillon), « Don : … » pour un don ; et
+ * « Remboursement : … » ensuite (ou sur une note refusée, en brouillon), « Don : … » pour un don,
+ * « Montant : … » pour un brouillon où le demandeur n'a pas encore choisi entre les deux ; et
  * « 312.40 € déclarés, dont 25.00 € au-delà des plafonds du club » quand les plafonds le réduisent.
  */
 export function getAmountSummary(report: NonEventExpenseReport): { titre: string; detail: string | null } {

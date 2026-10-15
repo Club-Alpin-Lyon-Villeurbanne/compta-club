@@ -53,13 +53,13 @@ export default function NoteHorsSortiePage() {
   const reloadStatus = useCallback(async () => (await fetchNote())?.status ?? null, [fetchNote]);
   const focusTitle = useCallback(() => titleRef.current?.focus(), []);
 
-  const { handleAction, pendingAction } = useExpenseActions(fetchNote, { reloadStatus, onAlreadyProcessed: focusTitle });
+  const { handleAction, pendingAction } = useExpenseActions({ reloadStatus, onAlreadyProcessed: focusTitle });
 
   const onAction = useCallback(
     async (noteId: number, action: TreasuryAction) => {
       if (!note) return;
       setConfirmation(null);
-      if (await handleAction(noteId, action, note.status, getDecisionSummary(note))) setConfirmation(getActionConfirmation(action, note));
+      if (await handleAction(noteId, action, note, getDecisionSummary(note))) setConfirmation(getActionConfirmation(action, note));
     },
     [handleAction, note]
   );

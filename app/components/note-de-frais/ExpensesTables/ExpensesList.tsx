@@ -14,7 +14,7 @@ interface ExpensesListProps {
 
 export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetchData, params }) => {
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-    const { handleAction } = useExpenseActions(fetchData);
+    const { handleAction } = useExpenseActions({ fetchData });
 
     const toggleRow = useCallback((reportId: number) => {
         setExpandedRows(prev => {

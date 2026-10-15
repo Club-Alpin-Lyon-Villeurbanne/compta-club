@@ -367,6 +367,11 @@ describe('page of a note hors sortie', () => {
     expect(getAmountSummary(noteHorsSortie(203, { status })).titre).toBe('Don : 42.00 €');
   });
 
+  it('calls a draft without a choice between don and remboursement neither', () => {
+    expect(getAmountSummary(noteHorsSortie(207)).titre).toBe('Montant : 60.00 €');
+    expect(getDecisionSummary(noteHorsSortie(207)).montant).toBe('Montant : 60.00 €');
+  });
+
   it('names who a note still waits for', () => {
     expect(getWaitingForResponsable(noteHorsSortie(206)))
       .toBe("En attente de Hugo Blanc (responsable d'Escalade). Vous pourrez l'approuver après lui.");

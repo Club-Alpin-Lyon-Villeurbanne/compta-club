@@ -245,11 +245,8 @@ export default function NoteHorsSortieDetail({
 
                 <section aria-label="Synthèse" className="w-full p-4 bg-white rounded-lg shadow-sm md:w-80 md:flex-shrink-0">
                     <p className="text-xl font-semibold text-gray-900">
-                        {note.refundRequired ? (
-                            <FaMoneyBillWave className="inline-block mr-2 text-green-600" aria-hidden="true" />
-                        ) : (
-                            <FaGift className="inline-block mr-2 text-blue-600" aria-hidden="true" />
-                        )}
+                        {note.refundRequired === true && <FaMoneyBillWave className="inline-block mr-2 text-green-600" aria-hidden="true" />}
+                        {note.refundRequired === false && <FaGift className="inline-block mr-2 text-blue-600" aria-hidden="true" />}
                         {summary.titre}
                     </p>
                     {summary.detail && <p className="mt-1 text-sm text-gray-600">{summary.detail}</p>}

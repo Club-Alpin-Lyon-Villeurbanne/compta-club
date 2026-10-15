@@ -44,12 +44,14 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, commentaireStatut } = body;
+    const { status, commentaireStatut, version } = body;
 
-    // Mettre à jour la note de frais
+    // Mettre à jour la note de frais. `version` (note hors sortie) : la plateforme refuse (409) une note
+    // modifiée depuis cette version.
     const expenseReport = await patch(`${process.env.NEXT_PUBLIC_API_URL}/notes-de-frais/${slug}`, {
       status,
       commentaireStatut,
+      ...(Number.isInteger(version) ? { version } : {}),
     });
 
     return NextResponse.json(expenseReport);

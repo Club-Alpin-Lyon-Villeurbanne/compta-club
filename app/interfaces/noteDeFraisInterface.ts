@@ -25,7 +25,6 @@ export type ExpenseReportType = 'sortie' | 'formation' | 'autre'
 interface BaseExpenseReport {
     id: number
     status: ExpenseStatus
-    refundRequired: boolean
     utilisateur: User
     dateCreation: string
     commentaireStatut: string | null
@@ -35,12 +34,15 @@ interface BaseExpenseReport {
 export interface EventExpenseReport extends BaseExpenseReport {
     // Absent tant que la plateforme ne sert pas de notes hors sortie.
     type?: 'sortie'
+    refundRequired: boolean
     sortie: Event
     details: Details
 }
 
 export interface NonEventExpenseReport extends BaseExpenseReport {
     type: 'formation' | 'autre'
+    // null : brouillon où le demandeur n'a pas encore choisi entre don et remboursement.
+    refundRequired: boolean | null
     sortie: null
     commission: Commission
     objet: string
@@ -59,6 +61,8 @@ export interface NonEventExpenseReport extends BaseExpenseReport {
     derniereDecision: DerniereDecision | null
     validationResponsable: ValidationResponsable | null
     libelleComptable: string | null
+    // Renvoyée avec chaque décision : la plateforme refuse (409) une note modifiée depuis son affichage.
+    version: number
 }
 
 export type ExpenseReport = EventExpenseReport | NonEventExpenseReport

@@ -23,7 +23,7 @@ Cette application utilise uniquement les endpoints suivants de l'API backend :
 |----------|---------|-------------|
 | `/admin/notes-de-frais` | GET | Liste les notes de frais (admins et gestionnaires des notes de frais) : les notes de sortie, et les notes hors sortie (formation, achat) qui attendent la trésorerie ou qu'elle a traitées, et celles qu'un responsable a refusées. Un `HEAD` sur cet endpoint sert aussi à vérifier la connexion |
 | `/notes-de-frais/{id}` | GET | Lit une note par son identifiant : la page d'une note hors sortie |
-| `/notes-de-frais/{id}` | PATCH | Met à jour le statut d'une note (approved, rejected, accounted) |
+| `/notes-de-frais/{id}` | PATCH | Met à jour le statut d'une note (approved, rejected, accounted). Pour une note hors sortie, avec la `version` affichée : l'API refuse (409) une note modifiée depuis |
 
 #### Filtres de la liste
 
@@ -52,7 +52,7 @@ Le montant affiché d'une note de sortie est calculé par compta-club ; celui d'
 Une note hors sortie (formation, achat) s'ouvre depuis la liste sur sa page, `/note-de-frais/note/{id}` ; une note de sortie se traite sur la page de sa sortie, `/note-de-frais/{idSortie}`. La page lit `GET /notes-de-frais/{id}` et montre les champs de la note hors sortie : `utilisateur`, `type`, `commission`, `objet`, `dateDepense`, `lienFormation` (lien seulement en http ou https), `motPourResponsable` (« Mot du demandeur »), `validationResponsable`, `lignesAffichees` avec le justificatif de chaque ligne (`piecesJointes`, par `expenseId`), `totalDeclare`, `totalRemboursable`, `avertissements`, `refundRequired`, `libelleComptable`.
 
 - Au-dessus du titre : type, commission et demandeur ; sous le badge, avant les boutons : le refus, l'attente du responsable et les `avertissements`.
-- En tête, à côté du titre : le montant à payer (`totalRemboursable`), « À rembourser » tant que le paiement reste à faire (`submitted`, `preapproved`, `approved`), « Remboursement » sinon (note comptabilisée, refusée, brouillon), « Don » pour un don ; l'écart avec `totalDeclare` (« au-delà des plafonds du club »), le libellé comptable et les actions.
+- En tête, à côté du titre : le montant à payer (`totalRemboursable`), « À rembourser » tant que le paiement reste à faire (`submitted`, `preapproved`, `approved`), « Remboursement » sinon (note comptabilisée, refusée, brouillon), « Don » pour un don, « Montant » pour un brouillon où le demandeur n'a pas encore choisi (`refundRequired` nul) ; l'écart avec `totalDeclare` (« au-delà des plafonds du club »), le libellé comptable et les actions.
 - Dépenses : un seul « Total » quand `totalRemboursable` égale `totalDeclare` ; sinon « Total déclaré » puis, en gras, « Total remboursable » (« Total dans les plafonds du club » pour un don).
 - Refus : le bloc rouge du refus en cours seulement si la note est `rejected` (`derniereDecision`, sinon `commentaireStatut`). Une note refusée puis renvoyée (`derniereDecision` encore un refus, `dateEnvoi` plus récente) garde un rappel neutre : « Refusée par la trésorerie le JJ/MM, corrigée et renvoyée le JJ/MM : « message » ». Un `commentaireStatut` sur une note qui n'est pas refusée n'est jamais montré comme un refus.
 - Décisions signées selon `derniereDecision.niveau` : « la trésorerie » (jamais le nom de son compte), ou le nom du responsable de commission. Une note approuvée ou comptabilisée affiche « Approuvée par la trésorerie le … ».
@@ -74,11 +74,12 @@ Les fenêtres Approuver et Comptabiliser nomment le demandeur et rappellent le m
 
 Une seule action à la fois : pendant l'envoi, les boutons sont désactivés (le hook des actions bloque aussi tout second envoi sur la page d'une sortie). Autour de l'envoi, la page relit la note :
 
-- juste avant : si elle a changé depuis l'affichage (traitée dans un autre onglet), rien ne part. L'API répond 200, sans effet ni mail, à une comptabilisation déjà faite ;
+- juste avant : si son statut a changé depuis l'affichage (traitée dans un autre onglet), rien ne part ;
+- à l'envoi : la décision porte la `version` de la note affichée. Une note modifiée depuis, même revenue au même statut (refusée, corrigée puis renvoyée), est refusée par l'API (409, « Cette note a été modifiée dans un autre onglet ou sur un autre appareil. ») : rien n'est enregistré, et la page montre la note telle qu'elle est ;
 - juste après : « Note approuvée. Un mail a été envoyé à Prénom NOM. » (refusée, comptabilisée) seulement si la note relue a bien le statut demandé ; le focus va sur cette confirmation. Si la relecture échoue, la note reste affichée sans bouton d'action et la page dit qu'elle n'a pas pu être relue ;
 - après tout refus de l'API (4xx) : la page montre la note telle qu'elle est.
 
-Une note qui a changé, ou « Cette note a déjà été traitée. » (422), ouvre la fenêtre d'information « Note déjà traitée » avec le statut relu (« Elle est maintenant : approuvée. »), puis le focus va sur le titre ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
+Une note qui a changé de statut, ou « Cette note a déjà été traitée. » (422, parfois suivi d'un autre message), ouvre la fenêtre d'information « Note déjà traitée » avec le statut relu (« Elle est maintenant : approuvée. »), puis le focus va sur le titre ; un autre refus de l'API s'affiche tel quel sous le message d'erreur.
 
 #### PDF d'une note hors sortie
 
@@ -102,7 +103,7 @@ Le navigateur n'appelle que les routes de compta-club, derrière la session (coo
 |-------|---------|---------------|
 | `/api/expense-reports` | GET | `GET /admin/notes-de-frais`, avec les paramètres reçus |
 | `/api/expense-reports/{idSortie}` | GET | `GET /admin/notes-de-frais?event={idSortie}&pagination=false` : les notes d'une sortie |
-| `/api/expense-reports/{id}` | PATCH | `PATCH /notes-de-frais/{id}`, avec `status` et `commentaireStatut` |
+| `/api/expense-reports/{id}` | PATCH | `PATCH /notes-de-frais/{id}`, avec `status`, `commentaireStatut` et `version` si c'est un entier |
 | `/api/expense-reports/note/{id}` | GET | `GET /notes-de-frais/{id}` |
 
 - L'identifiant d'une note (`PATCH /api/expense-reports/{id}`, `GET /api/expense-reports/note/{id}`) doit être un entier positif : sinon 400 « Identifiant de note invalide », sans appel à l'API.
@@ -115,7 +116,7 @@ Le navigateur n'appelle que les routes de compta-club, derrière la session (coo
 
 - Une session qui ne peut plus être rafraîchie pendant le travail (`/api/auth/check` répond 401) mène à la connexion, `/?session=expiree&retour=<page quittée>` : « Votre session a expiré. Reconnectez-vous. », puis retour à la page quittée.
 - Une page privée ouverte sans session mène de même à la connexion, `/?retour=<page demandée>` (`middleware.ts` passe le chemin au layout privé par l'en-tête `x-compta-club-path`).
-- `retour` n'est suivi que s'il est un chemin de compta-club : il commence par un seul `/`, sans `\`, sans caractère de contrôle ni autre origine ; sinon la connexion mène à la liste.
+- `retour` n'est suivi que s'il mène à `/note-de-frais` ou à l'une de ses pages : il commence par un seul `/`, sans `\`, sans caractère de contrôle ni autre origine, et reste sous `/note-de-frais` une fois les `..` résolus ; sinon la connexion mène à la liste.
 
 ## Architecture
 

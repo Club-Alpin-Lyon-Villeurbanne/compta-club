@@ -141,6 +141,38 @@ describe('PATCH /api/expense-reports/[slug]', () => {
     });
   });
 
+  it('passes on the version of the note shown, for the API to refuse a note changed since', async () => {
+    vi.mocked(patch).mockResolvedValue({});
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/201'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved', version: 3 }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    await PATCH(req, makeContext('201'));
+
+    expect(patch).toHaveBeenCalledWith(`${API}/notes-de-frais/201`, { status: 'approved', version: 3 });
+  });
+
+  it.each([['3'], [3.5], [null], [true], [{}]])('passes on no version that is not an integer (%j)', async (version) => {
+    vi.mocked(patch).mockResolvedValue({});
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/201'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved', version }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    await PATCH(req, makeContext('201'));
+
+    expect(vi.mocked(patch).mock.calls[0][1]).not.toHaveProperty('version');
+  });
+
   it('returns 500 when fetchServer.patch throws', async () => {
     vi.mocked(patch).mockRejectedValue(new Error('Update failed'));
 

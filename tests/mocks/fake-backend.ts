@@ -15,13 +15,13 @@
  *   valider dans la liste, `status` et `type` à une ou plusieurs valeurs, recherche et date de la
  *   sortie sans effet sur elles ; lecture d'une note par son identifiant ; décisions de la
  *   trésorerie après le responsable, « Cette note a déjà été traitée. » et message obligatoire
- *   au refus.
+ *   au refus ; `version`, qui change à chaque modification, et 409 sur une version périmée.
  *
  * Chaque connexion ouvre une session isolée (identifiant `sid` porté par les jetons) : les
  * changements de statut et les requêtes reçues sont propres à un test, même en parallèle.
  * Les routes /__e2e/* permettent à un test de lire ce que le backend a reçu, de provoquer
- * une erreur ou d'ajouter les notes hors sortie à sa session (les tests des notes de sortie
- * gardent ainsi leurs données).
+ * une erreur, d'ajouter les notes hors sortie à sa session (les tests des notes de sortie
+ * gardent ainsi leurs données) ou de modifier une note comme le ferait le demandeur sur le site.
  */
 
 import http from 'node:http';
@@ -63,13 +63,14 @@ type Report = {
   id: number;
   status: string;
   type?: string;
-  refundRequired: boolean;
+  refundRequired: boolean | null;
   utilisateur: { id: number; prenom: string; nom: string };
   sortie: Event | null;
   dateCreation: string;
   commentaireStatut: string | null;
   details: Record<string, unknown>;
   valideurs?: unknown[];
+  version?: number;
   [field: string]: unknown;
 };
 
@@ -288,6 +289,13 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     session.notesHorsSortie = true;
     return send(res, 204);
   }
+  const editMatch = url.pathname.match(/^\/__e2e\/edit-note\/(\d+)$/);
+  if (req.method === 'POST' && editMatch) {
+    const report = reportsSeenBy(session).find((r) => r.id === Number(editMatch[1]));
+    if (!report?.version) return problem(res, 404, 'Not Found');
+    session.changes.set(report.id, { ...session.changes.get(report.id), ...(await readJson(req)), version: report.version + 1 });
+    return send(res, 204);
+  }
 
   if (url.pathname === '/admin/notes-de-frais') {
     if (req.method === 'HEAD') return send(res, 200);
@@ -335,8 +343,13 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     if (isHorsSortie(report) && body.status === 'rejected' && !String(body.commentaireStatut ?? '').trim()) {
       return violation(res, 'commentaireStatut', 'Un message au demandeur est obligatoire pour refuser la note.');
     }
+    // Après les refus du validateur, comme l'API : un 422 passe avant le 409.
+    if (body.version !== undefined && body.version !== report.version) {
+      return problem(res, 409, 'Cette note a été modifiée dans un autre onglet ou sur un autre appareil.');
+    }
 
     const change: Partial<Report> = { status: body.status, commentaireStatut: body.commentaireStatut ?? report.commentaireStatut };
+    if (report.version && body.status !== report.status) change.version = report.version + 1;
     if (isHorsSortie(report) && DECISIONS.includes(body.status) && body.status !== report.status) {
       change.derniereDecision = {
         statut: body.status,

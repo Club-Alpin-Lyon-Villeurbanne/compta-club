@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { patch } from '../fetchClient';
 import { DEJA_TRAITEE } from '../apiError';
-import { DecisionSummary, noteStatusPhrase } from '@/app/utils/expenseReport';
+import { DecisionSummary, noteStatusPhrase, TreasuryAction } from '@/app/utils/expenseReport';
 
 const getSwal = () => import('sweetalert2').then(m => m.default);
 type SwalModule = Awaited<ReturnType<typeof getSwal>>;
@@ -18,9 +17,9 @@ function refusalReason(error: unknown): string | null {
   return error.message || null;
 }
 
-export type ExpenseAction = 'approved' | 'rejected' | 'accounted';
-
 interface ExpenseActionsOptions {
+  // Page d'une sortie : recharge ses notes après l'action.
+  fetchData?: () => Promise<unknown>;
   // Relit la note et rend son statut (null si la lecture échoue) : avant l'envoi, pour ne pas agir sur une
   // note déjà traitée ailleurs, et après, pour ne confirmer qu'une action qui a pris effet.
   reloadStatus?: () => Promise<string | null>;
@@ -28,26 +27,31 @@ interface ExpenseActionsOptions {
   onAlreadyProcessed?: () => void;
 }
 
-export function useExpenseActions(fetchData: () => Promise<unknown>, options: ExpenseActionsOptions = {}) {
-  const router = useRouter();
+// La note telle que la page l'affichait au clic. Seule une note hors sortie a une `version`.
+interface ShownNote {
+  status: string;
+  version?: number;
+}
+
+export function useExpenseActions(options: ExpenseActionsOptions = {}) {
   const busy = useRef(false);
   // L'action envoyée, de la confirmation à la relecture de la note
-  const [pendingAction, setPendingAction] = useState<ExpenseAction | null>(null);
+  const [pendingAction, setPendingAction] = useState<TreasuryAction | null>(null);
 
-  // `shownStatus` : le statut que la page affichait au clic ; `summary` : ce que la confirmation rappelle de la note.
-  const handleAction = async (reportId: number, action: ExpenseAction, shownStatus?: string, summary?: DecisionSummary) => {
+  // `summary` : ce que la confirmation rappelle de la note.
+  const handleAction = async (reportId: number, action: TreasuryAction, shown?: ShownNote, summary?: DecisionSummary) => {
     // Une action à la fois : un second clic pendant l'envoi ne repart pas, et ne finit pas en « déjà traitée ».
     if (busy.current) return false;
     busy.current = true;
     try {
-      return await runAction(reportId, action, shownStatus, summary);
+      return await runAction(reportId, action, shown, summary);
     } finally {
       busy.current = false;
       setPendingAction(null);
     }
   };
 
-  const alreadyProcessed = (Swal: SwalModule, action: ExpenseAction, status: string | null) => {
+  const alreadyProcessed = (Swal: SwalModule, action: TreasuryAction, status: string | null) => {
     Swal.fire({
       title: 'Note déjà traitée',
       text: [
@@ -60,7 +64,7 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
     });
   };
 
-  const runAction = async (reportId: number, action: ExpenseAction, shownStatus?: string, summary?: DecisionSummary) => {
+  const runAction = async (reportId: number, action: TreasuryAction, shown?: ShownNote, summary?: DecisionSummary) => {
     let Swal: SwalModule;
     try {
       Swal = await getSwal();
@@ -71,9 +75,9 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
       return false;
     }
 
-    const { reloadStatus } = options;
+    const { fetchData, reloadStatus } = options;
     try {
-      let body: { status: ExpenseAction; commentaireStatut?: string } = { status: action };
+      let body: { status: TreasuryAction; commentaireStatut?: string; version?: number } = { status: action };
 
       if (action === 'approved') {
         const result = await Swal.fire({
@@ -132,12 +136,16 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
         }
       }
 
+      // Modifiée depuis l'affichage, même sans changer de statut (refusée, corrigée puis renvoyée) :
+      // la plateforme refuse la décision (409) plutôt que de valider un montant que la page n'a pas montré.
+      if (shown?.version !== undefined) body.version = shown.version;
+
       setPendingAction(action);
-      if (reloadStatus && shownStatus) {
-        // Traitée ailleurs pendant la confirmation : l'API accepterait sans effet ni mail une
-        // comptabilisation déjà faite, rien ne part.
+      if (reloadStatus && shown) {
+        // Traitée ailleurs pendant la confirmation : rien ne part, et la fenêtre dit où en est la note
+        // plutôt qu'une erreur.
         const before = await reloadStatus();
-        if (before !== null && before !== shownStatus) {
+        if (before !== null && before !== shown.status) {
           alreadyProcessed(Swal, action, before);
           return false;
         }
@@ -146,7 +154,7 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
       await patch(`/api/expense-reports/${reportId}`, body);
 
       if (!reloadStatus) {
-        await fetchData();
+        await fetchData?.();
         return true;
       }
       const after = await reloadStatus();
@@ -159,7 +167,8 @@ export function useExpenseActions(fetchData: () => Promise<unknown>, options: Ex
       const reason = refusalReason(error);
       // Après tout refus de l'API, la page montre la note telle qu'elle est : jamais de boutons périmés.
       const status = reason && reloadStatus ? await reloadStatus().catch(() => null) : null;
-      if (reason === DEJA_TRAITEE && reloadStatus) {
+      // Parfois parmi d'autres messages : un second refus d'une note déjà refusée en ajoute un sur le commentaire.
+      if (reason?.includes(DEJA_TRAITEE) && reloadStatus) {
         alreadyProcessed(Swal, action, status);
         return false;
       }

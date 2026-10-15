@@ -158,6 +158,7 @@ const champsHorsSortie = {
   valideurs: [],
   derniereDecision: null,
   validationResponsable: null,
+  version: 1,
 };
 
 /**
@@ -338,7 +339,8 @@ export const mockNotesHorsSortie = [
     id: 207,
     type: 'autre',
     status: 'draft',
-    refundRequired: true,
+    // Rien de coché tant que le demandeur n'a pas choisi
+    refundRequired: null,
     utilisateur: lucie,
     commission: commissionRandonnee,
     objet: 'Gants pour la via ferrata',

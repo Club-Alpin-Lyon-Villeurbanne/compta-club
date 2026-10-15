@@ -7,7 +7,8 @@ export function useDocumentTitle(title: string | null) {
     const previous = document.title;
     document.title = title;
     return () => {
-      document.title = previous;
+      // En allant vers Aide ou À propos, Next a déjà posé le titre de la page suivante : il reste.
+      if (document.title === title) document.title = previous;
     };
   }, [title]);
 }

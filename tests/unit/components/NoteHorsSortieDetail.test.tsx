@@ -164,6 +164,8 @@ describe('NoteHorsSortieDetail', () => {
     expect(screen.getByText('Brouillon')).toBeTruthy();
     expect(screen.getByText('Pas encore envoyée par le demandeur.')).toBeTruthy();
     expect(actionButtons()).toEqual([]);
+    // Ni don ni remboursement choisi : ni cadeau ni billet
+    expect(within(summary()).getByText('Montant : 60.00 €').querySelector('svg')).toBeNull();
   });
 
   it('does not link a formation link that is not http or https', () => {

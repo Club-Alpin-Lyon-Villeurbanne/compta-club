@@ -1,5 +1,5 @@
 import { Page, Route } from '@playwright/test';
-import { test, expect, backendReceived, downloadedPdf, login, rows } from './test-utils';
+import { test, expect, backendReceived, changeNoteInBackend, downloadedPdf, login, rows } from './test-utils';
 import { textAfter } from './pdf-text';
 
 // Notes des données de test : 201 achat soumis sans responsable, 202 formation validée par le
@@ -53,6 +53,16 @@ test.describe('Page of a note hors sortie', () => {
     await page.getByRole('link', { name: 'Retour à la liste' }).click();
     await expect(page).toHaveURL('/note-de-frais');
     await expect(rows(page).first()).toBeVisible();
+  });
+
+  test('should leave the title of the tab to the page opened from the menu', async ({ page }) => {
+    await page.goto(note(202));
+    await expect(page).toHaveTitle('Note 202 : Formation initiateur escalade · Compta Club');
+
+    await page.getByRole('navigation').getByRole('link', { name: 'Aide', exact: true }).click();
+
+    await expect(page).toHaveURL('/aide');
+    await expect(page).toHaveTitle('Aide · Compta Club');
   });
 
   test('should show a formation, with its car line', async ({ page }) => {
@@ -115,7 +125,7 @@ test.describe('Page of a note hors sortie', () => {
     expect((await receipt).url()).toBe('https://example.com/facture-203.pdf');
   });
 
-  test('should say that a note sent without valideur has no responsable', async ({ page }) => {
+  test('should say that a note sent without valideur goes straight to the treasury', async ({ page }) => {
     await page.goto(note(201));
 
     await expect(page.getByText('Achat · Randonnée · Lucie Roux', { exact: true })).toBeVisible();
@@ -140,7 +150,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(field(page, 'Décision')).toHaveText(new RegExp(`^Approuvée par la trésorerie le ${today.source}$`));
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
     expect(await backendReceived(page)).toEqual([
-      { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'approved' } },
+      { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'approved', version: 1 } },
     ]);
   });
 
@@ -166,7 +176,7 @@ test.describe('Page of a note hors sortie', () => {
     await expect(actionButtons(page)).toHaveText(['Comptabiliser']);
     await expect(dialog(page)).toBeHidden();
     expect(await backendReceived(page)).toEqual([
-      { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'approved' } },
+      { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'approved', version: 1 } },
     ]);
   });
 
@@ -208,7 +218,7 @@ test.describe('Page of a note hors sortie', () => {
 
     await expect(status(page, 'Approuvée')).toBeVisible();
     expect(await backendReceived(page)).toEqual([
-      { method: 'PATCH', path: '/notes-de-frais/201', body: { status: 'approved' } },
+      { method: 'PATCH', path: '/notes-de-frais/201', body: { status: 'approved', version: 1 } },
     ]);
   });
 
@@ -241,7 +251,7 @@ test.describe('Page of a note hors sortie', () => {
       {
         method: 'PATCH',
         path: '/notes-de-frais/203',
-        body: { status: 'rejected', commentaireStatut: 'Merci de joindre le ticket de caisse.' },
+        body: { status: 'rejected', commentaireStatut: 'Merci de joindre le ticket de caisse.', version: 1 },
       },
     ]);
   });
@@ -260,13 +270,13 @@ test.describe('Page of a note hors sortie', () => {
     await expect(status(page, 'Comptabilisée')).toBeVisible();
     await expect(actionButtons(page)).toHaveCount(0);
     expect(await backendReceived(page)).toEqual([
-      { method: 'PATCH', path: '/notes-de-frais/204', body: { status: 'accounted' } },
+      { method: 'PATCH', path: '/notes-de-frais/204', body: { status: 'accounted', version: 1 } },
     ]);
   });
 
   // Décidée entre-temps, dans un autre onglet par exemple : la requête de test ne passe pas par la page.
-  const decideElsewhere = async (page: Page, id: number, status: string) =>
-    expect((await page.request.patch(`/api/expense-reports/${id}`, { data: { status } })).ok()).toBe(true);
+  const decideElsewhere = async (page: Page, id: number, status: string, commentaireStatut?: string) =>
+    expect((await page.request.patch(`/api/expense-reports/${id}`, { data: { status, commentaireStatut } })).ok()).toBe(true);
 
   test('should send nothing on a note processed elsewhere, and tell where it stands', async ({ page }) => {
     await page.goto(note(202));
@@ -290,6 +300,41 @@ test.describe('Page of a note hors sortie', () => {
     // Seule la décision de l'autre onglet est arrivée
     expect(await backendReceived(page)).toEqual([
       { method: 'PATCH', path: '/notes-de-frais/202', body: { status: 'approved' } },
+    ]);
+  });
+
+  // La relecture d'avant l'envoi ne voit rien : la note a repris le statut affiché. La version, elle, a changé.
+  test('should not approve a note refused, corrected and sent again since it was shown', async ({ page }) => {
+    await page.goto(note(201));
+    await expect(summary(page)).toContainText('À rembourser : 55.00 €');
+    await decideElsewhere(page, 201, 'rejected', 'Il manque la facture.');
+    await changeNoteInBackend(page, 201, {
+      status: 'submitted',
+      lignesAffichees: [{ id: 'ligne-201', nature: null, libelle: 'Cordelettes pour la SAE', detail: null, montant: 480 }],
+      totalDeclare: 480,
+      totalRemboursable: 480,
+    });
+
+    await button(page, 'Approuver').click();
+    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('À rembourser : 55.00 €. Lucie Roux recevra un mail.');
+    await page.locator('.swal2-confirm').click();
+
+    await expect(dialog(page)).toContainText('Cette note a été modifiée dans un autre onglet ou sur un autre appareil.');
+    await expect(page.locator('.swal2-icon-error')).toBeVisible();
+    await page.locator('.swal2-confirm').click();
+    await expect(confirmation(page)).toHaveText('');
+    await expect(status(page, 'Soumise')).toBeVisible();
+    await expect(summary(page)).toContainText('À rembourser : 480.00 €');
+
+    // Relue, la note se décide sur ce qu'elle est devenue
+    await button(page, 'Approuver').click();
+    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('À rembourser : 480.00 €. Lucie Roux recevra un mail.');
+    await page.locator('.swal2-confirm').click();
+    await expect(confirmation(page)).toHaveText('Note approuvée. Un mail a été envoyé à Lucie Roux.');
+    expect(await backendReceived(page)).toEqual([
+      { method: 'PATCH', path: '/notes-de-frais/201', body: { status: 'rejected', commentaireStatut: 'Il manque la facture.' } },
+      { method: 'PATCH', path: '/notes-de-frais/201', body: { status: 'approved', version: 1 } },
+      { method: 'PATCH', path: '/notes-de-frais/201', body: { status: 'approved', version: 3 } },
     ]);
   });
 
@@ -347,7 +392,7 @@ test.describe('Page of a note hors sortie', () => {
     // Le statut affiché est peut-être périmé : plus de bouton d'action
     await expect(actionButtons(page)).toHaveCount(0);
     expect(await backendReceived(page)).toEqual([
-      { method: 'PATCH', path: '/notes-de-frais/204', body: { status: 'accounted' } },
+      { method: 'PATCH', path: '/notes-de-frais/204', body: { status: 'accounted', version: 1 } },
     ]);
   });
 
@@ -414,6 +459,8 @@ test.describe('Page of a note hors sortie', () => {
 
     await expect(status(page, 'Brouillon')).toBeVisible();
     await expect(page.getByText('Pas encore envoyée par le demandeur.')).toBeVisible();
+    // Ni don ni remboursement choisi
+    await expect(summary(page)).toContainText('Montant : 60.00 €');
     await expect(actionButtons(page)).toHaveCount(0);
   });
 

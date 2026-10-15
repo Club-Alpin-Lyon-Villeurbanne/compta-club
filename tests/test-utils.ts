@@ -104,6 +104,17 @@ export async function failNextListRequest(page: Page, status: number) {
 }
 
 /**
+ * Modifier une note dans le faux backend, comme le demandeur depuis le site : sa version change.
+ */
+export async function changeNoteInBackend(page: Page, id: number, changes: object) {
+  await callBackend(`/__e2e/edit-note/${id}`, {
+    method: 'POST',
+    headers: { ...(await backendSession(page)), 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+}
+
+/**
  * Le PDF téléchargé : son nom, son contenu brut et ses textes. Avec la variable PDF_SAMPLES_DIR, il
  * est aussi copié dans ce dossier, pour le regarder.
  */
