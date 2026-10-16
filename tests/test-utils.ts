@@ -2,8 +2,11 @@
  * Utilitaires pour les tests Playwright
  */
 
-import { Page, expect, test as base } from '@playwright/test';
+import { Download, Page, expect, test as base } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { E2E_CREDENTIALS } from './mocks/fake-backend';
+import { pdfTexts } from './pdf-text';
 import { FAKE_BACKEND_URL } from '../playwright.config';
 
 export const TEST_CREDENTIALS = E2E_CREDENTIALS;
@@ -47,11 +50,15 @@ export async function fillLoginForm(page: Page, credentials = TEST_CREDENTIALS) 
 }
 
 /**
- * Se connecter par l'API (le formulaire est testé dans auth*.spec.ts) et ouvrir la liste
+ * Se connecter par l'API (le formulaire est testé dans auth*.spec.ts) et ouvrir la liste.
+ * Avec `notesHorsSortie`, le faux backend sert aussi les notes hors sortie à cette session.
  */
-export async function login(page: Page) {
+export async function login(page: Page, { notesHorsSortie = false } = {}) {
   const response = await page.request.post('/api/auth/login', { data: TEST_CREDENTIALS });
   expect(response.ok()).toBe(true);
+  if (notesHorsSortie) {
+    await callBackend('/__e2e/notes-hors-sortie', { method: 'POST', headers: await backendSession(page) });
+  }
   await page.goto('/note-de-frais');
   await expect(page.getByRole('button', { name: 'Déconnexion' })).toBeVisible();
 }
@@ -94,4 +101,26 @@ export async function failNextListRequest(page: Page, status: number) {
     headers: { ...(await backendSession(page)), 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   });
+}
+
+/**
+ * Modifier une note dans le faux backend, comme le demandeur depuis le site : sa version change.
+ */
+export async function changeNoteInBackend(page: Page, id: number, changes: object) {
+  await callBackend(`/__e2e/edit-note/${id}`, {
+    method: 'POST',
+    headers: { ...(await backendSession(page)), 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+}
+
+/**
+ * Le PDF téléchargé : son nom, son contenu brut et ses textes. Avec la variable PDF_SAMPLES_DIR, il
+ * est aussi copié dans ce dossier, pour le regarder.
+ */
+export async function downloadedPdf(download: Download) {
+  const fileName = download.suggestedFilename();
+  if (process.env.PDF_SAMPLES_DIR) await download.saveAs(join(process.env.PDF_SAMPLES_DIR, fileName));
+  const bytes = readFileSync((await download.path())!);
+  return { fileName, raw: bytes.toString('latin1'), texts: pdfTexts(bytes) };
 }

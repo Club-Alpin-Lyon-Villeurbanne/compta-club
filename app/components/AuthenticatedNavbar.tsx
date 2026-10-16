@@ -7,6 +7,7 @@ import { FaSignOutAlt, FaQuestionCircle, FaInfoCircle } from 'react-icons/fa';
 export default function AuthenticatedNavbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const notesDeFrais = pathname === '/note-de-frais' || pathname.startsWith('/note-de-frais/');
 
   const handleLogout = async () => {
     try {
@@ -52,8 +53,9 @@ export default function AuthenticatedNavbar() {
           <div className="hidden sm:flex sm:items-center sm:space-x-1">
             <Link
               href="/note-de-frais"
+              aria-current={notesDeFrais ? 'page' : undefined}
               className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                pathname === '/note-de-frais'
+                notesDeFrais
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
@@ -63,6 +65,7 @@ export default function AuthenticatedNavbar() {
 
             <Link
               href="/aide"
+              aria-current={pathname === '/aide' ? 'page' : undefined}
               className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
                 pathname === '/aide'
                   ? 'bg-blue-50 text-blue-700'
@@ -75,6 +78,7 @@ export default function AuthenticatedNavbar() {
 
             <Link
               href="/a-propos"
+              aria-current={pathname === '/a-propos' ? 'page' : undefined}
               className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
                 pathname === '/a-propos'
                   ? 'bg-blue-50 text-blue-700'

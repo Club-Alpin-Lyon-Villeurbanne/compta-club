@@ -42,7 +42,7 @@ const TransportTable: React.FC<TransportTableProps> = ({ transport, attachments 
             </div>
             <div className="flex items-center justify-between">
                 <span className="text-lg font-bold text-gray-900">{amount}€</span>
-                <Justificatif fileUrl={justificatif ?? undefined} />
+                <Justificatif fileUrl={justificatif ?? undefined} libelle={title} />
             </div>
         </div>
     );

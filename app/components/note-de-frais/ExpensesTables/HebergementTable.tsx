@@ -47,7 +47,7 @@ const HebergementTable: React.FC<HebergementTableProps> = ({ hebergement, attach
                                     </td>
                                 )}
                                 <td className="py-2 text-center">
-                                    <Justificatif fileUrl={justificatifUrl}/>
+                                    <Justificatif fileUrl={justificatifUrl} libelle={`Nuitée n°${index + 1}`} />
                                 </td>
                             </tr>
                         );

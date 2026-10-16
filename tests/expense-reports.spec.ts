@@ -8,6 +8,7 @@ test.describe('Expense Reports', () => {
   test('should display submitted expense reports by default', async ({ page }) => {
     await expect(rows(page)).toHaveText([/Sortie Mont Blanc/, /Canyon Ardeche/, /Via ferrata Chamechaude/]);
     await expect(page.getByText('3 notes de frais affichées')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Notes de frais · À valider (3)');
   });
 
   test('should display the refundable amount of each report', async ({ page }) => {

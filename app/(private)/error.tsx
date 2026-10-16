@@ -15,7 +15,7 @@ export default function PrivateError({
   }, [error]);
 
   return (
-    <main className="flex items-center justify-center min-h-[50vh]">
+    <div className="flex items-center justify-center min-h-[50vh]">
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">
           Une erreur est survenue
@@ -30,6 +30,6 @@ export default function PrivateError({
           Réessayer
         </button>
       </div>
-    </main>
+    </div>
   );
 }

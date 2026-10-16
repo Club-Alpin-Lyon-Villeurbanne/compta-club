@@ -113,6 +113,19 @@ describe('fetchServer', () => {
     await expect(fetchServer(`${API}/data`)).rejects.toMatchObject({ status: 422 });
   });
 
+  it('attaches the reason of a refusal to the thrown error', async () => {
+    setupCookies({});
+    createFetchMock().on(
+      () => true,
+      () => Response.json(
+        { detail: 'status: Cette note a déjà été traitée.', violations: [{ propertyPath: 'status', message: 'Cette note a déjà été traitée.' }] },
+        { status: 422 }
+      )
+    );
+
+    await expect(fetchServer(`${API}/data`)).rejects.toMatchObject({ status: 422, apiMessage: 'Cette note a déjà été traitée.' });
+  });
+
   it('throws on network error', async () => {
     setupCookies({});
     createFetchMock().on(

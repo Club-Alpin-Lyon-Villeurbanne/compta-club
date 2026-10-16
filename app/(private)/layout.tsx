@@ -1,14 +1,17 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import { isAuthenticated as isAuthenticatedServer } from '../lib/auth.server';
+import { PATH_HEADER } from '../lib/constants';
+import { loginUrl } from '../lib/loginRedirect';
 import '../globals.css'
 
 // Indiquer à Next.js que ce layout doit être rendu dynamiquement
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Gestion des notes de frais du Club Alpin de Lyon',
+  title: 'Notes de frais',
   description: 'Gestion des notes de frais du Club Alpin de Lyon',
 }
 
@@ -20,15 +23,16 @@ export default async function PrivateLayout({ children }: Props) {
   // Vérifier si l'utilisateur est authentifié
   const authenticated = await isAuthenticatedServer();
   
-  // Si l'utilisateur n'est pas authentifié, rediriger vers la page d'accueil
+  // Pas connecté : la connexion, puis retour à la page demandée.
   if (!authenticated) {
-    redirect('/');
+    redirect(loginUrl({ returnTo: (await headers()).get(PATH_HEADER) }));
   }
 
   return (
     <div className="flex flex-col min-h-screen font-sans antialiased bg-gray-200">
       <Navbar />
-      <main className="flex-grow px-4 pt-20 mt-4 sm:px-6 lg:px-8">
+      {/* La barre de navigation est sticky, pas fixed : elle occupe déjà sa place, rien à compenser. */}
+      <main className="flex-grow px-4 py-6 sm:px-6 lg:px-8">
         {children}
       </main>
       <Footer />

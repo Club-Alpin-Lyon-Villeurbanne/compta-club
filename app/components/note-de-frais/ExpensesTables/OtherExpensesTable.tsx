@@ -32,7 +32,7 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({autres, attachme
                                 <td className="py-2">{item.comment || "Aucune description"}</td>
                                 <td className="py-2 text-right">{item.price ? `${item.price}€` : "N/A"}</td>
                                 <td className="py-2 text-center">
-                                    <Justificatif fileUrl={justificationUrl}/>
+                                    <Justificatif fileUrl={justificationUrl} libelle={`Autre n°${index + 1}`} />
                                 </td>
                             </tr>
                         );

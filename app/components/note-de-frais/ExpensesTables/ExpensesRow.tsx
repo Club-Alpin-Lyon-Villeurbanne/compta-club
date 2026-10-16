@@ -1,6 +1,6 @@
 // ExpenseRow.tsx
 import React from "react";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import { EventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 import { FaAngleDown, FaAngleUp, FaCheck, FaTimes, FaUser, FaCalendarAlt, FaMoneyBillWave, FaGift, FaFileInvoiceDollar, FaFilePdf } from "react-icons/fa";
@@ -9,7 +9,7 @@ import { Badge } from "../Badge";
 import ExpensesTable from "./ExpensesTable";
 
 interface ExpenseRowProps {
-    report: ExpenseReport;
+    report: EventExpenseReport;
     isExpanded: boolean;
     onToggle: () => void;
     onAction: (reportId: number, action: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED | ExpenseStatus.ACCOUNTED) => void;
@@ -88,7 +88,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = React.memo(({ report, isExp
                             {(report.status === ExpenseStatus.SUBMITTED) && (
                                 <>
                                     <button 
-                                        className="p-1 font-bold text-white transition duration-300 ease-in-out bg-green-500 rounded-full hover:bg-green-600"
+                                        className="p-1 font-bold text-white transition duration-300 ease-in-out bg-green-700 rounded-full hover:bg-green-800"
                                         onClick={() => onAction(report.id, ExpenseStatus.APPROVED)}
                                         title="Approuver"
                                     >
@@ -97,7 +97,7 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = React.memo(({ report, isExp
                                     <button 
                                         className="p-1 font-bold text-white transition duration-300 ease-in-out bg-red-500 rounded-full hover:bg-red-600"
                                         onClick={() => onAction(report.id, ExpenseStatus.REJECTED)}
-                                        title="Rejeter"
+                                        title="Refuser"
                                     >
                                         <FaTimes className="w-4 h-4" />
                                     </button>

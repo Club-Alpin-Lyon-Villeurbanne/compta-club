@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ExpenseReport, PaginationMeta } from "../interfaces/noteDeFraisInterface";
+import { sortieFiltersApply } from "../utils/expenseReport";
 
 
 interface StoreState {
@@ -14,6 +15,7 @@ interface StoreState {
     dateFilter: string;
     requesterFilter: string;
     typeFilter: string;
+    reportTypeFilter: string;
     setExpenseReports: (reports: ExpenseReport[]) => void;
     setPaginationMeta: (meta: PaginationMeta | null) => void;
     setDisplayedCount: (count: number) => void;
@@ -25,6 +27,7 @@ interface StoreState {
     setDateFilter: (date: string) => void;
     setRequesterFilter: (requester: string) => void;
     setTypeFilter: (type: string) => void;
+    setReportTypeFilter: (type: string) => void;
     resetFilters: () => void;
 }
 
@@ -40,6 +43,7 @@ const useStore = create<StoreState>((set) => ({
     dateFilter: '',
     requesterFilter: '',
     typeFilter: '',
+    reportTypeFilter: '',
     setExpenseReports: (reports) => set({
         expenseReports: Array.isArray(reports) ? reports : []
     }),
@@ -53,12 +57,19 @@ const useStore = create<StoreState>((set) => ({
     setDateFilter: (date) => set({ dateFilter: date, currentPage: 1 }),
     setRequesterFilter: (requester) => set({ requesterFilter: requester, currentPage: 1 }),
     setTypeFilter: (type) => set({ typeFilter: type, currentPage: 1 }),
+    // La recherche et la date ne portent que sur les sorties : elles se vident pour les formations et les achats.
+    setReportTypeFilter: (type) => set({
+        reportTypeFilter: type,
+        currentPage: 1,
+        ...(sortieFiltersApply(type) ? {} : { searchTerm: '', dateFilter: '' }),
+    }),
     resetFilters: () => set({
         status: 'submitted',
         searchTerm: '',
         dateFilter: '',
         requesterFilter: '',
         typeFilter: '',
+        reportTypeFilter: '',
         currentPage: 1
     }),
 }));

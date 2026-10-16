@@ -7,6 +7,7 @@ test.describe('Authentication', () => {
   });
 
   test('should show login form on home page', async ({ page }) => {
+    await expect(page).toHaveTitle('Connexion · Compta Club');
     await expect(page.locator('h2')).toContainText('Connexion');
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
@@ -16,7 +17,7 @@ test.describe('Authentication', () => {
   test('should show error with invalid credentials', async ({ page }) => {
     await fillLoginForm(page, { email: 'invalid@example.com', password: 'wrongpassword' });
 
-    await expect(page.getByText('Identifiants invalides')).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'Identifiants invalides' })).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
   });
 

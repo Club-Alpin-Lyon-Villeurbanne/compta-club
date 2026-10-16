@@ -62,6 +62,19 @@ describe('GET /api/expense-reports/[slug]', () => {
     );
   });
 
+  // Sans identifiant entier, l'API ignore le filtre `event` et renvoie toutes les notes du club.
+  it.each(['note', 'abc', '0', '-1', '1.5', '', '42abc', '9007199254740993'])(
+    'refuses the sortie id "%s" without calling the API',
+    async (slug) => {
+      const req = new NextRequest(new URL('http://localhost:3000/api/expense-reports/x'));
+      const { status, data } = await parseJsonResponse(await GET(req, makeContext(slug)));
+
+      expect(status).toBe(400);
+      expect(data.error).toBe('Identifiant de sortie invalide');
+      expect(get).not.toHaveBeenCalled();
+    }
+  );
+
   it('returns 500 when fetchServer.get throws', async () => {
     vi.mocked(get).mockRejectedValue(new Error('API down'));
 
@@ -128,6 +141,38 @@ describe('PATCH /api/expense-reports/[slug]', () => {
     });
   });
 
+  it('passes on the version of the note shown, for the API to refuse a note changed since', async () => {
+    vi.mocked(patch).mockResolvedValue({});
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/201'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved', version: 3 }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    await PATCH(req, makeContext('201'));
+
+    expect(patch).toHaveBeenCalledWith(`${API}/notes-de-frais/201`, { status: 'approved', version: 3 });
+  });
+
+  it.each([['3'], [3.5], [null], [true], [{}]])('passes on no version that is not an integer (%j)', async (version) => {
+    vi.mocked(patch).mockResolvedValue({});
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/201'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved', version }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    await PATCH(req, makeContext('201'));
+
+    expect(vi.mocked(patch).mock.calls[0][1]).not.toHaveProperty('version');
+  });
+
   it('returns 500 when fetchServer.patch throws', async () => {
     vi.mocked(patch).mockRejectedValue(new Error('Update failed'));
 
@@ -144,6 +189,61 @@ describe('PATCH /api/expense-reports/[slug]', () => {
     );
 
     expect(status).toBe(500);
+  });
+
+  it.each(['abc', '0', '-1', '1.5', '../admin/notes-de-frais', '1/clone'])(
+    'refuses the id "%s" without calling the API',
+    async (slug) => {
+      const req = new NextRequest(
+        new URL('http://localhost:3000/api/expense-reports/x'),
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'approved' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      const { status, data } = await parseJsonResponse(await PATCH(req, makeContext(slug)));
+
+      expect(status).toBe(400);
+      expect(data.error).toBe('Identifiant de note invalide');
+      expect(patch).not.toHaveBeenCalled();
+    }
+  );
+
+  it('passes on the reason the API refused the update with', async () => {
+    vi.mocked(patch).mockRejectedValue(
+      Object.assign(new Error('Erreur 422'), { status: 422, apiMessage: 'Cette note a déjà été traitée.' })
+    );
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/202'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved' }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    const { status, data } = await parseJsonResponse(await PATCH(req, makeContext('202')));
+
+    expect(status).toBe(422);
+    expect(data).toEqual({ error: 'Cette note a déjà été traitée.' });
+  });
+
+  it('keeps the generic message when the API gives no reason', async () => {
+    vi.mocked(patch).mockRejectedValue(Object.assign(new Error('Erreur 500'), { status: 500, apiMessage: null }));
+
+    const req = new NextRequest(
+      new URL('http://localhost:3000/api/expense-reports/1'),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'approved' }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    const { status, data } = await parseJsonResponse(await PATCH(req, makeContext('1')));
+
+    expect(status).toBe(500);
+    expect(data).toEqual({ error: 'Erreur lors de la mise à jour de la note de frais' });
   });
 
   it('propagates the backend status when the update is refused', async () => {
