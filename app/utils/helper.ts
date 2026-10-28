@@ -1,6 +1,10 @@
 import { Details, Transport } from '../interfaces/DetailsInterface';
 import { config } from '../config';
 
+export function commissionPictoUrl(commissionId: number | null | undefined): string {
+    return commissionId ? `https://www.clubalpinlyon.fr/ftp/commission/${commissionId}/picto-dark.png` : config.DEFAULT_COMMISSION_ICON;
+}
+
 export function getFileUrlByExpenseId(piecesJointes: any[], expenseId: string): string | undefined {
     if (!piecesJointes || piecesJointes.length === 0) {
         return undefined;
@@ -10,7 +14,7 @@ export function getFileUrlByExpenseId(piecesJointes: any[], expenseId: string): 
 
 
 // Les montants viennent du JSON saisi par l'adhérent : on ne fait pas confiance à leur type.
-const toAmount = (value: unknown): number => {
+export const toAmount = (value: unknown): number => {
     const amount = Number(value);
     return Number.isFinite(amount) ? amount : 0;
 };
@@ -103,8 +107,3 @@ export function calculateTotals(details: Details) {
         accommodationsRemboursable
     };
 }
-
-export const truncateText = (text: string, maxLength: number = 30): string => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};

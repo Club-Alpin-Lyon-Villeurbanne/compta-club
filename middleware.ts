@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decodeJwt } from 'jose';
-import { COOKIE_NAMES } from './app/lib/constants';
+import { COOKIE_NAMES, PATH_HEADER } from './app/lib/constants';
 
 /**
  * Rafraîchit la session avant le rendu des pages privées.
@@ -35,12 +35,19 @@ function isExpired(token: string): boolean {
   }
 }
 
+// La page rendue lit les en-têtes de la requête : les cookies rafraîchis, et le chemin demandé.
+function forward(request: NextRequest): NextResponse {
+  const headers = new Headers(request.headers);
+  headers.set(PATH_HEADER, request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
+}
+
 export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(COOKIE_NAMES.REFRESH_TOKEN)?.value;
 
   if (!refreshToken || (accessToken && !isExpired(accessToken))) {
-    return NextResponse.next();
+    return forward(request);
   }
 
   try {
@@ -51,23 +58,23 @@ export async function middleware(request: NextRequest) {
       signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS),
     });
     if (!response.ok) {
-      return NextResponse.next();
+      return forward(request);
     }
     const { token, refresh_token: newRefreshToken } = await response.json();
     if (!token || !newRefreshToken) {
-      return NextResponse.next();
+      return forward(request);
     }
 
     // La page rendue dans la même requête lit les cookies de la requête : on lui passe les nouveaux jetons.
     request.cookies.set(COOKIE_NAMES.ACCESS_TOKEN, token);
     request.cookies.set(COOKIE_NAMES.REFRESH_TOKEN, newRefreshToken);
-    const next = NextResponse.next({ request: { headers: request.headers } });
+    const next = forward(request);
     next.cookies.set(COOKIE_NAMES.ACCESS_TOKEN, token, COOKIE_OPTIONS);
     next.cookies.set(COOKIE_NAMES.REFRESH_TOKEN, newRefreshToken, COOKIE_OPTIONS);
     return next;
   } catch {
     // Backend injoignable ou trop lent : le layout fera sa propre vérification et renverra vers la connexion.
-    return NextResponse.next();
+    return forward(request);
   }
 }
 

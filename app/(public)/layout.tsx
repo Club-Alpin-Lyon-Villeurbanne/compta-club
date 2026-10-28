@@ -3,7 +3,6 @@ import Navbar from '../components/Navbar'
 import '../globals.css'
 
 export const metadata = {
-  title: 'Gestion des notes de frais du Club Alpin de Lyon',
   description: 'Gestion des notes de frais du Club Alpin de Lyon',
 }
 

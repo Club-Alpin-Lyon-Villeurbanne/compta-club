@@ -6,6 +6,7 @@ const Pagination: React.FC = () => {
     const setCurrentPage = useStore((state) => state.setCurrentPage);
     const paginationMeta = useStore((state) => state.paginationMeta);
     const displayedCount = useStore((state) => state.displayedCount);
+    const isLoading = useStore((state) => state.isLoading);
 
     const totalPages = paginationMeta?.pages ?? 1;
 
@@ -22,7 +23,7 @@ const Pagination: React.FC = () => {
     return (
         <div className="flex flex-col items-center px-5 py-5 bg-white border-t xs:flex-row xs:justify-between ">
       <span className="text-xs text-gray-900 xs:text-sm">
-        {displayedCount} note{displayedCount > 1 ? 's' : ''} de frais affichée{displayedCount > 1 ? 's' : ''}
+        {!isLoading && `${displayedCount} note${displayedCount > 1 ? 's' : ''} de frais affichée${displayedCount > 1 ? 's' : ''}`}
       </span>
             <div className="inline-flex mt-2 xs:mt-0">
                 <button

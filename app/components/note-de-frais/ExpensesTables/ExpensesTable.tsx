@@ -4,17 +4,17 @@ import HebergementTable from "@/app/components/note-de-frais/ExpensesTables/Hebe
 import OtherExpensesTable from "@/app/components/note-de-frais/ExpensesTables/OtherExpensesTable";
 import ExpensesSummary from "@/app/components/note-de-frais/ExpensesTables/ExpensesSummary";
 import ExpenseStatus from "@/app/enums/ExpenseStatus";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import { EventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import { FaCheck, FaTimes, FaInfoCircle, FaCar, FaBed, FaReceipt, FaFileInvoiceDollar } from 'react-icons/fa';
 
-export default function ExpensesTable({ report }: { report: ExpenseReport }) {
+export default function ExpensesTable({ report }: { report: EventExpenseReport }) {
     const renderStatusAlert = () => {
         if (report.status === ExpenseStatus.APPROVED) {
             return (
                 <div className="flex items-start p-4 mt-6 text-green-700 border border-green-200 rounded-lg bg-green-50">
                     <FaCheck className="flex-shrink-0 mt-1 mr-3 text-green-500" />
                     <div>
-                        <p className="font-semibold">Note de frais validée</p>
+                        <p className="font-semibold">Note de frais approuvée</p>
                         <p className="mt-1 text-sm">{report.commentaireStatut}</p>
                     </div>
                 </div>

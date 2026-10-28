@@ -1,20 +1,20 @@
 import React, { useState, useCallback } from "react";
-import { ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
+import { EventExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import ErrorMessage from "../../ErrorMessage";
 import { ExpenseRow } from "./ExpensesRow";
 import { useExpenseActions } from "@/app/lib/hooks/useExpenseAction";
-import ExpenseStatus from "@/app/enums/ExpenseStatus";
+import { getDecisionSummary } from "@/app/utils/expenseReport";
 import { Table, TableHeader, TableRow, TableHead } from "@/components/ui/table";    
 
 interface ExpensesListProps {
-    expenseReports: ExpenseReport[];
+    expenseReports: EventExpenseReport[];
     fetchData: () => Promise<void>;
     params: { slug: string };
 }
 
 export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetchData, params }) => {
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-    const { handleAction } = useExpenseActions(fetchData);
+    const { handleAction } = useExpenseActions({ fetchData });
 
     const toggleRow = useCallback((reportId: number) => {
         setExpandedRows(prev => {
@@ -38,10 +38,10 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetc
                 <TableHeader>
                     <TableRow>
                         <TableHead>Sortie</TableHead>
-                        <TableHead>Utilisateur</TableHead>
+                        <TableHead>Demandeur</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Montant</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Don ou remb.</TableHead>
                         <TableHead>Statut</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
@@ -53,7 +53,7 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({ expenseReports, fetc
                                 report={report}
                                 isExpanded={expandedRows.has(report.id)}
                                 onToggle={() => toggleRow(report.id)}
-                                onAction={handleAction}
+                                onAction={(reportId, action) => handleAction(reportId, action, undefined, getDecisionSummary(report))}
                             />
                         </React.Fragment>
                     ))}

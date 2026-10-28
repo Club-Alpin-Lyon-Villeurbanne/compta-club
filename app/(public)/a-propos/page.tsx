@@ -1,7 +1,7 @@
-'use client';
-
 import Image from 'next/image';
 import { FaMountain, FaUsers, FaCode, FaHeart, FaGithub, FaLightbulb } from 'react-icons/fa';
+
+export const metadata = { title: 'À propos' };
 
 export default function AboutPage() {
     return (

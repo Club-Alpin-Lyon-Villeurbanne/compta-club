@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test, expect, backendReceived, login, rows } from './test-utils';
 
 // Événements des données de test et statut de leur note :
-// 101 soumise (Jean Dupont), 102 approuvée (Marie Martin), 103 rejetée, 104 comptabilisée,
+// 101 soumise (Jean Dupont), 102 approuvée (Marie Martin), 103 refusée, 104 comptabilisée,
 // 106 soumise par le gestionnaire connecté lui-même.
 const SUBMITTED_EVENT = '/note-de-frais/101';
 const APPROVED_EVENT = '/note-de-frais/102';
@@ -15,7 +15,7 @@ const dialog = (page: Page) => page.locator('.swal2-popup');
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 
 async function expectActions(page: Page, visible: string[]) {
-  for (const name of ['Approuver', 'Rejeter', 'Comptabiliser', 'Télécharger en PDF']) {
+  for (const name of ['Approuver', 'Refuser', 'Comptabiliser', 'Télécharger en PDF']) {
     await expect(button(page, name)).toHaveCount(visible.includes(name) ? 1 : 0);
   }
 }
@@ -26,10 +26,10 @@ test.describe('Expense Report Actions', () => {
   });
 
   const actionsByStatus = [
-    { status: 'Soumis', event: SUBMITTED_EVENT, actions: ['Approuver', 'Rejeter'] },
-    { status: 'Approuvé', event: APPROVED_EVENT, actions: ['Comptabiliser', 'Télécharger en PDF'] },
-    { status: 'Rejeté', event: REJECTED_EVENT, actions: [] },
-    { status: 'Comptabilisé', event: ACCOUNTED_EVENT, actions: ['Télécharger en PDF'] },
+    { status: 'Soumise', event: SUBMITTED_EVENT, actions: ['Approuver', 'Refuser'] },
+    { status: 'Approuvée', event: APPROVED_EVENT, actions: ['Comptabiliser', 'Télécharger en PDF'] },
+    { status: 'Refusée', event: REJECTED_EVENT, actions: [] },
+    { status: 'Comptabilisée', event: ACCOUNTED_EVENT, actions: ['Télécharger en PDF'] },
   ];
 
   for (const { status, event, actions } of actionsByStatus) {
@@ -44,12 +44,13 @@ test.describe('Expense Report Actions', () => {
   test('should approve after confirmation', async ({ page }) => {
     await page.goto(SUBMITTED_EVENT);
     await button(page, 'Approuver').click();
-    await expect(dialog(page)).toContainText('Voulez-vous vraiment approuver cette note de frais ?');
+    await expect(dialog(page).locator('.swal2-title')).toHaveText('Approuver la note de Jean Dupont ?');
+    await expect(dialog(page).locator('.swal2-html-container')).toHaveText('À rembourser : 120.00 €. Jean Dupont recevra un mail.');
 
     await page.locator('.swal2-confirm').click();
 
     // L'écran est rechargé avec le nouveau statut
-    await expect(rows(page)).toContainText('Approuvé');
+    await expect(rows(page)).toContainText('Approuvée');
     await expectActions(page, ['Comptabiliser', 'Télécharger en PDF']);
     expect(await backendReceived(page)).toEqual([
       { method: 'PATCH', path: '/notes-de-frais/1', body: { status: 'approved' } },
@@ -66,21 +67,24 @@ test.describe('Expense Report Actions', () => {
 
     await expect(dialog(page)).toBeHidden();
     expect(patches).toEqual([]);
-    await expect(rows(page)).toContainText('Soumis');
+    await expect(rows(page)).toContainText('Soumise');
   });
 
   test('should require a comment to reject, then send it to the backend', async ({ page }) => {
     await page.goto(SUBMITTED_EVENT);
-    await button(page, 'Rejeter').click();
-    await expect(dialog(page)).toContainText('Motif du rejet');
+    await button(page, 'Refuser').click();
+    await expect(dialog(page)).toContainText('Refuser la note');
+    await expect(dialog(page)).toContainText('Message au demandeur, envoyé par mail');
+    // Le responsable de commission ne revoit jamais une note de sortie
+    await expect(dialog(page)).not.toContainText('Le responsable de la commission');
 
     await page.locator('.swal2-confirm').click();
-    await expect(page.locator('.swal2-validation-message')).toContainText('Vous devez entrer un commentaire');
+    await expect(page.locator('.swal2-validation-message')).toHaveText('Écrivez le message au demandeur.');
 
     await page.locator('.swal2-textarea').fill('Justificatif manquant');
     await page.locator('.swal2-confirm').click();
 
-    await expect(rows(page)).toContainText('Rejeté');
+    await expect(rows(page)).toContainText('Refusée');
     expect(await backendReceived(page)).toEqual([
       {
         method: 'PATCH',
@@ -93,11 +97,13 @@ test.describe('Expense Report Actions', () => {
   test('should mark an approved report as accounted after confirmation', async ({ page }) => {
     await page.goto(APPROVED_EVENT);
     await button(page, 'Comptabiliser').click();
-    await expect(dialog(page)).toContainText('Voulez-vous vraiment comptabiliser cette note de frais ?');
+    await expect(dialog(page).locator('.swal2-title')).toHaveText('Comptabiliser la note de Marie Martin ?');
+    await expect(dialog(page)).toContainText('À rembourser : ');
+    await expect(dialog(page)).toContainText('Elle sera close : plus aucune action possible.');
 
     await page.locator('.swal2-confirm').click();
 
-    await expect(rows(page)).toContainText('Comptabilisé');
+    await expect(rows(page)).toContainText('Comptabilisée');
     await expectActions(page, ['Télécharger en PDF']);
     expect(await backendReceived(page)).toEqual([
       { method: 'PATCH', path: '/notes-de-frais/2', body: { status: 'accounted' } },
@@ -111,9 +117,10 @@ test.describe('Expense Report Actions', () => {
     await page.locator('.swal2-confirm').click();
 
     await expect(dialog(page)).toContainText('Une erreur est survenue lors de l\'action sur la note de frais.');
+    await expect(dialog(page)).toContainText('Vous ne pouvez pas décider sur votre propre note de frais.');
     await expect(page.locator('.swal2-icon-error')).toBeVisible();
     expect(await backendReceived(page)).toHaveLength(1);
-    await expect(rows(page)).toContainText('Soumis');
+    await expect(rows(page)).toContainText('Soumise');
   });
 });
 

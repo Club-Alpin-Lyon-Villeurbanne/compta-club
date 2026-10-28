@@ -2,6 +2,8 @@
  * Utilitaire pour effectuer des requêtes fetch côté client
  */
 
+import { goToLoginAfterExpiry } from './loginRedirect';
+
 /**
  * Options pour les requêtes fetch
  */
@@ -40,6 +42,11 @@ export async function fetchClient<T = any>(
         method: 'GET',
         credentials: 'include',
       });
+      // Session expirée : la page part vers la connexion, rien à afficher d'ici là.
+      if (refreshRes.status === 401) {
+        goToLoginAfterExpiry();
+        return new Promise<never>(() => {});
+      }
       if (!refreshRes.ok) {
         const refreshError = await refreshRes.json().catch(() => ({}));
         throw new Error(refreshError.error || 'Non authentifié');
@@ -54,7 +61,7 @@ export async function fetchClient<T = any>(
     // Vérifier si la réponse est OK
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Erreur ${response.status}`);
+      throw Object.assign(new Error(errorData.error || `Erreur ${response.status}`), { status: response.status });
     }
 
     // Retourner les données

@@ -96,6 +96,24 @@ describe('GET /api/expense-reports', () => {
     expect(capturedUrl).not.toContain('pagination=false');
   });
 
+  it('forwards every value of a repeated filter', async () => {
+    setupCookies({ access_token: 'tok' });
+    let capturedUrl = '';
+
+    createFetchMock().on(
+      (url) => url.includes('/admin/notes-de-frais'),
+      (url) => {
+        capturedUrl = url;
+        return Response.json({ data: [], meta: { page: 1, perPage: 30, total: 0, pages: 0 } });
+      }
+    );
+
+    await GET(new NextRequest(new URL(`${ROUTE_URL}?status%5B%5D=submitted&status%5B%5D=preapproved&type=formation`)));
+    const forwarded = new URL(capturedUrl).searchParams;
+    expect(forwarded.getAll('status[]')).toEqual(['submitted', 'preapproved']);
+    expect(forwarded.get('type')).toBe('formation');
+  });
+
   it('forwards error status from external API', async () => {
     setupCookies({ access_token: 'tok' });
     createFetchMock().on(

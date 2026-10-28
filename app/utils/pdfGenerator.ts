@@ -1,11 +1,11 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
+import { EventExpenseReport } from '@/app/interfaces/noteDeFraisInterface';
 import { calculateTotals, formatEuro } from '@/app/utils/helper';
 import { ExpenseStatus, getExpenseStatusTranslation } from '@/app/enums/ExpenseStatus';
 import { config } from '@/app/config';
 
-export const generateExpenseReportPDF = (report: ExpenseReport) => {
+export const generateExpenseReportPDF = (report: EventExpenseReport) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   
@@ -67,7 +67,7 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
     ['Date fin:', report.sortie.heureRetour ? new Date(report.sortie.heureRetour).toLocaleDateString('fr-FR') : 'N/A'],
     ['Participants:', report.sortie.participationsCount?.toString() || 'N/A'],
     ['Date soumission:', report.dateCreation ? new Date(report.dateCreation).toLocaleDateString('fr-FR') : 'N/A'],
-    ['Type de demande:', report.refundRequired ? 'Remboursement' : 'Don au club'],
+    ['Don ou remboursement:', report.refundRequired ? 'Remboursement' : 'Don au club'],
   ];
   
   let yPosition = 65;
@@ -102,11 +102,11 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   yPosition += 5;
   doc.setFontSize(10);
   
-  // Commentaire de statut (si rejeté)
+  // Message du refus
   if (report.status === ExpenseStatus.REJECTED && report.commentaireStatut) {
     yPosition += 5;
     doc.setFont('helvetica', 'bold');
-    doc.text('Motif du rejet:', 14, yPosition);
+    doc.text('Message au demandeur:', 14, yPosition);
     doc.setFont('helvetica', 'normal');
     doc.text(report.commentaireStatut, 60, yPosition);
     yPosition += 10;
@@ -204,7 +204,7 @@ export const generateExpenseReportPDF = (report: ExpenseReport) => {
   
   const summaryData = [
     ['Total remboursable', formatEuro(totals.totalRemboursable)],
-    ['Type de demande', report.refundRequired ? 'Remboursement' : 'Don au club'],
+    ['Don ou remboursement', report.refundRequired ? 'Remboursement' : 'Don au club'],
   ];
   
   autoTable(doc, {

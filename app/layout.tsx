@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Compta Club',
+  title: { default: 'Compta Club', template: '%s · Compta Club' },
   description: 'Application de gestion des notes de frais',
   icons: {
     icon: [

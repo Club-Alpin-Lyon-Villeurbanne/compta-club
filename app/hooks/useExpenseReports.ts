@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import useStore from "@/app/store/useStore";
 import { PaginatedResponse, ExpenseReport } from "@/app/interfaces/noteDeFraisInterface";
 import { get } from "@/app/lib/fetchClient";
+import { buildReportListParams } from "@/app/utils/expenseReport";
 
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState(value);
@@ -20,6 +21,7 @@ export function useExpenseReports() {
     const dateFilter = useStore((state) => state.dateFilter);
     const requesterFilter = useStore((state) => state.requesterFilter);
     const typeFilter = useStore((state) => state.typeFilter);
+    const reportTypeFilter = useStore((state) => state.reportTypeFilter);
     const currentPage = useStore((state) => state.currentPage);
     const itemsPerPage = useStore((state) => state.itemsPerPage);
     const setExpenseReports = useStore((state) => state.setExpenseReports);
@@ -40,31 +42,15 @@ export function useExpenseReports() {
         setError(null);
 
         try {
-            const params = new URLSearchParams();
-            params.set('page', String(currentPage));
-            // TODO: Envoyer itemsPerPage une fois les ApiFilter déployés sur le backend.
-            // En attendant, on demande le max (30) pour que le filtrage client-side ait
-            // assez de données pour afficher tous les résultats matchants sur une page.
-            params.set('itemsPerPage', '30');
-
-            if (status !== 'Toutes') {
-                params.set('status', status);
-            }
-            if (debouncedSearch) {
-                params.set('event.titre', debouncedSearch);
-            }
-            if (debouncedRequester) {
-                params.set('user.lastname', debouncedRequester);
-            }
-            if (dateFilter) {
-                params.set('event.startDate[after]', `${dateFilter}T00:00:00`);
-                params.set('event.startDate[before]', `${dateFilter}T23:59:59`);
-            }
-            if (typeFilter === 'don') {
-                params.set('refundRequired', 'false');
-            } else if (typeFilter === 'remboursement') {
-                params.set('refundRequired', 'true');
-            }
+            const params = buildReportListParams({
+                page: currentPage,
+                status,
+                searchTerm: debouncedSearch,
+                requesterFilter: debouncedRequester,
+                dateFilter,
+                typeFilter,
+                reportTypeFilter,
+            });
 
             const response = await get<PaginatedResponse<ExpenseReport>>(
                 `/api/expense-reports?${params.toString()}`,
@@ -82,7 +68,7 @@ export function useExpenseReports() {
                 setIsLoading(false);
             }
         }
-    }, [currentPage, itemsPerPage, status, debouncedSearch, dateFilter, debouncedRequester, typeFilter, setExpenseReports, setPaginationMeta, setIsLoading]);
+    }, [currentPage, itemsPerPage, status, debouncedSearch, dateFilter, debouncedRequester, typeFilter, reportTypeFilter, setExpenseReports, setPaginationMeta, setIsLoading]);
 
     useEffect(() => {
         fetchReports();
