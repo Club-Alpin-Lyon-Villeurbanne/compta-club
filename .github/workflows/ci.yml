@@ -42,7 +42,8 @@ jobs:
 
   e2e:
     name: Tests E2E
-    runs-on: ubuntu-latest
+    # Playwright 1.55 n'installe pas Chromium sur Ubuntu 26.04, devenu ubuntu-latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
