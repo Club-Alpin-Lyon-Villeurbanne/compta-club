@@ -7,6 +7,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
+  // Les cookies portent les jetons de session, et le corps de /api/auth/login le mot de passe.
+  integrations: [Sentry.requestDataIntegration({ include: { cookies: false, data: false } })],
+
   tracesSampleRate: 0.1,
 
   debug: false,
